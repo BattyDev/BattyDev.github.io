@@ -984,10 +984,12 @@ function renderGuilds(data) {
         const species = worker.species || "Unknown Pal";
         workerName.textContent = worker.nickname ? `${worker.nickname} (${species})` : species;
         const stats = document.createElement("span");
+        // worker.action is a raw internal AI/blueprint identifier (e.g.
+        // "BP_AIAction_BaseCampWorker_Wait"), not a human-readable label --
+        // deliberately not shown until there's a real name mapping for it.
         const parts = [
           worker.level == null ? null : `Lv ${tidy(worker.level)}`,
-          worker.health_percent == null ? null : `${tidy(worker.health_percent)}% HP`,
-          worker.action || null
+          worker.health_percent == null ? null : `${tidy(worker.health_percent)}% HP`
         ].filter(Boolean);
         stats.textContent = parts.join(" · ") || "Details unavailable";
         workerCopy.append(workerName, stats);
