@@ -6,80 +6,139 @@
   <meta name="theme-color" content="#07151c">
   <title>Join Batty Mac · Palworld</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../concept-launcher.css?v=33">
   <style>
-    @import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Nunito:wght@600;700;800;900&display=swap");
-    :root{color-scheme:dark;--aqua:#66edf1;--green:#9bf00b;font-family:"Nunito","Segoe UI",sans-serif}
-    *{box-sizing:border-box}
-    body{min-width:320px;margin:0;min-height:100vh;background:#071117;color:#fff;padding:28px 16px 60px}
-    main{width:100%;max-width:640px;margin:0 auto}
-    .eyebrow{color:var(--aqua);font:800 .8rem "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.1em;text-transform:uppercase}
-    h1{margin:4px 0 6px;font:900 clamp(1.9rem,6vw,2.5rem) "Barlow Condensed","Arial Narrow",sans-serif;text-transform:uppercase;letter-spacing:.01em}
-    p.intro{margin:0 0 24px;color:#9fb0b7;font-size:.95rem;line-height:1.5}
+    /* Join-page-specific additions only -- everything else (fonts, colors,
+       header, hero tile, icon tiles) is the dashboard's own stylesheet, so
+       this page stays visually identical to the rest of the site. */
+    body{padding-bottom:60px}
+    .join-shell{width:min(980px,calc(100% - 40px));margin:clamp(150px,20vh,240px) auto 0}
+    .join-hero{position:relative;min-height:230px;border-radius:4px;overflow:hidden;box-shadow:0 12px 34px #0007;margin-bottom:22px}
+    .join-hero img{width:100%;height:100%;object-fit:cover;object-position:center 40%}
+    .join-hero:after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#07121ce8 0,transparent 70%)}
+    .join-hero-copy{position:absolute;z-index:1;left:26px;right:26px;bottom:22px}
+    .join-hero-copy small{font:800 .68rem "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.1em;color:var(--aqua);text-transform:uppercase}
+    .join-hero-copy h1{margin:4px 0 0;font:900 clamp(1.9rem,5vw,2.9rem) "Barlow Condensed","Arial Narrow",sans-serif;text-transform:uppercase;line-height:.95}
+    .join-hero-copy p{max-width:520px;margin:8px 0 0;color:#e1eaed;font-size:.8rem}
 
-    .card{background:linear-gradient(145deg,#0f222b,#081820);border:1px solid #66edf13b;border-radius:10px;padding:20px 22px;margin-bottom:22px;box-shadow:0 12px 34px #0006}
-    .card-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #ffffff14}
-    .card-row:last-child{border-bottom:0}
-    .card-row small{display:block;color:#8fa3aa;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em}
-    .card-row strong{font-size:1.05rem}
-    .server-name-row strong{font:900 1.4rem "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.02em}
-    .copy-btn{display:flex;align-items:center;gap:6px;padding:9px 14px;border:1px solid #66edf159;border-radius:6px;background:#0d2129;color:#fff;font:700 .8rem "Nunito";cursor:pointer;transition:.15s ease}
-    .copy-btn:hover,.copy-btn:focus-visible{background:#66edf11f;border-color:var(--aqua)}
+    .join-info{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:18px;background:#07151ddb;border:1px solid #ffffff19;border-left:4px solid var(--aqua);padding:16px 20px;margin-bottom:26px;box-shadow:0 12px 34px #0005}
+    .join-info-name small{display:block;color:#78ded0;font:800 .6rem "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.12em;text-transform:uppercase}
+    .join-info-name strong{display:block;margin-top:2px;font:900 1.5rem "Barlow Condensed","Arial Narrow",sans-serif}
+    .join-info-chips{display:flex;flex-wrap:wrap;gap:8px}
+    .join-info-chips span{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;background:#ffffff12;font-size:.7rem;font-weight:800}
+    .join-info-chips .no-pw{color:var(--green)}
+    .copy-btn{display:flex;align-items:center;gap:7px;padding:10px 16px;border:1px solid #66edf159;border-radius:5px;background:#0d2129;color:#fff;font:800 .74rem "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:.15s ease;white-space:nowrap}
+    .copy-btn:hover,.copy-btn:focus-visible{background:#66edf11f;border-color:var(--aqua);outline:none}
     .copy-btn.copied{background:var(--green);border-color:var(--green);color:#08222a}
-    .platforms{display:flex;flex-wrap:wrap;gap:8px}
-    .platforms span{padding:4px 10px;border-radius:20px;background:#ffffff12;font-size:.78rem}
-    .no-password{display:flex;align-items:center;gap:6px;color:var(--green);font-weight:800}
 
-    h2{margin:0 0 16px;font:900 1.3rem "Barlow Condensed","Arial Narrow",sans-serif;text-transform:uppercase;letter-spacing:.01em}
-    ol.steps{list-style:none;margin:0 0 20px;padding:0;display:grid;gap:12px}
-    ol.steps li{display:grid;grid-template-columns:34px 1fr;gap:14px;padding:14px 16px;background:#0d1b23;border:1px solid #ffffff14;border-radius:8px;align-items:start}
-    ol.steps .num{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--aqua);color:#07151c;font:900 1rem "Barlow Condensed";}
-    ol.steps strong{display:block;margin-bottom:2px;font-size:.95rem}
-    ol.steps span{color:#9fb0b7;font-size:.85rem;line-height:1.4}
+    .join-steps-head{margin:0 0 14px}
+    .join-steps-head small{color:var(--aqua);font:800 .68rem "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.1em;text-transform:uppercase}
+    .join-steps-head h2{margin:2px 0 0;font:900 1.6rem "Barlow Condensed","Arial Narrow",sans-serif;text-transform:uppercase}
 
-    .note{display:flex;gap:10px;padding:14px 16px;background:#12303a4d;border-left:3px solid var(--aqua);border-radius:6px;color:#c7dade;font-size:.83rem;line-height:1.5;margin-bottom:26px}
-    .note i{color:var(--aqua);font-size:1.1rem;flex-shrink:0}
+    .join-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px;margin-bottom:22px}
+    .join-step{position:relative;min-height:150px;padding:17px;overflow:hidden;background:linear-gradient(145deg,#173b48,#0a2631);border-bottom:4px solid var(--aqua);isolation:isolate}
+    .join-step:nth-child(4n+2){background:linear-gradient(145deg,#802c8e,#4a1d67);border-color:#ef65bd}
+    .join-step:nth-child(4n+3){background:linear-gradient(145deg,#9f5d16,#6f3e09);border-color:var(--gold)}
+    .join-step:nth-child(4n+4){background:linear-gradient(145deg,#457817,#244f09);border-color:var(--green)}
+    .join-step:nth-child(4n+5){background:linear-gradient(145deg,#1c5f66,#0d3438);border-color:var(--aqua)}
+    .join-step .step-art{position:absolute;z-index:-1;right:10px;top:6px;color:#fff;font-size:5.2rem;line-height:1;opacity:.16;transform:rotate(-8deg)}
+    .join-step strong{position:relative;display:block;font:900 2rem/1 "Barlow Condensed","Arial Narrow",sans-serif}
+    .join-step span{position:relative;display:block;margin-top:14px;font-size:.78rem;font-weight:900;text-transform:uppercase}
+    .join-step small{position:relative;display:block;margin-top:5px;color:#d4e1e5;font-size:.66rem;line-height:1.4}
 
-    .back-link{display:inline-flex;align-items:center;gap:6px;color:#9fb0b7;text-decoration:none;font-size:.85rem}
+    .join-note{display:flex;gap:10px;padding:14px 16px;background:#12303a4d;border-left:3px solid var(--aqua);border-radius:4px;color:#c7dade;font-size:.8rem;line-height:1.5;margin-bottom:26px}
+    .join-note i{color:var(--aqua);font-size:1.05rem;flex-shrink:0}
+
+    .back-link{display:inline-flex;align-items:center;gap:6px;color:#9fb0b7;text-decoration:none;font-size:.82rem}
     .back-link:hover{color:var(--aqua)}
+
+    @media(max-width:660px){
+      .join-shell{margin-top:95px}
+      .join-info{grid-template-columns:1fr;text-align:left}
+      .copy-btn{width:100%;justify-content:center}
+      .join-hero{min-height:190px}
+    }
   </style>
 </head>
 <body>
-  <main>
-    <div class="eyebrow">Palpagos community server</div>
-    <h1>Come play Palworld with us</h1>
-    <p class="intro">Free to join, crossplay-friendly, no password. Here's what to search for -- and if you've never joined a multiplayer server before, the steps below walk through it.</p>
+  <div class="wallpaper" aria-hidden="true"></div>
+  <header class="home-bar">
+    <a class="account" href="../index.html" aria-label="Back to the Batty Mac status dashboard">
+      <span class="gamerpic">B</span>
+      <span><b>Batty Mac</b><small>Palpagos community server</small></span>
+    </a>
+  </header>
 
-    <div class="card">
-      <div class="card-row server-name-row">
-        <div><small>Server name</small><strong id="server-name">Batty Mac</strong></div>
-        <button class="copy-btn" id="copy-btn" type="button"><i class="bi bi-clipboard"></i><span>Copy</span></button>
+  <main class="join-shell">
+    <section class="join-hero">
+      <img src="../official-world-multiplayer.jpg" alt="Players exploring Palworld together">
+      <div class="join-hero-copy">
+        <small>You're invited</small>
+        <h1>Come build with us on Palpagos</h1>
+        <p>Batty Mac is a laid-back community server -- boosted rates, no drama, room for more bases than usual. Jump in any time.</p>
       </div>
-      <div class="card-row">
-        <div><small>Platforms</small></div>
-        <div class="platforms"><span>Steam</span><span>Xbox</span><span>PS5</span><span>Mac</span></div>
+    </section>
+
+    <section class="join-info">
+      <div class="join-info-name">
+        <small>Search for this server name</small>
+        <strong id="server-name">Batty Mac</strong>
       </div>
-      <div class="card-row">
-        <div><small>Password</small></div>
-        <div class="no-password"><i class="bi bi-unlock-fill"></i> None needed</div>
+      <div class="join-info-chips">
+        <span><i class="bi bi-controller"></i> Steam</span>
+        <span><i class="bi bi-controller"></i> Xbox</span>
+        <span><i class="bi bi-controller"></i> PS5</span>
+        <span><i class="bi bi-controller"></i> Mac</span>
+        <span class="no-pw"><i class="bi bi-unlock-fill"></i> No password</span>
       </div>
+      <button class="copy-btn" id="copy-btn" type="button"><i class="bi bi-clipboard"></i><span>Copy name</span></button>
+    </section>
+
+    <div class="join-steps-head">
+      <small>New to joining a multiplayer world?</small>
+      <h2>Here's exactly how</h2>
+    </div>
+    <div class="join-steps">
+      <article class="join-step">
+        <i class="step-art bi bi-house-door-fill" aria-hidden="true"></i>
+        <strong>1</strong>
+        <span>Open Palworld's main menu</span>
+        <small>From the title screen -- not a save you've already loaded into.</small>
+      </article>
+      <article class="join-step">
+        <i class="step-art bi bi-globe2" aria-hidden="true"></i>
+        <strong>2</strong>
+        <span>Join Multiplayer Game</span>
+        <small>Separate from starting or continuing your own single-player world.</small>
+      </article>
+      <article class="join-step">
+        <i class="step-art bi bi-people-fill" aria-hidden="true"></i>
+        <strong>3</strong>
+        <span>Open the Community Server tab</span>
+        <small>One of the tabs near the top of the server list screen.</small>
+      </article>
+      <article class="join-step">
+        <i class="step-art bi bi-search" aria-hidden="true"></i>
+        <strong>4</strong>
+        <span>Search "Batty Mac"</span>
+        <small>Type the name above, or tap Copy and paste it in.</small>
+      </article>
+      <article class="join-step">
+        <i class="step-art bi bi-check-circle-fill" aria-hidden="true"></i>
+        <strong>5</strong>
+        <span>Select it and hit Join</span>
+        <small>No password prompt should appear -- if one does, just ask in chat.</small>
+      </article>
     </div>
 
-    <h2>How to join</h2>
-    <ol class="steps">
-      <li><span class="num">1</span><div><strong>Open Palworld and go to the main menu</strong><span>From the title screen, not a save you've already loaded into.</span></div></li>
-      <li><span class="num">2</span><div><strong>Select "Join Multiplayer Game"</strong><span>This is separate from starting or continuing your own single-player world.</span></div></li>
-      <li><span class="num">3</span><div><strong>Open the "Community Server" tab</strong><span>It's one of the tabs near the top/side of the server list screen.</span></div></li>
-      <li><span class="num">4</span><div><strong>Search for "Batty Mac"</strong><span>Use the search box on that screen and type the server name above (or tap Copy and paste it).</span></div></li>
-      <li><span class="num">5</span><div><strong>Select it and hit Join</strong><span>No password prompt should appear -- if one does, something's off, just ask in chat.</span></div></li>
-    </ol>
-
-    <div class="note">
+    <div class="join-note">
       <i class="bi bi-info-circle-fill"></i>
-      <span>The public server search is occasionally slow to show new servers or flaky by name. If "Batty Mac" doesn't show up right away, wait a minute and search again before assuming something's wrong.</span>
+      <span>The public server search is occasionally slow to show new servers or a little flaky by name. If "Batty Mac" doesn't show up right away, wait a minute and search again before assuming something's wrong.</span>
     </div>
 
-    <a class="back-link" href="../"><i class="bi bi-arrow-left"></i> See the live server status dashboard</a>
+    <a class="back-link" href="../index.html"><i class="bi bi-arrow-left"></i> See the live server status dashboard</a>
   </main>
+
   <script>
     const btn = document.getElementById("copy-btn");
     btn.addEventListener("click", async () => {
@@ -89,7 +148,7 @@
         btn.querySelector("span").textContent = "Copied!";
         setTimeout(() => {
           btn.classList.remove("copied");
-          btn.querySelector("span").textContent = "Copy";
+          btn.querySelector("span").textContent = "Copy name";
         }, 1500);
       } catch (err) {
         btn.querySelector("span").textContent = "Copy failed";
