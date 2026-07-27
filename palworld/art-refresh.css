@@ -1,0 +1,241 @@
+.brand-mark {
+  display: grid;
+  place-items: center;
+  border-radius: 24px;
+  background: linear-gradient(145deg, #223f6b, #132442);
+  border: 1px solid #ffffff2b;
+  box-shadow: inset 0 1px 0 #ffffff29, 0 16px 36px #0007;
+  font-size: 2.6rem;
+  transform: rotate(-4deg);
+}
+
+.brand-mark::before,
+.brand-mark span {
+  display: none;
+}
+
+.hero {
+  min-height: 340px;
+  align-items: flex-end;
+  isolation: isolate;
+  background-color: #07142a;
+  background-image: url("official-base-camp-hd.jpg");
+  background-position: center 50%;
+  background-size: cover;
+  border-color: #38517b;
+  padding: 0;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0 50%,
+    #07142a5e 61%,
+    #07142aed 73%,
+    #07142a 82% 100%
+  );
+  pointer-events: none;
+}
+
+.hero::after {
+  display: none;
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 2;
+  padding: 24px;
+}
+
+.players {
+  position: relative;
+  z-index: 2;
+  align-self: flex-end;
+  margin: 0 24px 24px 0;
+  padding: 16px 18px;
+  border: 1px solid #ffffff26;
+  border-radius: 20px;
+  background: #09172cc7;
+  backdrop-filter: blur(10px);
+}
+
+.companion-banner {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+  background: linear-gradient(125deg, #132c52, #0a1935);
+}
+
+.companion-banner::after {
+  display: none;
+}
+
+.companion-banner > div {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding: 24px 28px 28px;
+  background: linear-gradient(135deg, #102547, #09182f);
+}
+
+.companion-banner h2 {
+  margin: 5px 0 10px;
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+}
+
+.companion-banner p:last-child {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.companion-banner img {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  object-fit: cover;
+  object-position: center 62%;
+}
+
+.section-art {
+  font-size: 1.8rem;
+  filter: drop-shadow(0 0 10px #62e6a766);
+}
+
+.footer-mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 8px;
+  color: var(--gold);
+  font-size: 1.5rem;
+}
+
+.signal-notice {
+  position: relative;
+  z-index: 5;
+  width: fit-content;
+  margin: -12px 0 14px auto;
+}
+
+.signal-notice[hidden] {
+  display: none;
+}
+
+.signal-notice summary {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin-left: auto;
+  border: 1px solid #ffd76599;
+  border-radius: 50%;
+  background: #5a431fe8;
+  color: #fff1bd;
+  box-shadow: 0 8px 22px #02061566;
+  cursor: pointer;
+  font-size: 1.05rem;
+  font-weight: 900;
+  list-style: none;
+}
+
+.signal-notice summary::-webkit-details-marker {
+  display: none;
+}
+
+.signal-notice summary:hover,
+.signal-notice summary:focus-visible {
+  background: #725522;
+  outline: 2px solid #ffd76588;
+  outline-offset: 2px;
+}
+
+.signal-notice > div {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  width: min(320px, calc(100vw - 44px));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid #ffd76566;
+  border-radius: 15px;
+  background: #4b391fef;
+  color: #fff1bd;
+  box-shadow: 0 16px 34px #02061599;
+  backdrop-filter: blur(12px);
+}
+
+.signal-notice > div span {
+  color: #fff7d8;
+  font-size: .84rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 720px) {
+  .hero {
+    min-height: 330px;
+    background-position: 52% center;
+  }
+  .hero-copy { padding: 20px; }
+  .players { margin: 0 20px 20px 0; }
+  .companion-banner > div {
+    padding: 22px 24px 26px;
+  }
+  .companion-banner h2 {
+    font-size: clamp(1.45rem, 4.7vw, 2rem);
+  }
+}
+
+@media (max-width: 520px) {
+  .companion-banner > div {
+    width: 100%;
+    padding: 22px;
+  }
+  .companion-banner img {
+    aspect-ratio: 16 / 9;
+    object-position: center center;
+  }
+}
+
+@media (max-width: 420px) {
+  .hero {
+    min-height: 400px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+  .hero-copy {
+    min-width: 0;
+    padding: 0 8px 20px 18px;
+  }
+  .hero-copy .status {
+    padding: 6px 8px;
+    font-size: 0.64rem;
+    white-space: nowrap;
+  }
+  .hero-copy h2 {
+    font-size: 1.55rem;
+  }
+  .players {
+    align-self: end;
+    margin: 0 14px 20px 0;
+    padding: 14px;
+    text-align: center;
+  }
+  .players strong {
+    font-size: 2.75rem;
+  }
+  .players span {
+    font-size: 0.78rem;
+  }
+}

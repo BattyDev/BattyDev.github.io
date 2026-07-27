@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07151c">
+  <title>Batty Mac · Palworld Server Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="concept-launcher.css?v=32">
+</head>
+<body>
+  <div class="wallpaper" aria-hidden="true"></div>
+
+  <header class="home-bar">
+    <a class="account" href="index.html" aria-label="Return to the current Batty Mac status page">
+      <span class="gamerpic">B</span>
+      <span><b>Batty Mac</b><small>Palpagos community server</small></span>
+    </a>
+
+    <nav class="system-icons" aria-label="Dashboard views">
+      <button class="is-active" type="button" data-view-target="home" aria-label="Home" aria-current="page"><i class="bi bi-house-fill"></i></button>
+      <button type="button" data-view-target="party" aria-label="Players"><i class="bi bi-people-fill"></i></button>
+      <button type="button" data-view-target="world" aria-label="World settings"><i class="bi bi-sliders"></i></button>
+      <button type="button" data-view-target="bosses" aria-label="Boss radar"><i class="bi bi-map-fill"></i></button>
+      <button type="button" data-view-target="guilds" aria-label="Guild records"><i class="bi bi-shield-fill"></i></button>
+      <button type="button" data-view-target="achievements" aria-label="Achievements"><i class="bi bi-trophy-fill"></i></button>
+      <button type="button" data-view-target="overkill" aria-label="Data overload"><i class="bi bi-bar-chart-fill"></i></button>
+    </nav>
+
+    <div class="system-status">
+      <span class="achievement">◆ <b data-field="day">—</b></span>
+      <span class="connection"><i data-status-dot></i><b data-field="status">Connecting</b></span>
+      <time data-clock>--:--</time>
+      <span class="menu-mark">▤</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="view-pane is-active" data-view="home">
+      <div class="dashboard-row primary-row" aria-label="Server shortcuts">
+        <article class="home-tile selected-tile">
+          <img src="official-world-multiplayer.jpg" alt="Players exploring Palworld together">
+          <div class="game-logo"><span>PAL</span><b>WORLD</b></div>
+          <div class="tile-caption">
+            <span><b data-field="server-name">Batty Mac</b><small>Community server</small></span>
+            <i data-status-dot></i>
+          </div>
+        </article>
+
+        <button class="home-tile live-tile" type="button" data-view-target="party">
+          <i class="bi bi-people-fill tile-icon"></i>
+          <strong data-field="players">—</strong>
+          <span>of <b data-field="max-players">—</b> online</span>
+        </button>
+
+        <button class="home-tile image-tile world-tile" type="button" data-view-target="world">
+          <img src="official-build-automate.jpg" alt="">
+          <span><b>World rules</b><small>Your boosted settings</small></span>
+        </button>
+
+        <button class="home-tile day-tile" type="button" data-view-target="world">
+          <i class="bi bi-sun-fill tile-icon"></i>
+          <strong>Day <i data-field="day">—</i></strong>
+          <span>World progress</span>
+        </button>
+
+        <button class="home-tile fps-tile" type="button" data-view-target="overkill">
+          <i class="bi bi-speedometer2 tile-icon"></i>
+          <strong data-field="fps">—</strong>
+          <span>server FPS</span>
+        </button>
+
+        <button class="home-tile boss-tile" type="button" data-view-target="bosses">
+          <i class="bi bi-crosshair tile-icon"></i>
+          <strong data-field="bosses-up">—</strong>
+          <span>alive now</span>
+        </button>
+
+        <button class="home-tile image-tile guild-shortcut" type="button" data-view-target="guilds">
+          <img src="official-adventure-hd.jpg" alt="">
+          <span><b><span data-field="guild-count">—</span> Guilds</b><small>See the world records</small></span>
+        </button>
+      </div>
+
+      <div class="dashboard-row feature-row" aria-label="Featured server information">
+        <article class="feature-tile welcome-feature">
+          <img src="official-base-camp-hd.jpg" alt="A large Palworld base full of working Pals">
+          <div><small>WELCOME BACK</small><h1 data-field="server-name">Batty Mac</h1><p data-field="description">Loading the islands…</p></div>
+        </article>
+
+        <article class="feature-tile uptime-feature">
+          <div class="feature-symbol"><i class="bi bi-stopwatch"></i></div>
+          <div><small>WORLD SESSION</small><strong data-field="uptime">—</strong><span>running continuously</span></div>
+        </article>
+
+        <article class="feature-tile base-feature">
+          <img src="official-build-automate.jpg" alt="Pals working around an automated base">
+          <div><small>ACTIVE CAMPS</small><strong data-field="bases">—</strong><span>across the islands</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="view-pane content-shelf content-screen boss-screen" id="bosses" data-view="bosses" hidden>
+      <header>
+        <div><small>LIVE WORLD RADAR</small><h2>Boss watch</h2></div>
+        <span class="live-label"><i data-boss-signal></i> LOADED REGIONS</span>
+      </header>
+      <p class="screen-intro">Alphas are assumed alive until a confirmed kill starts the respawn timer.</p>
+      <div class="boss-layout">
+        <div class="boss-roster">
+          <div class="boss-roster-head">
+            <div><small>PALPAGOS FIELD REPORT</small><strong data-boss-coverage>Waiting for sightings</strong></div>
+            <div class="boss-legend">
+              <span><i class="alive"></i>Alive</span>
+              <span><i class="down"></i>Respawning</span>
+            </div>
+          </div>
+          <div class="boss-summary" id="boss-summary"></div>
+          <div class="boss-list" id="boss-list"></div>
+        </div>
+      </div>
+      <p class="boss-privacy"><i class="bi bi-shield-lock-fill"></i> Exact coordinates and player positions stay on batty-mac. The public report receives normalized boss status only.</p>
+    </section>
+
+    <section class="view-pane content-shelf content-screen" id="world" data-view="world" hidden>
+      <header><div><small>WORLD SETTINGS</small><h2>Pals first. Survival at your own pace.</h2></div><span><kbd>Y</kbd> Live configuration</span></header>
+      <p class="screen-intro">Every tile describes the setting in plain language, with artwork that reflects the rule it changes.</p>
+      <div id="concept-highlights" class="modifier-grid"></div>
+    </section>
+
+    <section class="view-pane content-shelf content-screen party-shelf" id="party" data-view="party" hidden>
+      <header><div><small>PEOPLE</small><h2>Playing now</h2></div><span class="live-label"><i data-status-dot></i> LIVE</span></header>
+      <div class="people-columns">
+        <section>
+          <h3><i class="bi bi-controller"></i> Online</h3>
+          <ul id="concept-online" class="party-list"></ul>
+        </section>
+        <section class="offline-section">
+          <h3><i class="bi bi-clock-history"></i> Offline · Previously seen</h3>
+          <ul id="concept-recent" class="recent-list"></ul>
+        </section>
+      </div>
+    </section>
+
+    <section class="view-pane content-shelf content-screen guild-shelf" id="guilds" data-view="guilds" hidden>
+      <header><div><small>PALPAGOS RECORDS</small><h2>Guild activity</h2></div><span><kbd>X</kbd> Latest snapshot</span></header>
+      <div id="concept-guilds" class="guild-grid"></div>
+    </section>
+
+    <section class="view-pane content-shelf content-screen achievement-screen" id="achievements" data-view="achievements" hidden>
+      <header><div><small>ACCOMPLISHMENTS</small><h2>Legends of Palpagos</h2></div><span><kbd>Y</kbd> Current world census</span></header>
+      <p class="screen-intro">These accomplishments are inferred from the server’s live guild and workforce snapshot. Boss kills and old events are not exposed by Palworld’s public data yet.</p>
+      <div id="concept-achievements" class="achievement-grid"></div>
+    </section>
+
+    <section class="view-pane content-shelf content-screen overkill-screen" id="overkill" data-view="overkill" hidden>
+      <header><div><small>DATA OVERLOAD</small><h2>Way too much information</h2></div><span><kbd>Y</kbd> Sanitized public telemetry</span></header>
+      <div id="concept-overkill-summary" class="detail-grid"></div>
+      <div class="overkill-columns">
+        <section><h3><i class="bi bi-activity"></i> Pal census</h3><div id="concept-census" class="data-list"></div></section>
+        <section><h3><i class="bi bi-person-vcard-fill"></i> Online player detail</h3><div id="concept-player-detail" class="data-list"></div></section>
+        <section class="configuration-panel"><h3><i class="bi bi-sliders2-vertical"></i> Active configuration</h3><div id="concept-configuration" class="data-list configuration-list"></div></section>
+      </div>
+    </section>
+  </main>
+
+  <div class="pal-inspector" id="pal-inspector" hidden>
+    <button class="pal-inspector-backdrop" type="button" data-pal-close aria-label="Close Pal inspection"></button>
+    <article class="pal-inspector-panel" role="dialog" aria-modal="false" aria-labelledby="pal-inspector-title">
+      <button class="pal-inspector-back" type="button" data-pal-close aria-label="Back"><i class="bi bi-arrow-left"></i> Back</button>
+      <button class="pal-inspector-close" type="button" data-pal-close aria-label="Close Pal inspection"><i class="bi bi-x-lg"></i></button>
+      <header class="pal-inspector-header">
+        <div class="pal-level-badge"><small>LEVEL</small><strong data-pal-level>—</strong></div>
+        <div>
+          <div class="pal-stars" data-pal-stars aria-label="Condensation stars"></div>
+          <h2 id="pal-inspector-title" data-pal-name>Pal</h2>
+          <p><span data-pal-species></span><span data-pal-gender></span><span data-pal-owner></span></p>
+          <div class="pal-elements" data-pal-elements></div>
+        </div>
+      </header>
+
+      <div class="pal-inspector-layout">
+        <section class="pal-inspector-left">
+          <div class="pal-data-section partner-section">
+            <div class="pal-section-heading"><span>Partner Skill</span><b data-pal-partner-name>—</b></div>
+            <div class="partner-ranks" data-pal-partner-ranks></div>
+            <p data-pal-partner-effect>No partner-skill data available.</p>
+          </div>
+          <div class="pal-data-section">
+            <div class="pal-section-heading"><span>Active Skills</span></div>
+            <div class="pal-skill-list" data-pal-active-skills></div>
+          </div>
+          <div class="pal-data-section">
+            <div class="pal-section-heading"><span>Passive Skills</span></div>
+            <div class="pal-passive-list" data-pal-passives></div>
+          </div>
+        </section>
+
+        <section class="pal-inspector-center" aria-label="Pal portrait">
+          <div class="pal-portrait-aura"></div>
+          <img data-pal-portrait alt="">
+          <div class="pal-flag-row" data-pal-flags></div>
+          <button class="maxed-toggle" type="button" data-pal-maxed-toggle><i class="bi bi-stars"></i> Compare maxed potential</button>
+        </section>
+
+        <section class="pal-inspector-right">
+          <div class="pal-data-section trust-section">
+            <div class="pal-section-heading"><span>Trust</span><b data-pal-trust-rank>—</b></div>
+            <div class="trust-track"><i data-pal-trust-bar></i></div>
+            <small data-pal-trust-copy>—</small>
+          </div>
+          <div class="pal-data-section">
+            <div class="pal-section-heading"><span>Stats</span><small data-pal-stats-mode>Current build</small></div>
+            <dl class="pal-stat-grid" data-pal-stats></dl>
+          </div>
+          <div class="pal-data-section">
+            <div class="pal-section-heading"><span>Potential</span><small>0–100</small></div>
+            <dl class="pal-potential-grid" data-pal-potential></dl>
+          </div>
+          <div class="pal-data-section">
+            <div class="pal-section-heading"><span>Soul Enhancements</span><small>0–20</small></div>
+            <dl class="pal-soul-grid" data-pal-souls></dl>
+          </div>
+          <div class="pal-data-section">
+            <div class="pal-section-heading"><span>Work Suitability</span></div>
+            <div class="pal-work-list" data-pal-work></div>
+          </div>
+          <details class="pal-data-section learned-section">
+            <summary>Learned skill library <span data-pal-learned-count>0</span></summary>
+            <div class="pal-learned-list" data-pal-learned></div>
+          </details>
+        </section>
+      </div>
+      <footer class="pal-inspector-controls"><span><kbd>A</kbd> Change partner rank</span><span><kbd>Y</kbd> Maxed comparison</span><button type="button" class="pal-inspector-controls-close" data-pal-close><kbd>B</kbd> Close</button></footer>
+    </article>
+  </div>
+
+  <footer class="controller-bar">
+    <span><kbd>A</kbd> Select</span>
+    <button type="button" data-view-target="home"><kbd>B</kbd> Home</button>
+    <span><kbd>Y</kbd> Details</span>
+    <small>UPDATED <b data-field="updated">—</b></small>
+  </footer>
+
+  <script src="concept.js?v=30"></script>
+</body>
+</html>

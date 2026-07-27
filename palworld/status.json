@@ -1,0 +1,90 @@
+{
+  "updated_at": "2026-07-22T03:15:00Z",
+  "online": true,
+  "server_name": "Batty Mac",
+  "description": "This is where I taught Jim Carrey how to Surf",
+  "version": "v1.0.1.100619",
+  "players": 2,
+  "player_names": ["Batty", "TheNumbersMason"],
+  "recent_players": [
+    {"name": "Batty", "last_seen": "2026-07-22T03:15:00Z"},
+    {"name": "TheNumbersMason", "last_seen": "2026-07-22T03:15:00Z"},
+    {"name": "Marty katch'em", "last_seen": "2026-07-22T02:15:00Z"}
+  ],
+  "max_players": 8,
+  "fps": 59,
+  "world_day": 151,
+  "base_camps": 6,
+  "uptime": 39000,
+  "settings": {"XP rate": 2.5, "Capture rate": 1.5, "Collection drops": 3, "Enemy drops": 2, "Work speed": 3, "Egg hatch time": 1, "Bases per guild": 8, "Global Pal export": true, "Global Pal import": true},
+  "online_players": [
+    {"name": "Batty", "level": 50, "ping": 28.6, "guild": "Kyody", "health_percent": 100, "max_health": 4420, "action": "Exploring", "stage": "Open world", "online": true, "last_seen": "2026-07-22T03:15:00Z", "party_sightings": [{"species": "Anubis", "level": 50, "health_percent": 100}, {"species": "Jetragon", "level": 49, "health_percent": 94.6}]},
+    {"name": "TheNumbersMason", "level": 7, "ping": 99.7, "guild": "Unnamed Guild 2", "health_percent": 86.4, "max_health": 980, "action": "Building", "stage": "Base camp", "online": true, "last_seen": "2026-07-22T03:15:00Z", "party_sightings": [{"species": "Cattiva", "level": 8, "health_percent": 91.2}]}
+  ],
+  "known_players": [
+    {"name": "Batty", "level": 50, "guild": "Kyody", "health_percent": 100, "action": "Exploring", "online": true, "last_seen": "2026-07-22T03:15:00Z", "party_sightings": [{"species": "Anubis", "level": 50}, {"species": "Jetragon", "level": 49}]},
+    {"name": "TheNumbersMason", "level": 7, "guild": "Unnamed Guild 2", "health_percent": 86.4, "action": "Building", "online": true, "last_seen": "2026-07-22T03:15:00Z", "party_sightings": [{"species": "Cattiva", "level": 8}]},
+    {"name": "Marty katch'em", "level": 43, "guild": "Kyody", "health_percent": 100, "action": "Exploring", "online": false, "last_seen": "2026-07-22T02:15:00Z", "party_sightings": [{"species": "Fenglope", "level": 41}]},
+    {"name": "Owlz", "level": 37, "guild": "Unnamed Guild 1", "health_percent": 96.2, "action": "At base", "online": false, "last_seen": "2026-07-22T01:54:00Z", "party_sightings": [{"species": "Dazemu", "level": 35}]}
+  ],
+  "guilds": [
+    {
+      "name": "Kyody", "bases": 3, "workers": 45, "online_players": ["Batty"],
+      "members": [
+        {"name": "Batty", "level": 50, "online": true, "last_seen": "2026-07-22T03:15:00Z", "party_sightings": [{"species": "Anubis", "level": 50}, {"species": "Jetragon", "level": 49}]},
+        {"name": "Marty katch'em", "level": 43, "online": false, "last_seen": "2026-07-22T02:15:00Z", "party_sightings": [{"species": "Fenglope", "level": 41}]}
+      ],
+      "bases_detail": [
+        {"label": "Base 1", "worker_count": 3, "workers": [{"species": "Anubis", "level": 52, "health_percent": 100, "action": "Working"}, {"species": "Jormuntide Ignis", "level": 48, "health_percent": 98.3, "action": "Cooking"}, {"species": "Orserk", "level": 45, "health_percent": 96.8, "action": "Generating electricity"}]},
+        {"label": "Base 2", "worker_count": 2, "workers": [{"species": "Lyleen", "level": 47, "health_percent": 100, "action": "Planting"}, {"species": "Verdash", "level": 44, "health_percent": 97.2, "action": "Gathering"}]},
+        {"label": "Base 3", "worker_count": 2, "workers": [{"species": "Astegon", "level": 50, "health_percent": 94.1, "action": "Mining"}, {"species": "Faleris", "level": 46, "health_percent": 100, "action": "Transporting"}]}
+      ],
+      "worker_levels": {"count": 45, "average": 31.2, "minimum": 4, "maximum": 52}, "worker_health_average": 96.8, "top_worker_species": [{"name": "Anubis", "count": 9}], "top_worker_actions": [{"name": "Working", "count": 31}]
+    },
+    {
+      "name": "Unnamed Guild 1", "bases": 2, "workers": 14, "online_players": [],
+      "members": [{"name": "Owlz", "level": 37, "online": false, "last_seen": "2026-07-22T01:54:00Z", "party_sightings": [{"species": "Dazemu", "level": 35}]}],
+      "bases_detail": [{"label": "Base 1", "worker_count": 2, "workers": [{"species": "Lamball", "level": 24, "health_percent": 95.4, "action": "Handiwork"}, {"species": "Dinossom", "level": 28, "health_percent": 92.1, "action": "Planting"}]}, {"label": "Base 2", "worker_count": 1, "workers": [{"species": "Azurobe", "level": 32, "health_percent": 86.5, "action": "Watering"}]}],
+      "worker_levels": {"count": 14, "average": 21.4, "minimum": 3, "maximum": 48}, "worker_health_average": 91.3, "top_worker_species": [{"name": "Lamball", "count": 4}], "top_worker_actions": [{"name": "Working", "count": 10}]
+    },
+    {
+      "name": "Unnamed Guild 2", "bases": 1, "workers": 3, "online_players": ["TheNumbersMason"],
+      "members": [{"name": "TheNumbersMason", "level": 7, "online": true, "last_seen": "2026-07-22T03:15:00Z", "party_sightings": [{"species": "Cattiva", "level": 8}]}],
+      "bases_detail": [{"label": "Base 1", "worker_count": 3, "workers": [{"species": "Cattiva", "level": 9, "health_percent": 100, "action": "Transporting"}, {"species": "Cattiva", "level": 7, "health_percent": 100, "action": "Gathering"}, {"species": "Lamball", "level": 5, "health_percent": 100, "action": "Handiwork"}]}],
+      "worker_levels": {"count": 3, "average": 7, "minimum": 5, "maximum": 9}, "worker_health_average": 100, "top_worker_species": [{"name": "Cattiva", "count": 2}], "top_worker_actions": [{"name": "Working", "count": 3}]
+    }
+  ],
+  "pal_census": {
+    "total_actors": 76,
+    "counts": {"BaseCampPal": 62, "NPC": 1, "PalBox": 6, "Player": 2, "WildPal": 5},
+    "levels": {"BaseCampPal": {"count": 62, "average": 27.8, "minimum": 3, "maximum": 52}, "NPC": {"count": 1, "average": 22, "minimum": 22, "maximum": 22}, "Player": {"count": 2, "average": 28.5, "minimum": 7, "maximum": 50}, "WildPal": {"count": 5, "average": 3.2, "minimum": 2, "maximum": 5}},
+    "health_average": {"BaseCampPal": 95.2, "NPC": 100, "Player": 93.2, "WildPal": 88.1},
+    "top_species": {"BaseCampPal": [{"name": "Anubis", "count": 9}, {"name": "Jormuntide Ignis", "count": 7}, {"name": "Lamball", "count": 5}], "WildPal": [{"name": "Lamball", "count": 3}, {"name": "Cattiva", "count": 2}]},
+    "top_actions": {"BaseCampPal": [{"name": "Working", "count": 44}, {"name": "Resting", "count": 12}, {"name": "Eating", "count": 6}], "WildPal": [{"name": "Wander", "count": 5}]}
+  },
+  "performance": {"fps": 59.59, "average_fps": 58.87, "frame_time_ms": 16.78, "snapshot_time": "2026-07-22 03:15:00"},
+  "system": {"load_average": [1.2, 1.05, 0.92], "memory_percent": 63.4, "memory_used_gib": 9.51, "memory_total_gib": 15.0, "palworld_memory_gib": 6.73, "disk_percent": 18.4, "disk_free_gib": 179.2, "battery_percent": 99, "battery_status": "Charging", "temperature_c": 67.2},
+  "configuration": {"BaseCampMaxNum": 128, "BaseCampMaxNumInGuild": 8, "BaseCampWorkerMaxNum": 20, "BuildObjectDamageRate": 0.01, "CollectionDropRate": 3, "CrossplayPlatforms": ["Steam", "Xbox", "PS5", "Mac"], "DayTimeSpeedRate": 1, "DeathPenalty": "None", "EnemyDropItemRate": 2, "EquipmentDurabilityDamageRate": 0, "ExpRate": 2.5, "GuildPlayerMaxNum": 20, "ItemWeightRate": 0.25, "NightTimeSpeedRate": 1, "PalCaptureRate": 1.5, "PalEggDefaultHatchingTime": 1, "ServerPlayerMaxNum": 8, "WorkSpeedRate": 3, "bAllowGlobalPalboxExport": true, "bAllowGlobalPalboxImport": true, "bEnableFastTravel": true, "bEnableFriendlyFire": false, "bEnableInvaderEnemy": true, "bEnablePlayerToPlayerDamage": false, "bHardcore": false, "bIsPvP": false},
+  "history": [
+    {"t": "2026-07-22T00:15:00Z", "players": 1, "fps": 58, "average_fps": 57, "frame_time_ms": 17.2, "bases": 6, "workers": 62, "memory_percent": 61},
+    {"t": "2026-07-22T01:15:00Z", "players": 2, "fps": 59, "average_fps": 58, "frame_time_ms": 16.9, "bases": 6, "workers": 62, "memory_percent": 62},
+    {"t": "2026-07-22T02:15:00Z", "players": 2, "fps": 60, "average_fps": 59, "frame_time_ms": 16.7, "bases": 6, "workers": 62, "memory_percent": 63},
+    {"t": "2026-07-22T03:15:00Z", "players": 2, "fps": 59, "average_fps": 59, "frame_time_ms": 16.8, "bases": 6, "workers": 62, "memory_percent": 63.4}
+  ],
+  "boss_tracker": {
+    "updated_at": "2026-07-25T18:20:00Z",
+    "coverage": "loaded-regions-only",
+    "privacy": "No player positions or exact world coordinates are published.",
+    "summary": {"alive": 2, "down": 1, "unknown": 3, "tracked": 6},
+    "bosses": [
+      {"key": "BOSS_Anubis", "name": "Anubis", "level": 47, "status": "alive", "health_percent": 100, "map_x": 58, "map_y": 48, "last_seen_at": "2026-07-25T18:20:00Z", "defeated_at": null, "estimated_respawn_at": null, "estimated_respawn_seconds": 3600, "estimate_source": "baseline", "respawn_samples": 0, "defeats_observed": 1, "observation": "loaded"},
+      {"key": "BOSS_WhiteDeer", "name": "Celesdir", "level": 65, "status": "alive", "health_percent": 72.4, "map_x": 29, "map_y": 41, "last_seen_at": "2026-07-25T18:20:00Z", "defeated_at": null, "estimated_respawn_at": null, "estimated_respawn_seconds": 3472, "estimate_source": "measured", "respawn_samples": 2, "defeats_observed": 2, "observation": "loaded"},
+      {"key": "BOSS_SaintCentaur", "name": "Paladius", "level": 55, "status": "down", "health_percent": null, "map_x": 72, "map_y": 63, "last_seen_at": "2026-07-25T18:04:00Z", "defeated_at": "2026-07-25T18:05:00Z", "estimated_respawn_at": "2026-07-25T19:05:00Z", "estimated_respawn_seconds": 3600, "estimate_source": "baseline", "respawn_samples": 0, "defeats_observed": 1, "observation": "loaded"},
+      {"key": "BOSS_BlackCentaur", "name": "Necromus", "level": 55, "status": "unknown", "health_percent": null, "map_x": 75, "map_y": 61, "last_seen_at": "2026-07-24T22:15:00Z", "defeated_at": null, "estimated_respawn_at": null, "estimated_respawn_seconds": 3600, "estimate_source": "baseline", "respawn_samples": 0, "defeats_observed": 0, "observation": "not-loaded"},
+      {"key": "BOSS_JetDragon", "name": "Jetragon", "level": 55, "status": "unknown", "health_percent": null, "map_x": 23, "map_y": 73, "last_seen_at": "2026-07-24T21:02:00Z", "defeated_at": null, "estimated_respawn_at": null, "estimated_respawn_seconds": 3600, "estimate_source": "baseline", "respawn_samples": 0, "defeats_observed": 0, "observation": "not-loaded"},
+      {"key": "BOSS_IceHorse", "name": "Frostallion", "level": 55, "status": "unknown", "health_percent": null, "map_x": 16, "map_y": 79, "last_seen_at": "2026-07-23T19:42:00Z", "defeated_at": null, "estimated_respawn_at": null, "estimated_respawn_seconds": 3600, "estimate_source": "baseline", "respawn_samples": 0, "defeats_observed": 0, "observation": "not-loaded"}
+    ]
+  },
+  "features": [{"key": "base_radius", "icon": "◉", "title": "Double the base radius", "detail": "A 7,000-unit circle gives every camp room to breathe.", "tone": "pink"}],
+  "capabilities": {"info": true, "metrics": true, "settings": true, "players": true, "game_data": true}
+}

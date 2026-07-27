@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f5f7">
+  <title>Batty Mac · Utility Concept</title>
+  <link rel="stylesheet" href="concept-utility.css?v=1">
+</head>
+<body>
+  <aside class="utility-rail">
+    <a class="utility-logo" href="index.html">B</a>
+    <nav aria-label="Design concepts"><a href="concept-launcher.html" title="Launcher">L</a><a href="concept-editorial.html" title="Editorial">E</a><a aria-current="page" href="concept-utility.html" title="Utility">U</a></nav>
+  </aside>
+
+  <main>
+    <header class="utility-head">
+      <div><p>Server overview</p><h1 data-field="server-name">Batty Mac</h1></div>
+      <span class="utility-status"><i data-status-dot></i><b data-field="status">Loading</b></span>
+    </header>
+
+    <section class="utility-summary">
+      <article class="primary"><span>Players online</span><strong><i data-field="players">—</i><small>/ <b data-field="max-players">—</b></small></strong><p data-field="description">Loading the islands…</p></article>
+      <article><span>Performance</span><strong><i data-field="fps">—</i><small>FPS</small></strong><p>Live server frame rate</p></article>
+      <article><span>World</span><strong><small>Day</small><i data-field="day">—</i></strong><p><b data-field="bases">—</b> active base camps</p></article>
+      <article><span>Uptime</span><strong data-field="uptime">—</strong><p data-field="version">—</p></article>
+    </section>
+
+    <section class="utility-section">
+      <header><div><p>World tuning</p><h2>Gameplay at a glance</h2></div><span>Live settings</span></header>
+      <div id="concept-highlights" class="utility-highlights"></div>
+    </section>
+
+    <section class="utility-columns">
+      <section class="utility-section">
+        <header><div><p>Presence</p><h2>Online now</h2></div></header>
+        <ul id="concept-online" class="utility-online"></ul>
+      </section>
+      <section class="utility-section">
+        <header><div><p>Activity</p><h2>Recent players</h2></div></header>
+        <ul id="concept-recent" class="utility-recent"></ul>
+      </section>
+    </section>
+
+    <section class="utility-section">
+      <header><div><p>Guilds</p><h2>Progress summary</h2></div><span>Sanitized data</span></header>
+      <div id="concept-guilds" class="utility-guilds"></div>
+    </section>
+
+    <footer><span>Concept 03 · Utility dashboard</span><small>Updated <b data-field="updated">—</b></small></footer>
+  </main>
+  <script src="concept.js?v=1"></script>
+</body>
+</html>
