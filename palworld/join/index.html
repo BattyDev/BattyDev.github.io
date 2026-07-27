@@ -22,8 +22,8 @@
        this page stays visually identical to the rest of the site. */
     body{padding-bottom:60px}
     .join-shell{width:min(980px,calc(100% - 40px));margin:clamp(150px,20vh,240px) auto 0}
-    .join-hero{position:relative;min-height:230px;border-radius:4px;overflow:hidden;box-shadow:0 12px 34px #0007;margin-bottom:22px}
-    .join-hero img{width:100%;height:100%;object-fit:cover;object-position:center 40%}
+    .join-hero{position:relative;aspect-ratio:2.6/1;min-height:190px;border-radius:4px;overflow:hidden;box-shadow:0 12px 34px #0007;margin-bottom:22px}
+    .join-hero img{width:100%;height:100%;object-fit:cover;object-position:center 38%}
     .join-hero:after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#07121ce8 0,transparent 70%)}
     .join-hero-copy{position:absolute;z-index:1;left:26px;right:26px;bottom:22px}
     .join-hero-copy small{font:800 .68rem "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.1em;color:var(--aqua);text-transform:uppercase}
@@ -65,7 +65,7 @@
       .join-shell{margin-top:95px}
       .join-info{grid-template-columns:1fr;text-align:left}
       .copy-btn{width:100%;justify-content:center}
-      .join-hero{min-height:190px}
+      .join-hero{aspect-ratio:1.5/1;min-height:190px}
     }
   </style>
 </head>
