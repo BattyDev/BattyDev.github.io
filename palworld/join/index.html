@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07151c">
+  <title>Join Batty Mac · Palworld</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Nunito:wght@600;700;800;900&display=swap");
+    :root{color-scheme:dark;--aqua:#66edf1;--green:#9bf00b;font-family:"Nunito","Segoe UI",sans-serif}
+    *{box-sizing:border-box}
+    body{min-width:320px;margin:0;min-height:100vh;background:#071117;color:#fff;padding:28px 16px 60px}
+    main{width:100%;max-width:640px;margin:0 auto}
+    .eyebrow{color:var(--aqua);font:800 .8rem "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.1em;text-transform:uppercase}
+    h1{margin:4px 0 6px;font:900 clamp(1.9rem,6vw,2.5rem) "Barlow Condensed","Arial Narrow",sans-serif;text-transform:uppercase;letter-spacing:.01em}
+    p.intro{margin:0 0 24px;color:#9fb0b7;font-size:.95rem;line-height:1.5}
+
+    .card{background:linear-gradient(145deg,#0f222b,#081820);border:1px solid #66edf13b;border-radius:10px;padding:20px 22px;margin-bottom:22px;box-shadow:0 12px 34px #0006}
+    .card-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #ffffff14}
+    .card-row:last-child{border-bottom:0}
+    .card-row small{display:block;color:#8fa3aa;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em}
+    .card-row strong{font-size:1.05rem}
+    .server-name-row strong{font:900 1.4rem "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.02em}
+    .copy-btn{display:flex;align-items:center;gap:6px;padding:9px 14px;border:1px solid #66edf159;border-radius:6px;background:#0d2129;color:#fff;font:700 .8rem "Nunito";cursor:pointer;transition:.15s ease}
+    .copy-btn:hover,.copy-btn:focus-visible{background:#66edf11f;border-color:var(--aqua)}
+    .copy-btn.copied{background:var(--green);border-color:var(--green);color:#08222a}
+    .platforms{display:flex;flex-wrap:wrap;gap:8px}
+    .platforms span{padding:4px 10px;border-radius:20px;background:#ffffff12;font-size:.78rem}
+    .no-password{display:flex;align-items:center;gap:6px;color:var(--green);font-weight:800}
+
+    h2{margin:0 0 16px;font:900 1.3rem "Barlow Condensed","Arial Narrow",sans-serif;text-transform:uppercase;letter-spacing:.01em}
+    ol.steps{list-style:none;margin:0 0 20px;padding:0;display:grid;gap:12px}
+    ol.steps li{display:grid;grid-template-columns:34px 1fr;gap:14px;padding:14px 16px;background:#0d1b23;border:1px solid #ffffff14;border-radius:8px;align-items:start}
+    ol.steps .num{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--aqua);color:#07151c;font:900 1rem "Barlow Condensed";}
+    ol.steps strong{display:block;margin-bottom:2px;font-size:.95rem}
+    ol.steps span{color:#9fb0b7;font-size:.85rem;line-height:1.4}
+
+    .note{display:flex;gap:10px;padding:14px 16px;background:#12303a4d;border-left:3px solid var(--aqua);border-radius:6px;color:#c7dade;font-size:.83rem;line-height:1.5;margin-bottom:26px}
+    .note i{color:var(--aqua);font-size:1.1rem;flex-shrink:0}
+
+    .back-link{display:inline-flex;align-items:center;gap:6px;color:#9fb0b7;text-decoration:none;font-size:.85rem}
+    .back-link:hover{color:var(--aqua)}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">Palpagos community server</div>
+    <h1>Come play Palworld with us</h1>
+    <p class="intro">Free to join, crossplay-friendly, no password. Here's what to search for -- and if you've never joined a multiplayer server before, the steps below walk through it.</p>
+
+    <div class="card">
+      <div class="card-row server-name-row">
+        <div><small>Server name</small><strong id="server-name">Batty Mac</strong></div>
+        <button class="copy-btn" id="copy-btn" type="button"><i class="bi bi-clipboard"></i><span>Copy</span></button>
+      </div>
+      <div class="card-row">
+        <div><small>Platforms</small></div>
+        <div class="platforms"><span>Steam</span><span>Xbox</span><span>PS5</span><span>Mac</span></div>
+      </div>
+      <div class="card-row">
+        <div><small>Password</small></div>
+        <div class="no-password"><i class="bi bi-unlock-fill"></i> None needed</div>
+      </div>
+    </div>
+
+    <h2>How to join</h2>
+    <ol class="steps">
+      <li><span class="num">1</span><div><strong>Open Palworld and go to the main menu</strong><span>From the title screen, not a save you've already loaded into.</span></div></li>
+      <li><span class="num">2</span><div><strong>Select "Join Multiplayer Game"</strong><span>This is separate from starting or continuing your own single-player world.</span></div></li>
+      <li><span class="num">3</span><div><strong>Open the "Community Server" tab</strong><span>It's one of the tabs near the top/side of the server list screen.</span></div></li>
+      <li><span class="num">4</span><div><strong>Search for "Batty Mac"</strong><span>Use the search box on that screen and type the server name above (or tap Copy and paste it).</span></div></li>
+      <li><span class="num">5</span><div><strong>Select it and hit Join</strong><span>No password prompt should appear -- if one does, something's off, just ask in chat.</span></div></li>
+    </ol>
+
+    <div class="note">
+      <i class="bi bi-info-circle-fill"></i>
+      <span>The public server search is occasionally slow to show new servers or flaky by name. If "Batty Mac" doesn't show up right away, wait a minute and search again before assuming something's wrong.</span>
+    </div>
+
+    <a class="back-link" href="../"><i class="bi bi-arrow-left"></i> See the live server status dashboard</a>
+  </main>
+  <script>
+    const btn = document.getElementById("copy-btn");
+    btn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText("Batty Mac");
+        btn.classList.add("copied");
+        btn.querySelector("span").textContent = "Copied!";
+        setTimeout(() => {
+          btn.classList.remove("copied");
+          btn.querySelector("span").textContent = "Copy";
+        }, 1500);
+      } catch (err) {
+        btn.querySelector("span").textContent = "Copy failed";
+      }
+    });
+  </script>
+</body>
+</html>
