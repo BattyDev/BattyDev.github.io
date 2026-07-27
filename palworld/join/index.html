@@ -15,7 +15,7 @@
   <meta property="og:url" content="https://battydev.com/palworld/join/">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="../concept-launcher.css?v=33">
+  <link rel="stylesheet" href="../concept-launcher.css?v=34">
   <style>
     /* Join-page-specific additions only -- everything else (fonts, colors,
        header, hero tile, icon tiles) is the dashboard's own stylesheet, so
@@ -26,23 +26,23 @@
     .join-hero img{width:100%;height:100%;object-fit:cover;object-position:center 38%}
     .join-hero:after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#07121ce8 0,transparent 70%)}
     .join-hero-copy{position:absolute;z-index:1;left:26px;right:26px;bottom:22px}
-    .join-hero-copy small{font:800 .68rem "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.1em;color:var(--aqua);text-transform:uppercase}
-    .join-hero-copy h1{margin:4px 0 0;font:900 clamp(1.9rem,5vw,2.9rem) "Barlow Condensed","Arial Narrow",sans-serif;text-transform:uppercase;line-height:.95}
+    .join-hero-copy small{font:800 .68rem "Roboto Condensed","Arial Narrow",sans-serif;letter-spacing:.1em;color:var(--aqua);text-transform:uppercase}
+    .join-hero-copy h1{margin:4px 0 0;font:900 clamp(1.9rem,5vw,2.9rem) "Roboto Condensed","Arial Narrow",sans-serif;text-transform:uppercase;line-height:.95}
     .join-hero-copy p{max-width:520px;margin:8px 0 0;color:#e1eaed;font-size:.8rem}
 
     .join-info{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:18px;background:#07151ddb;border:1px solid #ffffff19;border-left:4px solid var(--aqua);padding:16px 20px;margin-bottom:26px;box-shadow:0 12px 34px #0005}
-    .join-info-name small{display:block;color:#78ded0;font:800 .6rem "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.12em;text-transform:uppercase}
-    .join-info-name strong{display:block;margin-top:2px;font:900 1.5rem "Barlow Condensed","Arial Narrow",sans-serif}
+    .join-info-name small{display:block;color:#78ded0;font:800 .6rem "Roboto Condensed","Arial Narrow",sans-serif;letter-spacing:.12em;text-transform:uppercase}
+    .join-info-name strong{display:block;margin-top:2px;font:900 1.5rem "Roboto Condensed","Arial Narrow",sans-serif}
     .join-info-chips{display:flex;flex-wrap:wrap;gap:8px}
     .join-info-chips span{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;background:#ffffff12;font-size:.7rem;font-weight:800}
     .join-info-chips .no-pw{color:var(--green)}
-    .copy-btn{display:flex;align-items:center;gap:7px;padding:10px 16px;border:1px solid #66edf159;border-radius:5px;background:#0d2129;color:#fff;font:800 .74rem "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:.15s ease;white-space:nowrap}
+    .copy-btn{display:flex;align-items:center;gap:7px;padding:10px 16px;border:1px solid #66edf159;border-radius:5px;background:#0d2129;color:#fff;font:800 .74rem "Roboto Condensed","Arial Narrow",sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:.15s ease;white-space:nowrap}
     .copy-btn:hover,.copy-btn:focus-visible{background:#66edf11f;border-color:var(--aqua);outline:none}
     .copy-btn.copied{background:var(--green);border-color:var(--green);color:#08222a}
 
     .join-steps-head{margin:0 0 14px}
-    .join-steps-head small{color:var(--aqua);font:800 .68rem "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.1em;text-transform:uppercase}
-    .join-steps-head h2{margin:2px 0 0;font:900 1.6rem "Barlow Condensed","Arial Narrow",sans-serif;text-transform:uppercase}
+    .join-steps-head small{color:var(--aqua);font:800 .68rem "Roboto Condensed","Arial Narrow",sans-serif;letter-spacing:.1em;text-transform:uppercase}
+    .join-steps-head h2{margin:2px 0 0;font:900 1.6rem "Roboto Condensed","Arial Narrow",sans-serif;text-transform:uppercase}
 
     .join-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px;margin-bottom:22px}
     .join-step{position:relative;min-height:150px;padding:17px;overflow:hidden;background:linear-gradient(145deg,#173b48,#0a2631);border-bottom:4px solid var(--aqua);isolation:isolate}
@@ -51,7 +51,7 @@
     .join-step:nth-child(4n+4){background:linear-gradient(145deg,#457817,#244f09);border-color:var(--green)}
     .join-step:nth-child(4n+5){background:linear-gradient(145deg,#1c5f66,#0d3438);border-color:var(--aqua)}
     .join-step .step-art{position:absolute;z-index:-1;right:10px;top:6px;color:#fff;font-size:5.2rem;line-height:1;opacity:.16;transform:rotate(-8deg)}
-    .join-step strong{position:relative;display:block;font:900 2rem/1 "Barlow Condensed","Arial Narrow",sans-serif}
+    .join-step strong{position:relative;display:block;font:900 2rem/1 "Roboto Condensed","Arial Narrow",sans-serif}
     .join-step span{position:relative;display:block;margin-top:14px;font-size:.78rem;font-weight:900;text-transform:uppercase}
     .join-step small{position:relative;display:block;margin-top:5px;color:#d4e1e5;font-size:.66rem;line-height:1.4}
 
