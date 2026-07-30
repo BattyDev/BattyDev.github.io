@@ -111,9 +111,13 @@ const canonicalPlayerKey = value => {
   const identity = playerIdentity(value);
   return playerNameKey(identity?.character || value);
 };
-const playerSecondaryLabel = (name, guild) => {
+const playerSecondaryLabel = (name, guild, gamertag) => {
   const identity = playerIdentity(name);
-  return [guild || "No guild observed", identity?.profile ? `Xbox · ${identity.profile}` : null]
+  // The hardcoded identity list (manually confirmed aliases) wins when
+  // present; otherwise fall back to whatever gamertag the status feed
+  // resolved automatically for this player (see xbox_gamertag in status.json).
+  const resolvedGamertag = identity?.profile || gamertag;
+  return [guild || "No guild observed", resolvedGamertag ? `Xbox · ${resolvedGamertag}` : null]
     .filter(Boolean)
     .join(" · ");
 };
@@ -655,7 +659,7 @@ function renderOnline(data) {
     const name = document.createElement("strong");
     name.textContent = player.name || "Unknown player";
     const guild = document.createElement("span");
-    guild.textContent = playerSecondaryLabel(player.name, player.guild);
+    guild.textContent = playerSecondaryLabel(player.name, player.guild, player.xbox_gamertag);
     heading.append(name, guild);
     const stats = document.createElement("dl");
     stats.className = "player-stats";
@@ -714,7 +718,7 @@ function renderRecent(data) {
     const name = document.createElement("strong");
     name.textContent = player.name;
     const guild = document.createElement("span");
-    guild.textContent = playerSecondaryLabel(player.name, player.guild || "Guild not observed");
+    guild.textContent = playerSecondaryLabel(player.name, player.guild || "Guild not observed", player.xbox_gamertag);
     heading.append(name, guild);
     const details = document.createElement("div");
     details.className = "offline-player-meta";
