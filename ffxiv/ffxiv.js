@@ -158,15 +158,37 @@
       detail.appendChild(gearWrap);
     }
 
-    var jobs = (entry.jobs || []).slice().sort(function (a, b) { return b.level - a.level; });
-    if (jobs.length) {
-      var jobWrap = el("div", "detail-block");
-      jobWrap.appendChild(el("h3", "detail-heading", "All jobs (" + jobs.length + ")"));
-      var jobGrid = el("div", "job-grid");
-      jobs.forEach(function (job) { jobGrid.appendChild(jobChip(job, false)); });
-      jobWrap.appendChild(jobGrid);
-      detail.appendChild(jobWrap);
-    }
+    // Disciples of War/Magic, Hand and Land are separate progressions and get read
+    // separately — a lump of 33 jobs sorted by level tells you much less than
+    // "21 combat maxed, crafters at 100, gatherers still climbing".
+    var GROUPS = [
+      {key: "combat", label: "Combat"},
+      {key: "craft", label: "Crafting"},
+      {key: "gather", label: "Gathering"},
+      {key: "field", label: "Field records"}
+    ];
+    var byRole = {};
+    (entry.jobs || []).forEach(function (job) {
+      var role = job.role || (job.field_record ? "field" : "combat");
+      (byRole[role] = byRole[role] || []).push(job);
+    });
+
+    GROUPS.forEach(function (group) {
+      var list = byRole[group.key];
+      if (!list || !list.length) return;
+      list.sort(function (a, b) {
+        return b.level - a.level || String(a.job).localeCompare(String(b.job));
+      });
+      var maxed = list.filter(function (j) { return j.level >= LEVEL_CAP; }).length;
+      var block = el("div", "detail-block");
+      var heading = el("h3", "detail-heading", group.label + " (" + list.length + ")");
+      if (maxed) heading.appendChild(el("span", "detail-count", maxed + " at cap"));
+      block.appendChild(heading);
+      var grid = el("div", "job-grid");
+      list.forEach(function (job) { grid.appendChild(jobChip(job, false)); });
+      block.appendChild(grid);
+      detail.appendChild(block);
+    });
     return detail;
   }
 
@@ -177,14 +199,30 @@
     toggle.type = "button";
     toggle.setAttribute("aria-expanded", "false");
     toggle.textContent = "Details";
-    toggle.addEventListener("click", function () {
-      var open = detail.hidden;
+    function setOpen(open) {
       detail.hidden = !open;
       card.classList.toggle("is-expanded", open);
       toggle.setAttribute("aria-expanded", String(open));
       toggle.textContent = open ? "Close" : "Details";
-    });
+    }
+    toggle.addEventListener("click", function () { setOpen(detail.hidden); });
     card.appendChild(toggle);
+
+    // The name is the obvious thing to click, so make it work too — as a real button
+    // rather than a click handler on a heading, so keyboard and screen readers get it.
+    var nameEl = card.getElementsByClassName("char-name")[0];
+    if (nameEl) {
+      nameEl.classList.add("is-clickable");
+      nameEl.setAttribute("role", "button");
+      nameEl.setAttribute("tabindex", "0");
+      nameEl.addEventListener("click", function () { setOpen(detail.hidden); });
+      nameEl.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          setOpen(detail.hidden);
+        }
+      });
+    }
   }
 
   /* ---- roster ---- */
