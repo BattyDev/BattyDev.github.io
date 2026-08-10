@@ -11,6 +11,9 @@
   var LOCAL_FALLBACK = "ffxiv.json";
   var ICONS = "assets/job-icons/";
   var MAX_JOBS_ON_CARD = 5;
+  // Dawntrail's cap. Bump on the next expansion; jobs at or above it collapse into a
+  // single badge rather than filling the card with identical chips.
+  var LEVEL_CAP = 100;
 
   var $ = function (id) { return document.getElementById(id); };
 
@@ -143,11 +146,28 @@
     if (jobs.length) {
       var list = el("div", "job-list");
       var mainJob = entry.main_job ? entry.main_job.job : null;
-      jobs.slice(0, MAX_JOBS_ON_CARD).forEach(function (job) {
-        list.appendChild(jobChip(job, job.job === mainJob));
-      });
-      if (jobs.length > MAX_JOBS_ON_CARD) {
-        list.appendChild(el("span", "job-more", "+" + (jobs.length - MAX_JOBS_ON_CARD) + " more"));
+      var capped = jobs.filter(function (job) { return job.level >= LEVEL_CAP; });
+      var shown;
+
+      if (capped.length >= 3) {
+        // A veteran's top five are all 100, which is true but says nothing and makes
+        // every maxed card look identical. Collapse the cap into one badge and spend
+        // the remaining slots on jobs that are actually still moving.
+        var main = jobs.filter(function (job) { return job.job === mainJob; })[0] || capped[0];
+        var climbing = jobs.filter(function (job) {
+          return job.level < LEVEL_CAP && job.job !== main.job;
+        });
+        shown = [main].concat(climbing.slice(0, MAX_JOBS_ON_CARD - 2));
+        shown.forEach(function (job) { list.appendChild(jobChip(job, job.job === mainJob)); });
+        list.appendChild(el("span", "job-cap", capped.length + " at cap"));
+        var rest = jobs.length - shown.length - capped.length + (capped.indexOf(main) > -1 ? 1 : 0);
+        if (rest > 0) list.appendChild(el("span", "job-more", "+" + rest + " more"));
+      } else {
+        shown = jobs.slice(0, MAX_JOBS_ON_CARD);
+        shown.forEach(function (job) { list.appendChild(jobChip(job, job.job === mainJob)); });
+        if (jobs.length > shown.length) {
+          list.appendChild(el("span", "job-more", "+" + (jobs.length - shown.length) + " more"));
+        }
       }
       card.appendChild(list);
     }
