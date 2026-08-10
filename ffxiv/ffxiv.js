@@ -1,0 +1,391 @@
+/* Wild Hearts · FFXIV Adventurers
+   Reads the sanitized snapshot published from batty-mac. Everything here degrades:
+   the page is useful after a single night of data and gets richer as history builds. */
+
+(function () {
+  "use strict";
+
+  // Explicit rather than derived from location.pathname — /palworld computes its repo
+  // name from the URL, which would resolve to a repo that does not exist for this path.
+  var DATA_URL = "https://raw.githubusercontent.com/BattyDev/batty-ffxiv-status/data/ffxiv.json";
+  var LOCAL_FALLBACK = "ffxiv.json";
+  var ICONS = "assets/job-icons/";
+  var MAX_JOBS_ON_CARD = 5;
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function slug(name) {
+    return String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  }
+
+  function el(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+
+  function gcClass(grandCompany) {
+    if (!grandCompany) return "";
+    var key = String(grandCompany).toLowerCase();
+    if (key.indexOf("maelstrom") > -1) return "gc-maelstrom";
+    if (key.indexOf("adder") > -1) return "gc-adder";
+    if (key.indexOf("flame") > -1) return "gc-flames";
+    return "";
+  }
+
+  // A class/job page shows the base *class* name until its job is unlocked, so the
+  // harvested icon set only ever contains whichever of the pair a given character had.
+  // No number of characters guarantees both — a veteran roster never shows "Lancer".
+  // Falling back to the job's icon keeps every chip illustrated.
+  var CLASS_TO_JOB = {
+    gladiator: "paladin", marauder: "warrior", conjurer: "white-mage",
+    pugilist: "monk", lancer: "dragoon", archer: "bard",
+    thaumaturge: "black-mage", arcanist: "summoner", rogue: "ninja"
+  };
+
+  function jobChip(job, isMain) {
+    var chip = el("span", "job" + (isMain ? " is-main" : ""));
+    var icon = el("img");
+    var key = slug(job.job);
+    icon.src = ICONS + key + ".png";
+    icon.alt = "";
+    icon.loading = "lazy";
+    icon.width = 20;
+    icon.height = 20;
+    icon.addEventListener("error", function onError() {
+      icon.removeEventListener("error", onError);
+      if (CLASS_TO_JOB[key]) {
+        icon.src = ICONS + CLASS_TO_JOB[key] + ".png";
+        // A second failure removes it: better no icon than a broken-image box.
+        icon.addEventListener("error", function () { icon.remove(); });
+      } else {
+        icon.remove();
+      }
+    });
+    chip.appendChild(icon);
+    chip.appendChild(document.createTextNode(job.job + " "));
+    chip.appendChild(el("span", "lv", job.level));
+    return chip;
+  }
+
+  function relativeDays(iso) {
+    if (!iso) return null;
+    var then = Date.parse(iso);
+    if (isNaN(then)) return null;
+    var days = Math.floor((Date.now() - then) / 86400000);
+    if (days <= 0) return "today";
+    if (days === 1) return "yesterday";
+    if (days < 7) return days + " days ago";
+    if (days < 14) return "last week";
+    if (days < 60) return Math.floor(days / 7) + " weeks ago";
+    return Math.floor(days / 30) + " months ago";
+  }
+
+  function formatDate(iso) {
+    var when = new Date(iso);
+    return isNaN(when) ? "—" : when.toLocaleDateString(undefined, {
+      year: "numeric", month: "short", day: "numeric"
+    });
+  }
+
+  /* ---- roster ---- */
+
+  function renderAdventurer(entry) {
+    var card = el("div", "adventurer " + gcClass(entry.grand_company));
+    card.setAttribute("role", "listitem");
+
+    if (entry.status !== "ok") {
+      card.appendChild(el("p", "adv-name", entry.name || "Adventurer " + entry.id));
+      var reason = entry.status === "not_found"
+        ? "No longer found on The Lodestone."
+        : "Profile could not be read on " + (entry.as_of || "the last attempt") + ".";
+      card.appendChild(el("p", "adv-unavailable", reason));
+      return card;
+    }
+
+    var top = el("div", "adv-top");
+    if (entry.avatar) {
+      var portrait = el("img", "portrait");
+      portrait.src = entry.avatar;
+      portrait.alt = "";
+      portrait.loading = "lazy";
+      top.appendChild(portrait);
+    }
+
+    var identity = el("div", "adv-id");
+    var name = el("h2", "adv-name", entry.name);
+    if (entry.title) name.appendChild(el("span", "adv-title", "“" + entry.title + "”"));
+    identity.appendChild(name);
+
+    var descriptors = [entry.clan || entry.race, entry.world].filter(Boolean).join(" · ");
+    if (descriptors) identity.appendChild(el("div", "adv-meta", descriptors));
+    if (entry.grand_company) {
+      identity.appendChild(el("span", "gc-badge", entry.grand_company));
+    }
+    top.appendChild(identity);
+    card.appendChild(top);
+
+    // Combat jobs lead. A fully-levelled character has a dozen ties at 100, and the
+    // server-side sort breaks those alphabetically — so without this the card opens
+    // with Armorer and Blacksmith rather than what they actually play.
+    var ROLE_ORDER = { combat: 0, gather: 1, craft: 2, field: 3 };
+    var jobs = (entry.jobs || []).filter(function (job) { return !job.field_record; })
+      .slice()
+      .sort(function (a, b) {
+        var roleA = ROLE_ORDER[a.role] != null ? ROLE_ORDER[a.role] : 9;
+        var roleB = ROLE_ORDER[b.role] != null ? ROLE_ORDER[b.role] : 9;
+        if (roleA !== roleB) return roleA - roleB;
+        if (a.level !== b.level) return b.level - a.level;
+        return String(a.job).localeCompare(String(b.job));
+      });
+
+    if (jobs.length) {
+      var list = el("div", "job-list");
+      var mainJob = entry.main_job ? entry.main_job.job : null;
+      jobs.slice(0, MAX_JOBS_ON_CARD).forEach(function (job) {
+        list.appendChild(jobChip(job, job.job === mainJob));
+      });
+      if (jobs.length > MAX_JOBS_ON_CARD) {
+        list.appendChild(el("span", "job-more", "+" + (jobs.length - MAX_JOBS_ON_CARD) + " more"));
+      }
+      card.appendChild(list);
+    }
+
+    var stats = el("div", "adv-stats");
+    var achievements = entry.achievements || {};
+    if (achievements.visible && achievements.points != null) {
+      var points = el("span", null, "Deeds ");
+      points.appendChild(el("b", null, achievements.points.toLocaleString()));
+      stats.appendChild(points);
+    } else {
+      stats.appendChild(el("span", "muted", "Deeds sealed"));
+    }
+
+    var collections = entry.collections || {};
+    ["mounts", "minions"].forEach(function (kind) {
+      var record = collections[kind];
+      if (!record || record.owned == null) return;
+      var wrap = el("span", null, kind.charAt(0).toUpperCase() + kind.slice(1) + " ");
+      wrap.appendChild(el("b", null, record.owned));
+      var delta = entry.collection_deltas ? entry.collection_deltas[kind] : null;
+      if (delta) wrap.appendChild(el("span", "delta", " +" + delta));
+      stats.appendChild(wrap);
+    });
+    card.appendChild(stats);
+
+    // Only opted-in characters carry last_active at all — the publish step omits it
+    // rather than the page hiding it, so there is nothing here to leak.
+    if (entry.last_active) {
+      var seen = relativeDays(entry.last_active);
+      if (seen) {
+        var line = el("div", "last-seen", "Last seen in Eorzea ");
+        line.appendChild(el("b", null, seen));
+        card.appendChild(line);
+      }
+    }
+    return card;
+  }
+
+  function renderRoster(data) {
+    var container = $("roster");
+    container.textContent = "";
+    var roster = (data.roster || []).slice().sort(function (a, b) {
+      if ((a.status === "ok") !== (b.status === "ok")) return a.status === "ok" ? -1 : 1;
+      var levelA = a.main_job ? a.main_job.level : -1;
+      var levelB = b.main_job ? b.main_job.level : -1;
+      if (levelA !== levelB) return levelB - levelA;
+      return String(a.name || "").localeCompare(String(b.name || ""));
+    });
+
+    if (!roster.length) {
+      container.appendChild(el("p", "empty", "No adventurers recorded yet."));
+      return;
+    }
+    roster.forEach(function (entry) { container.appendChild(renderAdventurer(entry)); });
+
+    var withHistory = data.meta ? data.meta.with_history : 0;
+    $("roster-lede").textContent = roster.length + " sworn of the Wild Hearts" +
+      (withHistory ? " · " + withHistory + " sharing their chronicle" : "");
+  }
+
+  /* ---- deeds ---- */
+
+  function renderDeeds(data) {
+    var list = $("deeds");
+    list.textContent = "";
+    var names = {};
+    (data.roster || []).forEach(function (entry) { names[entry.id] = entry.name; });
+
+    var deeds = data.deeds || [];
+    if (!deeds.length) {
+      list.appendChild(el("li", "empty",
+        "No deeds to show yet. Achievements appear here for adventurers who share their chronicle."));
+      return;
+    }
+    deeds.forEach(function (deed) {
+      var row = el("li", "deed");
+      row.appendChild(el("span", "deed-who", names[deed.character_id] || deed.character_id));
+      row.appendChild(el("span", "deed-name", deed.name || "An unnamed deed"));
+      row.appendChild(el("span", "deed-when", formatDate(deed.obtained_at)));
+      list.appendChild(row);
+    });
+  }
+
+  /* ---- progression ---- */
+
+  function sparkline(points) {
+    var svgNS = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("class", "spark");
+    svg.setAttribute("viewBox", "0 0 100 30");
+    svg.setAttribute("preserveAspectRatio", "none");
+    svg.setAttribute("aria-hidden", "true");
+
+    var levels = points.map(function (point) { return point[1]; });
+    var low = Math.min.apply(null, levels);
+    var high = Math.max.apply(null, levels);
+    // A flat or single-point series would divide by zero; give it a mid-height line.
+    var span = high - low || 1;
+
+    if (points.length === 1) {
+      var dot = document.createElementNS(svgNS, "circle");
+      dot.setAttribute("cx", "50");
+      dot.setAttribute("cy", "15");
+      dot.setAttribute("r", "2.5");
+      svg.appendChild(dot);
+      return svg;
+    }
+
+    var d = points.map(function (point, index) {
+      var x = (index / (points.length - 1)) * 100;
+      var y = 27 - ((point[1] - low) / span) * 24;
+      return (index ? "L" : "M") + x.toFixed(2) + " " + y.toFixed(2);
+    }).join(" ");
+
+    var path = document.createElementNS(svgNS, "path");
+    path.setAttribute("d", d);
+    svg.appendChild(path);
+    return svg;
+  }
+
+  function renderProgress(data) {
+    var container = $("progress");
+    container.textContent = "";
+
+    var sharing = (data.roster || []).filter(function (entry) {
+      return entry.job_series && Object.keys(entry.job_series).length;
+    });
+
+    if (!sharing.length) {
+      container.appendChild(el("p", "empty",
+        "No chronicles shared yet. Level progression appears here once an adventurer opts in."));
+      return;
+    }
+
+    sharing.forEach(function (entry) {
+      var card = el("div", "progress-card");
+      card.appendChild(el("h2", null, entry.name));
+
+      var jobs = Object.keys(entry.job_series).map(function (job) {
+        var series = entry.job_series[job];
+        return { job: job, series: series, level: series[series.length - 1][1] };
+      }).sort(function (a, b) { return b.level - a.level; }).slice(0, 8);
+
+      var onlyOnePoint = true;
+      jobs.forEach(function (item) {
+        if (item.series.length > 1) onlyOnePoint = false;
+        var row = el("div", "spark-row");
+
+        var label = el("span", "spark-label");
+        var icon = el("img");
+        icon.src = ICONS + slug(item.job) + ".png";
+        icon.alt = "";
+        icon.loading = "lazy";
+        icon.addEventListener("error", function () { icon.remove(); });
+        label.appendChild(icon);
+        label.appendChild(document.createTextNode(item.job));
+        row.appendChild(label);
+
+        row.appendChild(sparkline(item.series));
+
+        var first = item.series[0][1];
+        var gained = item.level - first;
+        var value = el("span", "spark-value", "Lv " + item.level);
+        if (gained > 0) value.appendChild(el("span", "delta", " +" + gained));
+        row.appendChild(value);
+        card.appendChild(row);
+      });
+
+      if (onlyOnePoint) {
+        card.appendChild(el("p", "spark-single",
+          "One night recorded so far — the chronicle begins " +
+          formatDate(data.history_begins) + "."));
+      }
+      container.appendChild(card);
+    });
+  }
+
+  /* ---- views ---- */
+
+  function wireViews() {
+    var buttons = document.querySelectorAll(".system-icons button");
+    Array.prototype.forEach.call(buttons, function (button) {
+      button.addEventListener("click", function () {
+        Array.prototype.forEach.call(buttons, function (other) {
+          other.classList.toggle("is-active", other === button);
+          if (other === button) other.setAttribute("aria-current", "page");
+          else other.removeAttribute("aria-current");
+        });
+        ["roster", "deeds", "progress"].forEach(function (name) {
+          var section = $("view-" + name);
+          var active = name === button.dataset.viewTarget;
+          section.classList.toggle("is-active", active);
+          section.hidden = !active;
+        });
+      });
+    });
+  }
+
+  function showBanner(message) {
+    var banner = $("banner");
+    banner.textContent = message;
+    banner.hidden = false;
+  }
+
+  function render(data) {
+    renderRoster(data);
+    renderDeeds(data);
+    renderProgress(data);
+
+    if (data.generated_at) {
+      $("updated").textContent = "Updated " + formatDate(data.generated_at);
+    }
+    if (data.last_run && data.last_run.status && data.last_run.status !== "ok") {
+      showBanner("The last chronicle run finished as “" + data.last_run.status +
+                 "”, so some adventurers may be a day behind.");
+    }
+  }
+
+  function load() {
+    fetch(DATA_URL, { cache: "no-store" })
+      .then(function (response) {
+        if (!response.ok) throw new Error("remote unavailable");
+        return response.json();
+      })
+      .catch(function () {
+        return fetch(LOCAL_FALLBACK, { cache: "no-store" }).then(function (response) {
+          if (!response.ok) throw new Error("no data");
+          return response.json();
+        });
+      })
+      .then(render)
+      .catch(function () {
+        showBanner("The chronicle could not be read just now. It is published nightly.");
+        $("roster").appendChild(el("p", "empty", "No data available."));
+      });
+  }
+
+  wireViews();
+  load();
+})();
