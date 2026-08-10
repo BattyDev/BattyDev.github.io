@@ -99,15 +99,15 @@
     card.setAttribute("role", "listitem");
 
     if (entry.status !== "ok") {
-      card.appendChild(el("p", "adv-name", entry.name || "Adventurer " + entry.id));
+      card.appendChild(el("p", "char-name", entry.name || "Adventurer " + entry.id));
       var reason = entry.status === "not_found"
         ? "No longer found on The Lodestone."
         : "Profile could not be read on " + (entry.as_of || "the last attempt") + ".";
-      card.appendChild(el("p", "adv-unavailable", reason));
+      card.appendChild(el("p", "char-unavailable", reason));
       return card;
     }
 
-    var top = el("div", "adv-top");
+    var top = el("div", "char-head");
     if (entry.avatar) {
       var portrait = el("img", "portrait");
       portrait.src = entry.avatar;
@@ -116,13 +116,13 @@
       top.appendChild(portrait);
     }
 
-    var identity = el("div", "adv-id");
-    var name = el("h2", "adv-name", entry.name);
-    if (entry.title) name.appendChild(el("span", "adv-title", "“" + entry.title + "”"));
+    var identity = el("div", "char-id");
+    var name = el("h2", "char-name", entry.name);
+    if (entry.title) name.appendChild(el("span", "char-title", "“" + entry.title + "”"));
     identity.appendChild(name);
 
     var descriptors = [entry.clan || entry.race, entry.world].filter(Boolean).join(" · ");
-    if (descriptors) identity.appendChild(el("div", "adv-meta", descriptors));
+    if (descriptors) identity.appendChild(el("div", "char-meta", descriptors));
     if (entry.grand_company) {
       identity.appendChild(el("span", "gc-badge", entry.grand_company));
     }
@@ -172,7 +172,7 @@
       card.appendChild(list);
     }
 
-    var stats = el("div", "adv-stats");
+    var stats = el("div", "char-stats");
     var achievements = entry.achievements || {};
     if (achievements.visible && achievements.points != null) {
       var points = el("span", null, "Deeds ");

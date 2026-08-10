@@ -210,7 +210,7 @@ h1 {
 .gc-adder     { --accent: var(--gc-adder); }
 .gc-flames    { --accent: var(--gc-flames); }
 
-.adv-top { display: flex; gap: 13px; align-items: flex-start; }
+.char-head { display: flex; gap: 13px; align-items: flex-start; }
 .portrait {
   width: 60px; height: 60px;
   border-radius: 50%;
@@ -219,8 +219,8 @@ h1 {
   background: var(--deep);
   flex-shrink: 0;
 }
-.adv-id { min-width: 0; flex: 1; }
-.adv-name {
+.char-id { min-width: 0; flex: 1; }
+.char-name {
   margin: 0;
   font-family: 'Cinzel', serif;
   font-size: 17px;
@@ -229,14 +229,14 @@ h1 {
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
-.adv-title {
+.char-title {
   display: block;
   font-size: 11px;
   font-style: italic;
   color: var(--gold);
   opacity: 0.9;
 }
-.adv-meta { font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.09em; }
+.char-meta { font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.09em; }
 
 .gc-badge {
   display: inline-flex;
@@ -287,7 +287,7 @@ h1 {
   padding: 3px 8px;
 }
 
-.adv-stats {
+.char-stats {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 14px;
@@ -296,15 +296,15 @@ h1 {
   font-size: 12px;
   color: var(--ink-dim);
 }
-.adv-stats b { color: var(--ink); font-variant-numeric: tabular-nums; }
-.adv-stats .muted { color: var(--ink-faint); font-style: italic; }
+.char-stats b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.char-stats .muted { color: var(--ink-faint); font-style: italic; }
 
 .last-seen { font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.1em; }
 .last-seen b { color: var(--gold); font-style: normal; }
 
 .delta { color: #7fc99a; font-weight: 700; }
 
-.adv-unavailable { color: var(--ink-faint); font-style: italic; font-size: 13px; }
+.char-unavailable { color: var(--ink-faint); font-style: italic; font-size: 13px; }
 
 /* ---- deeds ---- */
 .deeds { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
