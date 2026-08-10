@@ -92,6 +92,101 @@
     });
   }
 
+  /* ---- expanded detail ---- */
+
+  function statLine(label, value) {
+    var row = el("div", "detail-row");
+    row.appendChild(el("span", "detail-label", label));
+    row.appendChild(el("span", "detail-value", value));
+    return row;
+  }
+
+  function buildDetail(entry) {
+    var detail = el("div", "char-detail");
+    detail.hidden = true;
+
+    if (entry.portrait) {
+      var portrait = el("img", "detail-portrait");
+      portrait.src = entry.portrait;
+      portrait.alt = "";
+      portrait.loading = "lazy";
+      detail.appendChild(portrait);
+    }
+
+    var facts = el("div", "detail-facts");
+    if (entry.race || entry.clan) facts.appendChild(statLine("Race", [entry.clan, entry.race].filter(Boolean).join(" · ")));
+    if (entry.gc_rank) facts.appendChild(statLine("Rank", entry.gc_rank));
+    if (entry.free_company) facts.appendChild(statLine("Company", entry.free_company));
+    var ach = entry.achievements || {};
+    if (ach.visible && ach.count != null) {
+      facts.appendChild(statLine("Deeds", ach.count.toLocaleString() +
+        (ach.points != null ? " · " + ach.points.toLocaleString() + " pts" : "")));
+    }
+    var cols = entry.collections || {};
+    Object.keys(cols).sort().forEach(function (kind) {
+      if (cols[kind] && cols[kind].owned != null) {
+        facts.appendChild(statLine(kind.charAt(0).toUpperCase() + kind.slice(1), cols[kind].owned));
+      }
+    });
+    if (entry.as_of) facts.appendChild(statLine("As of", entry.as_of));
+    if (facts.children.length) detail.appendChild(facts);
+
+    if (entry.gear && entry.gear.length) {
+      var gearWrap = el("div", "detail-block");
+      gearWrap.appendChild(el("h3", "detail-heading", "Equipment"));
+      var grid = el("div", "gear-grid");
+      entry.gear.forEach(function (piece) {
+        var cell = el("span", "gear-slot");
+        var img = el("img");
+        img.src = piece.icon;
+        img.alt = "";
+        img.loading = "lazy";
+        img.addEventListener("error", function () { img.remove(); });
+        cell.appendChild(img);
+        // Item names exist only for opted-in characters; everyone else gets the slot.
+        var label = piece.name || piece.slot.toLowerCase().replace(/(\d)/, " $1");
+        cell.title = piece.ilvl ? label + " (i" + piece.ilvl + ")" : label;
+        if (piece.name) {
+          var cap = el("span", "gear-name", piece.name);
+          if (piece.ilvl) cap.appendChild(el("span", "gear-ilvl", " i" + piece.ilvl));
+          cell.appendChild(cap);
+          cell.className = "gear-slot has-name";
+        }
+        grid.appendChild(cell);
+      });
+      gearWrap.appendChild(grid);
+      detail.appendChild(gearWrap);
+    }
+
+    var jobs = (entry.jobs || []).slice().sort(function (a, b) { return b.level - a.level; });
+    if (jobs.length) {
+      var jobWrap = el("div", "detail-block");
+      jobWrap.appendChild(el("h3", "detail-heading", "All jobs (" + jobs.length + ")"));
+      var jobGrid = el("div", "job-grid");
+      jobs.forEach(function (job) { jobGrid.appendChild(jobChip(job, false)); });
+      jobWrap.appendChild(jobGrid);
+      detail.appendChild(jobWrap);
+    }
+    return detail;
+  }
+
+  function makeExpandable(card, entry) {
+    var detail = card.getElementsByClassName("char-detail")[0];
+    if (!detail) return;
+    var toggle = el("button", "detail-toggle");
+    toggle.type = "button";
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.textContent = "Details";
+    toggle.addEventListener("click", function () {
+      var open = detail.hidden;
+      detail.hidden = !open;
+      card.classList.toggle("is-expanded", open);
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.textContent = open ? "Close" : "Details";
+    });
+    card.appendChild(toggle);
+  }
+
   /* ---- roster ---- */
 
   function renderAdventurer(entry) {
@@ -193,6 +288,9 @@
       stats.appendChild(wrap);
     });
     card.appendChild(stats);
+
+    card.appendChild(buildDetail(entry));
+    makeExpandable(card, entry);
 
     // Only opted-in characters carry last_active at all — the publish step omits it
     // rather than the page hiding it, so there is nothing here to leak.
