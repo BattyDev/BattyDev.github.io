@@ -254,7 +254,8 @@
     if (entry.title) name.appendChild(el("span", "char-title", "“" + entry.title + "”"));
     identity.appendChild(name);
 
-    var descriptors = [entry.clan || entry.race, entry.world].filter(Boolean).join(" · ");
+    var descriptors = [entry.fc_rank, entry.clan || entry.race, entry.world]
+      .filter(Boolean).join(" · ");
     if (descriptors) identity.appendChild(el("div", "char-meta", descriptors));
     if (entry.grand_company) {
       identity.appendChild(el("span", "gc-badge", entry.grand_company));
@@ -346,8 +347,14 @@
   function renderRoster(data) {
     var container = $("roster");
     container.textContent = "";
+    // Free Company hierarchy first. fc_order is the character's position in
+    // Lodestone's member list, which is itself rank-ordered. Anyone outside the FC
+    // (config-only friends) has no order and sorts after, by level.
     var roster = (data.roster || []).slice().sort(function (a, b) {
       if ((a.status === "ok") !== (b.status === "ok")) return a.status === "ok" ? -1 : 1;
+      var rankA = a.fc_order == null ? Infinity : a.fc_order;
+      var rankB = b.fc_order == null ? Infinity : b.fc_order;
+      if (rankA !== rankB) return rankA - rankB;
       var levelA = a.main_job ? a.main_job.level : -1;
       var levelB = b.main_job ? b.main_job.level : -1;
       if (levelA !== levelB) return levelB - levelA;
