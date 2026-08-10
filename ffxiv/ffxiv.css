@@ -170,7 +170,10 @@ h1 {
 /* ---- roster ---- */
 .roster-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  /* min() clamps the track floor to the container. A bare minmax(290px, 1fr) forces
+     cards wider than a narrow viewport and scrolls the whole page sideways — which
+     it did at 265px, narrower than any phone but exactly what a side panel gives you. */
+  grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr));
   gap: 18px;
 }
 
