@@ -210,6 +210,27 @@ h1 {
 .gc-adder     { --accent: var(--gc-adder); }
 .gc-flames    { --accent: var(--gc-flames); }
 
+/* An expanded card claims the whole row so the rest of the grid reflows around it,
+   rather than growing inside one column and stretching its neighbours to match.
+   Deliberately NOT using grid-auto-flow: dense — dense would backfill gaps with
+   later cards and quietly break the Free Company rank ordering. */
+.adventurer.is-expanded {
+  grid-column: 1 / -1;
+  border-top-width: 3px;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
+}
+.adventurer.is-expanded:hover { transform: none; }
+
+/* With the full width available, lay the detail blocks out in columns instead of
+   one long thin strip. */
+.is-expanded .char-detail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: 18px 26px;
+  align-items: start;
+}
+.is-expanded .char-detail > .detail-portrait { grid-row: span 2; }
+
 .char-head { display: flex; gap: 13px; align-items: flex-start; }
 .portrait {
   width: 60px; height: 60px;
