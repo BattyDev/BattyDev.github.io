@@ -198,12 +198,16 @@
     var toggle = el("button", "detail-toggle");
     toggle.type = "button";
     toggle.setAttribute("aria-expanded", "false");
-    toggle.textContent = "Details";
+    toggle.setAttribute("aria-label", "Show details");
+    // Two bars: the vertical one rotates flat onto the horizontal, turning the plus
+    // into a minus. Built from elements rather than a glyph so it animates.
+    toggle.appendChild(el("span", "bar bar-h"));
+    toggle.appendChild(el("span", "bar bar-v"));
     function setOpen(open) {
       detail.hidden = !open;
       card.classList.toggle("is-expanded", open);
       toggle.setAttribute("aria-expanded", String(open));
-      toggle.textContent = open ? "Close" : "Details";
+      toggle.setAttribute("aria-label", open ? "Hide details" : "Show details");
     }
     toggle.addEventListener("click", function () { setOpen(detail.hidden); });
     card.appendChild(toggle);

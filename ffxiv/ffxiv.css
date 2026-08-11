@@ -328,22 +328,48 @@ h1 {
 .char-unavailable { color: var(--ink-faint); font-style: italic; font-size: 13px; }
 
 /* ---- expanded card detail ---- */
+/* Plus/minus affordance, pinned to the card's top-right corner. */
 .detail-toggle {
-  align-self: flex-start;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
   background: transparent;
   border: 1px solid var(--rule);
   border-radius: 2px;
-  color: var(--gold);
-  font-family: 'Roboto Condensed', sans-serif;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  padding: 3px 10px;
   cursor: pointer;
-  transition: background .15s, color .15s;
+  transition: background .15s, border-color .15s, transform .25s ease;
+  z-index: 2;
 }
-.detail-toggle:hover { background: rgba(198,166,100,0.12); color: var(--gold-bright); }
+.detail-toggle .bar {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 11px;
+  height: 1.5px;
+  margin: -0.75px 0 0 -5.5px;
+  background: var(--gold);
+  transition: transform .25s ease, background .15s;
+}
+.detail-toggle .bar-v { transform: rotate(90deg); }
+
+/* The whole control turns; the vertical bar lands flat on the horizontal one, so a
+   plus becomes a minus in a single motion. */
+.is-expanded .detail-toggle { transform: rotate(180deg); }
+.is-expanded .detail-toggle .bar-v { transform: rotate(0deg); }
+
+.detail-toggle:hover { background: rgba(198,166,100,0.14); border-color: var(--gold); }
+.detail-toggle:hover .bar { background: var(--gold-bright); }
 .detail-toggle:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* Keep long names and titles clear of the button. */
+.char-head { padding-right: 28px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .detail-toggle, .detail-toggle .bar { transition: none; }
+}
 
 /* Any class that sets `display` outranks the UA stylesheet's [hidden] rule, so the
    hidden attribute silently stops working. Restore it explicitly. */
