@@ -35,6 +35,14 @@ const playerIdentities = [
     character: "Owlz",
     profile: "OwlzBandit",
     aliases: ["Owlz", "OwlzBandit"]
+  },
+  {
+    // Ukina is a former character name, NOT an Xbox profile, so it stays out
+    // of `profile` -- that field renders as "Xbox · <name>". The world save
+    // holds no Ukina character and no Ukina player file, and the guild she
+    // founded kept the old name, which is why she read as a second person.
+    character: "Cydaea",
+    aliases: ["Cydaea", "Ukina"]
   }
 ];
 
@@ -111,13 +119,81 @@ const canonicalPlayerKey = value => {
   const identity = playerIdentity(value);
   return playerNameKey(identity?.character || value);
 };
+// One person can hold two names in the feed (a renamed character, or a
+// gamertag the API reports separately), so collapse the roster by identity
+// before anything counts, names or renders it. Where both records exist the
+// one actually called by the canonical name wins, then whichever is online.
+const guildMembers = guild => {
+  const kept = new Map();
+  for (const member of Array.isArray(guild?.members) ? guild.members : []) {
+    const key = canonicalPlayerKey(member?.name);
+    if (!key) continue;
+    const existing = kept.get(key);
+    if (!existing) { kept.set(key, member); continue; }
+    const isCanonical = record => playerNameKey(record?.name) === key;
+    if ((isCanonical(member) && !isCanonical(existing))
+      || (member?.online && !existing?.online && !isCanonical(existing))) {
+      kept.set(key, member);
+    }
+  }
+  return [...kept.values()];
+};
+const guildMemberNames = guild => guildMembers(guild).map(member => member?.name);
+// Palworld names a new guild after whoever founded it, so a guild whose name
+// matches one of its own members is the game's default rather than a chosen
+// one. Left bare it reads as a second person, so it renders possessively.
+const namesCollide = (guild, names) => {
+  const key = playerNameKey(guild);
+  return Boolean(key) && (Array.isArray(names) ? names : [names])
+    .some(name => playerNameKey(name) === key);
+};
+// The publisher hands untouched guilds a placeholder ordinal because their in
+// -game name is not distinguishing (see the Unnamed Guild note in the handoff).
+const placeholderGuildName = value => /^\s*unnamed guild\b/i.test(String(value || ""));
+// The published feed carries no founder/admin field, so the owner can only be
+// named when the guild has exactly one observed member -- then the member and
+// the owner are necessarily the same player. A placeholder guild with several
+// observed members (or none) keeps its ordinal rather than guessing.
+const guildFounder = guild => {
+  const members = guildMemberNames(guild).filter(Boolean);
+  return members.length === 1 ? members[0] : null;
+};
+// A placeholder guild with nobody observed in it has neither a name worth
+// showing nor anyone to attribute it to, so it is left out until a member is
+// seen. It still exists server-side and returns on its own; this is display
+// only, and every count is taken from the same filtered list so nothing
+// disagrees with what is on screen.
+const visibleGuilds = data => (Array.isArray(data?.guilds) ? data.guilds : [])
+  .filter(guild => !(placeholderGuildName(guild?.name) && !guildMembers(guild).length));
+// Resolved once per snapshot from the full roster, so the same guild reads
+// identically on a player card, the guild page and the achievement list --
+// a player card on its own only knows whether the guild matches that one
+// player, which would label the same guild two different ways.
+let guildLabels = new Map();
+const rememberGuildLabels = data => {
+  guildLabels = new Map();
+  for (const guild of visibleGuilds(data)) {
+    const key = playerNameKey(guild?.name);
+    if (!key || guildLabels.has(key)) continue;
+    const founder = placeholderGuildName(guild.name)
+      ? guildFounder(guild)
+      : namesCollide(guild.name, guildMemberNames(guild)) ? guild.name : null;
+    guildLabels.set(key, founder ? `${founder}'s guild` : guild.name);
+  }
+};
+const guildDisplayName = (guild, names) => {
+  const key = playerNameKey(guild);
+  if (!key) return guild;
+  if (guildLabels.has(key)) return guildLabels.get(key);
+  return namesCollide(guild, names) ? `${guild}'s guild` : guild;
+};
 const playerSecondaryLabel = (name, guild, gamertag) => {
   const identity = playerIdentity(name);
   // The hardcoded identity list (manually confirmed aliases) wins when
   // present; otherwise fall back to whatever gamertag the status feed
   // resolved automatically for this player (see xbox_gamertag in status.json).
   const resolvedGamertag = identity?.profile || gamertag;
-  return [guild || "No guild observed", resolvedGamertag ? `Xbox · ${resolvedGamertag}` : null]
+  return [guildDisplayName(guild, name) || "No guild observed", resolvedGamertag ? `Xbox · ${resolvedGamertag}` : null]
     .filter(Boolean)
     .join(" · ");
 };
@@ -364,8 +440,11 @@ function createElementIcons(values, compact = false) {
 function showcaseParty(data, playerName, fallback = []) {
   const players = data?.pal_showcase?.players;
   if (!Array.isArray(players)) return fallback;
-  const lookup = String(playerName || "").toLocaleLowerCase();
-  const player = players.find(item => String(item?.name || "").toLocaleLowerCase() === lookup);
+  // Match through the identity table so a showcase record filed under a
+  // gamertag still lands on the character's card instead of dropping to the
+  // proximity sighting fallback.
+  const lookup = canonicalPlayerKey(playerName);
+  const player = players.find(item => canonicalPlayerKey(item?.name) === lookup);
   return Array.isArray(player?.party) && player.party.length ? player.party : fallback;
 }
 
@@ -763,7 +842,7 @@ function renderAchievements(data) {
   const host = $("#concept-achievements");
   if (!host) return;
   host.replaceChildren();
-  const guilds = Array.isArray(data.guilds) ? data.guilds : [];
+  const guilds = visibleGuilds(data);
 
   for (const guild of guilds) {
     for (const achievement of achievementsForGuild(guild)) {
@@ -773,7 +852,7 @@ function renderAchievements(data) {
       icon.className = `bi ${achievement.icon}`;
       const copy = document.createElement("div");
       const guildName = document.createElement("small");
-      guildName.textContent = guild.name;
+      guildName.textContent = guildDisplayName(guild.name, guildMemberNames(guild));
       const title = document.createElement("h3");
       title.textContent = achievement.title;
       const detail = document.createElement("p");
@@ -847,7 +926,7 @@ function renderOverkill(data, online) {
     addDataRow(
       playerHost,
       player.name,
-      `Lv ${displayData(player.level)} · ${player.guild || "No guild"} · ${tidy(player.ping)} ms · ${health} · ${companions} party sighting${companions === 1 ? "" : "s"}`
+      `Lv ${displayData(player.level)} · ${guildDisplayName(player.guild, player.name) || "No guild"} · ${tidy(player.ping)} ms · ${health} · ${companions} party sighting${companions === 1 ? "" : "s"}`
     );
   }
   if (!playerHost.children.length) addDataRow(playerHost, "Players", "Nobody online");
@@ -860,7 +939,7 @@ function renderGuilds(data) {
   const host = $("#concept-guilds");
   if (!host) return;
   host.replaceChildren();
-  for (const guild of Array.isArray(data.guilds) ? data.guilds : []) {
+  for (const guild of visibleGuilds(data)) {
     const achievement = achievementFor(guild);
     const article = document.createElement("article");
     article.className = "guild-detail-card";
@@ -874,7 +953,7 @@ function renderGuilds(data) {
     const eyebrow = document.createElement("small");
     eyebrow.textContent = "Guild profile";
     const name = document.createElement("h3");
-    name.textContent = guild.name;
+    name.textContent = guildDisplayName(guild.name, guildMemberNames(guild));
     const identityNote = document.createElement("p");
     identityNote.textContent = achievement.title;
     identityCopy.append(eyebrow, name, identityNote);
@@ -884,7 +963,7 @@ function renderGuilds(data) {
     for (const [value, label] of [
       [finite(guild.bases), "Bases"],
       [finite(guild.workers), "Working Pals"],
-      [Array.isArray(guild.members) ? guild.members.length : finite(guild.online_players?.length), "Members observed"]
+      [guildMembers(guild).length || finite(guild.online_players?.length), "Members observed"]
     ]) {
       const metric = document.createElement("span");
       metric.innerHTML = `<strong>${value}</strong><small>${label}</small>`;
@@ -914,7 +993,7 @@ function renderGuilds(data) {
     membersTitle.innerHTML = `<i class="bi bi-people-fill"></i> Members`;
     const memberList = document.createElement("div");
     memberList.className = "guild-member-list";
-    for (const member of Array.isArray(guild.members) ? guild.members : []) {
+    for (const member of guildMembers(guild)) {
       const memberCard = document.createElement("article");
       memberCard.className = `guild-member ${member.online ? "is-online" : ""}`;
       const memberHead = document.createElement("div");
@@ -961,10 +1040,16 @@ function renderGuilds(data) {
       baseIcon.className = "bi bi-house-gear-fill";
       baseIcon.setAttribute("aria-hidden", "true");
       const baseName = document.createElement("strong");
-      baseName.textContent = base.label || "Base";
+      // The publisher emits `name` ("Base 1"); `label` was never in the feed,
+      // so every base on the guild page read as a bare "Base".
+      baseName.textContent = base.label || base.name || "Base";
+      // Nearest named landmark, when the publisher could place the base close
+      // enough to one. Never a coordinate -- just the place name.
+      const landmark = document.createElement("small");
+      if (base.landmark) landmark.textContent = `near ${base.landmark}`;
       const count = document.createElement("span");
       count.textContent = `${finite(base.worker_count)} working Pals`;
-      summary.append(baseIcon, baseName, count);
+      summary.append(baseIcon, baseName, landmark, count);
       const roster = document.createElement("div");
       roster.className = "worker-roster";
       for (const worker of Array.isArray(base.workers) ? base.workers : []) {
@@ -1198,10 +1283,11 @@ async function loadConcept() {
     fill("fps", Math.round(finite(data.performance?.average_fps ?? data.fps)));
     fill("day", finite(data.world_day));
     fill("bases", finite(data.base_camps));
-    fill("guild-count", finite(Array.isArray(data.guilds) ? data.guilds.length : 0));
+    fill("guild-count", finite(visibleGuilds(data).length));
     fill("uptime", elapsed(data.uptime));
     fill("updated", new Date(data.updated_at).toLocaleString());
     for (const node of all("[data-status-dot]")) node.classList.toggle("is-online", online);
+    rememberGuildLabels(data);
     renderHighlights(data);
     renderOnline(data);
     renderRecent(data);

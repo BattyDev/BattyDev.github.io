@@ -224,7 +224,8 @@ body{padding-bottom:72px}
 .guild-member .party-sightings{margin-top:10px}
 .guild-member .pal-party-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .guild-base{overflow:hidden;background:linear-gradient(145deg,#102a34,#091c24);border:1px solid #ffffff12;border-left:4px solid #5edbe2}
-.guild-base summary{display:grid;grid-template-columns:30px minmax(0,1fr) auto auto;align-items:center;gap:9px;padding:10px 11px;cursor:pointer;list-style:none}
+.guild-base summary{display:grid;grid-template-columns:30px auto minmax(0,1fr) auto auto;align-items:center;gap:9px;padding:10px 11px;cursor:pointer;list-style:none}
+.guild-base summary small{min-width:0;overflow:hidden;color:var(--aqua);font-size:.68rem;letter-spacing:.02em;text-overflow:ellipsis;white-space:nowrap}
 .guild-base summary>i{display:grid;place-items:center;width:30px;height:30px;background:#173b46;color:var(--aqua)}
 .guild-base summary strong{font-size:.72rem}
 .guild-base summary>span{margin-left:auto;color:#aebec4;font-size:.73rem}
@@ -271,6 +272,14 @@ body{padding-bottom:72px}
   .guild-member-head>span:last-child{grid-column:2;margin-top:2px;width:max-content}
   .guild-member .pal-party-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .worker-roster{grid-template-columns:1fr}
+  /* The landmark cell is squeezed to ~80px at this width, which truncated
+     most place names, so give it its own row under the base number. */
+  .guild-base summary{grid-template-columns:30px minmax(0,1fr) auto auto}
+  .guild-base summary>i{grid-row:1/3}
+  .guild-base summary strong{grid-column:2;grid-row:1}
+  .guild-base summary small{grid-column:2/-1;grid-row:2;white-space:normal}
+  .guild-base summary>span{grid-column:3;grid-row:1;margin-left:0}
+  .guild-base summary:after{grid-column:4;grid-row:1}
 }
 
 /* Full party showcase and Pal inspection */
