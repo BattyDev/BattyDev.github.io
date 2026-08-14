@@ -330,12 +330,12 @@ function appendParty(host, pals, emptyCopy = "No companion has been observed in 
       const copy = document.createElement("span");
       copy.className = "pal-party-copy";
       const title = document.createElement("strong");
-      title.textContent = pal.nickname || pal.species || "Unknown Pal";
+      title.textContent = pal.nickname || speciesLabel(pal) || "Unknown Pal";
       const subline = document.createElement("span");
       subline.className = "pal-party-subline";
       const species = document.createElement("small");
       const nickname = String(pal.nickname || "").trim();
-      const speciesName = String(pal.species || "").trim();
+      const speciesName = speciesLabel(pal);
       if (nickname && speciesName && nickname.toLocaleLowerCase() !== speciesName.toLocaleLowerCase()) {
         species.textContent = speciesName;
         subline.append(species);
@@ -375,7 +375,7 @@ function appendParty(host, pals, emptyCopy = "No companion has been observed in 
       continue;
     }
     const chip = document.createElement("span");
-    const species = pal.species || pal.name || "Unknown Pal";
+    const species = speciesLabel(pal) || pal.name || "Unknown Pal";
     const name = pal.nickname ? `${pal.nickname} (${species})` : species;
     chip.textContent = pal.level == null ? name : `${name} · Lv ${tidy(pal.level)}`;
     chips.append(chip);
@@ -448,9 +448,34 @@ function showcaseParty(data, playerName, fallback = []) {
   return Array.isArray(player?.party) && player.party.length ? player.party : fallback;
 }
 
+// Humans can be caught and kept like Pals, but the save parser resolves them
+// for base workers and not for parties -- the same captured human reads "Zoe"
+// in a base roster and "GrassBoss" (the raw blueprint stem of
+// BP_NPC_GrassBoss_C) on a party card. The feed already carries the mapping:
+// boss_tracker lists every human NPC by blueprint key alongside the display
+// name, so the names come from the snapshot rather than a list kept by hand.
+let humanNames = new Map();
+const rememberHumanNames = data => {
+  humanNames = new Map();
+  for (const boss of Array.isArray(data?.boss_tracker?.bosses) ? data.boss_tracker.bosses : []) {
+    const key = String(boss?.key || "");
+    if (!/^BP_NPC_/i.test(key) || !boss?.name) continue;
+    // BP_NPC_GrassBoss_C -> grassboss, BP_NPC_Male_Soldier_BOSS_C -> male_soldier
+    const stem = key.replace(/^BP_NPC_/i, "").replace(/_C$/i, "").replace(/_BOSS$/i, "");
+    humanNames.set(stem.toLocaleLowerCase(), boss.name);
+  }
+};
+const isHuman = pal => humanNames.has(String(pal?.species || "").toLocaleLowerCase());
+// Falls back to the unresolved name rather than hiding it, so a human the boss
+// table does not cover still shows something rather than a blank card.
+const speciesLabel = pal => {
+  const raw = String(pal?.species || "").trim();
+  return humanNames.get(raw.toLocaleLowerCase()) || raw;
+};
+
 function portraitForPal(pal) {
   const key = String(pal?.species || "").toLocaleLowerCase();
-  return conceptPortraits[key] || "";
+  return conceptPortraits[key] || conceptPortraits[speciesLabel(pal).toLocaleLowerCase()] || "";
 }
 
 function setText(selector, value) {
@@ -585,8 +610,8 @@ function openPalInspector(pal, anchor = null) {
   inspector.querySelector(".pal-inspector-panel")?.setAttribute("aria-modal", popover ? "false" : "true");
   activeInspectorPal = pal;
   inspectorMaxed = false;
-  setText("[data-pal-name]", pal.nickname || pal.species || "Unknown Pal");
-  setText("[data-pal-species]", pal.nickname ? pal.species : "Party Pal");
+  setText("[data-pal-name]", pal.nickname || speciesLabel(pal) || "Unknown Pal");
+  setText("[data-pal-species]", pal.nickname ? speciesLabel(pal) : isHuman(pal) ? "Human" : "Party Pal");
   setText("[data-pal-level]", tidy(pal.level));
   setText("[data-pal-gender]", pal.gender ? ` · ${pal.gender}` : "");
   setText("[data-pal-owner]", pal.owner ? ` · ${pal.owner}'s party` : "");
@@ -600,7 +625,7 @@ function openPalInspector(pal, anchor = null) {
   const portraitUrl = portraitForPal(pal);
   if (portraitUrl) portrait.src = portraitUrl;
   else portrait.removeAttribute("src");
-  portrait.alt = `${pal.nickname || pal.species} portrait`;
+  portrait.alt = `${pal.nickname || speciesLabel(pal)} portrait`;
   portrait.hidden = !portraitUrl;
   portrait.onerror = () => { portrait.hidden = true; };
 
@@ -1287,6 +1312,7 @@ async function loadConcept() {
     fill("uptime", elapsed(data.uptime));
     fill("updated", new Date(data.updated_at).toLocaleString());
     for (const node of all("[data-status-dot]")) node.classList.toggle("is-online", online);
+    rememberHumanNames(data);
     rememberGuildLabels(data);
     renderHighlights(data);
     renderOnline(data);
