@@ -96,12 +96,22 @@ body {
   transition: color .15s, background .15s, border-color .15s;
 }
 /* The anchor needs these to sit level with the buttons; a button centres its
-   own label, an inline anchor does not. */
+   own label, an inline anchor does not.
+
+   It also needs to be heavier than its neighbours to read at all: the view
+   icons are solid glyphs (people-fill, trophy-fill) while bi-controller is a
+   thin outline with fine interior detail, so at the buttons' 16px muted grey it
+   disappeared. Larger and brighter evens it out — and it earns the distinction,
+   being the one control that leaves the page rather than switching a view.
+   line-height is pinned because an anchor inherits body's 1.55 and rides high. */
 .system-icons a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
+  font-size: 21px;
+  line-height: 1;
+  color: var(--ink);
 }
 .system-icons button:hover,
 .system-icons a:hover { color: var(--gold-bright); background: rgba(198,166,100,0.08); }
