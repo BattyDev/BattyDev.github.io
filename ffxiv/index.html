@@ -25,6 +25,9 @@
     <button type="button" class="is-active" data-view-target="roster" aria-current="page" aria-label="Adventurers"><i class="bi bi-people-fill"></i></button>
     <button type="button" data-view-target="deeds" aria-label="Deeds"><i class="bi bi-trophy-fill"></i></button>
     <button type="button" data-view-target="progress" aria-label="Progression"><i class="bi bi-graph-up"></i></button>
+    <!-- Leaves the page rather than switching a view, so it is an anchor. The
+         view switcher binds ".system-icons button", which skips it by design. -->
+    <a href="games/" aria-label="Games"><i class="bi bi-controller"></i></a>
   </nav>
   <div class="system-status">
     <span id="updated" class="stamp">—</span>

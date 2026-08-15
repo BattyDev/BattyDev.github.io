@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07151c">
+<title>Wild Hearts Games</title>
+<meta name="description" content="Mini-games starring the Wild Hearts Free Company.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="games.css?v=6" rel="stylesheet">
+</head>
+<body>
+
+<header class="game-bar">
+  <a class="back" href="../index.html">&larr; Adventurers</a>
+  <h1>Wild Hearts Games</h1>
+  <span class="spacer"></span>
+  <span class="stamp" id="stamp">prototypes</span>
+</header>
+
+<main class="game">
+  <section class="panel">
+    <p class="eyebrow">Three prototypes</p>
+    <h2 class="section">Play with the company</h2>
+    <p class="hint">
+      Every game pulls the live Free Company roster. Stats are derived from real
+      Lodestone data — main job sets the role, main job level and jobs at 100 set
+      the power, race grants a trait. Nothing is invented.
+    </p>
+
+    <div class="game-list">
+      <a href="arena.html">
+        <span class="role-pill role-dps" style="--role:var(--dps)">Auto-battler</span>
+        <h3>Wild Hearts Arena</h3>
+        <p>Draft four on a budget and watch it resolve. Share a challenge code and
+           the FC fights your exact party, same rolls, same result.</p>
+      </a>
+      <a href="derby.html">
+        <span class="role-pill" style="--role:var(--gold)">Daily</span>
+        <h3>Wild Hearts Derby</h3>
+        <p>Eight runners, one race a day, seeded from the date so everyone sees the
+           same card. Pick a winner before the gate.</p>
+      </a>
+      <a href="defense.html">
+        <span class="role-pill role-tank" style="--role:var(--tank)">Lane defense</span>
+        <h3>Hold the Line</h3>
+        <p>Station the company along the path. Tanks hold, healers mend and hasten,
+           DPS delete. Waves escalate until the crystal falls.</p>
+      </a>
+    </div>
+  </section>
+</main>
+
+</body>
+</html>

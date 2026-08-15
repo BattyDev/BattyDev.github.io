@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07151c">
+<title>Wild Hearts Arena</title>
+<meta name="description" content="Draft four Free Company members and settle it in the arena.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="games.css?v=6" rel="stylesheet">
+</head>
+<body>
+
+<header class="game-bar">
+  <a class="back" href="index.html">&larr; Games</a>
+  <h1>Wild Hearts Arena</h1>
+  <span class="spacer"></span>
+  <span class="stamp" id="stamp">—</span>
+</header>
+
+<main class="game">
+  <div id="loading" class="loading">Summoning the Free Company&hellip;</div>
+
+  <!-- draft -->
+  <section id="draft" class="panel" hidden>
+    <p class="eyebrow">Step one</p>
+    <h2 class="section">Draft your party</h2>
+    <p class="hint">
+      Pick four. Cost comes from each adventurer's main job level and how many jobs
+      they have at 100 — so the strongest four will not fit in one party.
+      There are only <b id="tank-count">?</b> tanks and <b id="healer-count">?</b> healers in the whole company.
+    </p>
+
+    <div class="budget">
+      <span class="num">Budget <b id="spent">0</b> / <span id="budget">28</span></span>
+      <span class="track"><i class="fill" id="budget-fill"></i></span>
+      <span class="num" id="party-count">0 / 4 chosen</span>
+    </div>
+
+    <div id="picked-summary" class="hint"></div>
+
+    <div class="roster-grid" id="roster"></div>
+
+    <div class="share">
+      <button class="primary" id="fight" disabled>Fight a rival party</button>
+      <button class="ghost" id="clear">Clear</button>
+    </div>
+
+    <div class="share">
+      <input id="code-in" placeholder="Paste a challenge code to fight someone's party&hellip;" spellcheck="false">
+      <button id="load-code">Load</button>
+    </div>
+    <p class="hint" id="code-note" style="margin-top:8px"></p>
+  </section>
+
+  <!-- battle -->
+  <section id="battle" class="panel" hidden>
+    <p class="eyebrow">The arena</p>
+    <h2 class="section" id="battle-title">Wild Hearts vs. Rivals</h2>
+
+    <div class="arena">
+      <div class="side" id="side-you"><h3>Your party</h3><div class="lineup" id="units-you"></div></div>
+      <div class="side foe" id="side-foe"><h3>Rival party</h3><div class="lineup" id="units-foe"></div></div>
+    </div>
+
+    <div class="combat-log" id="log"></div>
+
+    <div id="verdict" class="verdict" hidden>
+      <h3 id="verdict-title">—</h3>
+      <p id="verdict-text"></p>
+    </div>
+
+    <div class="share">
+      <button class="primary" id="again" hidden>Rematch</button>
+      <button id="back">Back to draft</button>
+      <button class="ghost" id="speed">Speed &times;1</button>
+    </div>
+
+    <div class="share" id="share-row" hidden>
+      <input id="code-out" readonly spellcheck="false">
+      <button id="copy">Copy challenge</button>
+    </div>
+    <p class="hint" id="share-note" style="margin-top:8px">
+      Send that code to the FC — whoever opens it fights this exact party, same rolls, same result.
+    </p>
+  </section>
+</main>
+
+<script src="game-data.js?v=6"></script>
+<script src="arena.js?v=6"></script>
+</body>
+</html>

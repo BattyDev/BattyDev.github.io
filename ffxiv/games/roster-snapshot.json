@@ -1,0 +1,636 @@
+{
+ "generated_at": "2026-08-12T04:29:20Z",
+ "source": "snapshot of BattyDev/batty-ffxiv-status@data/ffxiv.json",
+ "roster": [
+  {
+   "id": "2299082",
+   "name": "Cedho Nalen",
+   "avatar": "https://img2.finalfantasyxiv.com/f/e85f683ecacf5fdffcc2624d45cec1ba_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786506900",
+   "portrait": "https://img2.finalfantasyxiv.com/f/e85f683ecacf5fdffcc2624d45cec1ba_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786506900",
+   "race": "Hrothgar",
+   "title": "Heliodrome Hero",
+   "grand_company": "Flames",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Astrologian",
+    "level": 100
+   },
+   "jobs100": 17,
+   "jobs_total": 33,
+   "mounts": 110,
+   "minions": 199
+  },
+  {
+   "id": "27685561",
+   "name": "Azathio Magnus",
+   "avatar": "https://img2.finalfantasyxiv.com/f/e99eab0b1df34e0d9cc9f749ac85bd97_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786505899",
+   "portrait": "https://img2.finalfantasyxiv.com/f/e99eab0b1df34e0d9cc9f749ac85bd97_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786505899",
+   "race": "Au Ra",
+   "title": "The Unsevered",
+   "grand_company": "Flames",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Dark Knight",
+    "level": 60
+   },
+   "jobs100": 0,
+   "jobs_total": 9,
+   "mounts": 3,
+   "minions": 9
+  },
+  {
+   "id": "32325219",
+   "name": "Lili Locke",
+   "avatar": "https://img2.finalfantasyxiv.com/f/b75e71806eee5a48480e975990ba7103_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786508411",
+   "portrait": "https://img2.finalfantasyxiv.com/f/b75e71806eee5a48480e975990ba7103_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786508411",
+   "race": "Au Ra",
+   "title": "Of Countless Treasures",
+   "grand_company": "Adder",
+   "fc_rank": "Wilder",
+   "main_job": {
+    "job": "Black Mage",
+    "level": 100
+   },
+   "jobs100": 15,
+   "jobs_total": 32,
+   "mounts": 111,
+   "minions": 356
+  },
+  {
+   "id": "33692593",
+   "name": "Jay'mar Hydra",
+   "avatar": "https://img2.finalfantasyxiv.com/f/1da4bd23129fdc7f6e4bf360a6d6c64a_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786507792",
+   "portrait": "https://img2.finalfantasyxiv.com/f/1da4bd23129fdc7f6e4bf360a6d6c64a_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786507792",
+   "race": "Miqo'te",
+   "title": "Sleepless in Cyberspace",
+   "grand_company": "Adder",
+   "fc_rank": "Wildlings",
+   "main_job": {
+    "job": "Astrologian",
+    "level": 100
+   },
+   "jobs100": 32,
+   "jobs_total": 33,
+   "mounts": 120,
+   "minions": 312
+  },
+  {
+   "id": "36306365",
+   "name": "Van Lightbringer",
+   "avatar": "https://img2.finalfantasyxiv.com/f/02f237e40246c5abe7647a1577269515_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786506645",
+   "portrait": "https://img2.finalfantasyxiv.com/f/02f237e40246c5abe7647a1577269515_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786506645",
+   "race": "Hyur",
+   "title": null,
+   "grand_company": "Adder",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Dragoon",
+    "level": 52
+   },
+   "jobs100": 0,
+   "jobs_total": 13,
+   "mounts": 8,
+   "minions": 19
+  },
+  {
+   "id": "37693961",
+   "name": "Rael Paharo",
+   "avatar": "https://img2.finalfantasyxiv.com/f/a974f0197989d0fc2f12f667e0d5a043_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786507973",
+   "portrait": "https://img2.finalfantasyxiv.com/f/a974f0197989d0fc2f12f667e0d5a043_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786507973",
+   "race": "Miqo'te",
+   "title": "The Excruciatingly Excited",
+   "grand_company": "Adder",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Sage",
+    "level": 90
+   },
+   "jobs100": 0,
+   "jobs_total": 8,
+   "mounts": 23,
+   "minions": 60
+  },
+  {
+   "id": "38439508",
+   "name": "P'riya Fhey",
+   "avatar": "https://img2.finalfantasyxiv.com/f/3440826dfa624818b41c005830469089_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786508404",
+   "portrait": "https://img2.finalfantasyxiv.com/f/3440826dfa624818b41c005830469089_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786508404",
+   "race": "Miqo'te",
+   "title": "Seeker of Hidden Truths",
+   "grand_company": "Adder",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Samurai",
+    "level": 81
+   },
+   "jobs100": 0,
+   "jobs_total": 4,
+   "mounts": 17,
+   "minions": 25
+  },
+  {
+   "id": "42156493",
+   "name": "Roxas Calisim",
+   "avatar": "https://img2.finalfantasyxiv.com/f/7df76253296678c5d55bdbbeabf4700d_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786508621",
+   "portrait": "https://img2.finalfantasyxiv.com/f/7df76253296678c5d55bdbbeabf4700d_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786508621",
+   "race": "Hyur",
+   "title": null,
+   "grand_company": "Flames",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Monk",
+    "level": 44
+   },
+   "jobs100": 0,
+   "jobs_total": 2,
+   "mounts": 1,
+   "minions": 19
+  },
+  {
+   "id": "48466198",
+   "name": "Ukina Qufiswesfv",
+   "avatar": "https://img2.finalfantasyxiv.com/f/6570f6915a3af62a7b0ea834f26e2e39_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786504964",
+   "portrait": "https://img2.finalfantasyxiv.com/f/6570f6915a3af62a7b0ea834f26e2e39_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786504964",
+   "race": "Viera",
+   "title": null,
+   "grand_company": "Adder",
+   "fc_rank": "Walnut",
+   "main_job": {
+    "job": "White Mage",
+    "level": 38
+   },
+   "jobs100": 0,
+   "jobs_total": 15,
+   "mounts": 24,
+   "minions": 17
+  },
+  {
+   "id": "52129634",
+   "name": "Deianeira Magus",
+   "avatar": "https://img2.finalfantasyxiv.com/f/4fd675d7980d0d32c98da509cafb1784_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786507158",
+   "portrait": "https://img2.finalfantasyxiv.com/f/4fd675d7980d0d32c98da509cafb1784_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786507158",
+   "race": "Roegadyn",
+   "title": null,
+   "grand_company": "Flames",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Black Mage",
+    "level": 33
+   },
+   "jobs100": 0,
+   "jobs_total": 1,
+   "mounts": 1,
+   "minions": 2
+  },
+  {
+   "id": "53717203",
+   "name": "Koala Sleepwell",
+   "avatar": "https://img2.finalfantasyxiv.com/f/6ecc5c676f3604fa60bd76933742fb68_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786506505",
+   "portrait": "https://img2.finalfantasyxiv.com/f/6ecc5c676f3604fa60bd76933742fb68_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786506505",
+   "race": "Miqo'te",
+   "title": "The Sagacious",
+   "grand_company": "Maelstrom",
+   "fc_rank": "Wildlings",
+   "main_job": {
+    "job": "Sage",
+    "level": 94
+   },
+   "jobs100": 0,
+   "jobs_total": 27,
+   "mounts": 0,
+   "minions": 0
+  },
+  {
+   "id": "53717961",
+   "name": "Haname Kodakumi",
+   "avatar": "https://img2.finalfantasyxiv.com/f/b341d2f3398ef302e5ad4ad90ebf432b_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786508255",
+   "portrait": "https://img2.finalfantasyxiv.com/f/b341d2f3398ef302e5ad4ad90ebf432b_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786508255",
+   "race": "Au Ra",
+   "title": "Nidhogg Slayer",
+   "grand_company": "Flames",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Black Mage",
+    "level": 70
+   },
+   "jobs100": 0,
+   "jobs_total": 19,
+   "mounts": 9,
+   "minions": 30
+  },
+  {
+   "id": "57342838",
+   "name": "Maura Rhodes",
+   "avatar": "https://img2.finalfantasyxiv.com/f/3caf4ca1afb0600ba681bf13d3755d90_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786505778",
+   "portrait": "https://img2.finalfantasyxiv.com/f/3caf4ca1afb0600ba681bf13d3755d90_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786505778",
+   "race": "Hyur",
+   "title": "The Heart of the Party",
+   "grand_company": "Maelstrom",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Dancer",
+    "level": 61
+   },
+   "jobs100": 0,
+   "jobs_total": 6,
+   "mounts": 9,
+   "minions": 20
+  },
+  {
+   "id": "59018979",
+   "name": "Rowan Gray",
+   "avatar": "https://img2.finalfantasyxiv.com/f/2655665a795e7a93449280214be463ae_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786506407",
+   "portrait": "https://img2.finalfantasyxiv.com/f/2655665a795e7a93449280214be463ae_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786506407",
+   "race": "Viera",
+   "title": null,
+   "grand_company": null,
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Archer",
+    "level": 2
+   },
+   "jobs100": 0,
+   "jobs_total": 1,
+   "mounts": 0,
+   "minions": 0
+  },
+  {
+   "id": "60538334",
+   "name": "Lisa Dawn",
+   "avatar": "https://img2.finalfantasyxiv.com/f/d281d86e65b44b1694ca44e9dafff9c5_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786506940",
+   "portrait": "https://img2.finalfantasyxiv.com/f/d281d86e65b44b1694ca44e9dafff9c5_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786506940",
+   "race": "Miqo'te",
+   "title": null,
+   "grand_company": "Flames",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Gunbreaker",
+    "level": 63
+   },
+   "jobs100": 0,
+   "jobs_total": 5,
+   "mounts": 6,
+   "minions": 12
+  },
+  {
+   "id": "60744884",
+   "name": "It's Rust",
+   "avatar": "https://img2.finalfantasyxiv.com/f/4863e50c654d3e079cdb6aeaf7e647e6_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786505201",
+   "portrait": "https://img2.finalfantasyxiv.com/f/4863e50c654d3e079cdb6aeaf7e647e6_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786505201",
+   "race": "Miqo'te",
+   "title": "Lonely Explorer",
+   "grand_company": "Adder",
+   "fc_rank": "Wildlings",
+   "main_job": {
+    "job": "Dragoon",
+    "level": 100
+   },
+   "jobs100": 6,
+   "jobs_total": 20,
+   "mounts": 18,
+   "minions": 36
+  },
+  {
+   "id": "61136314",
+   "name": "Steamed Beans",
+   "avatar": "https://img2.finalfantasyxiv.com/f/b999c171116e4f21ac2e8429cdc8aae3_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786505846",
+   "portrait": "https://img2.finalfantasyxiv.com/f/b999c171116e4f21ac2e8429cdc8aae3_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786505846",
+   "race": "Hyur",
+   "title": null,
+   "grand_company": "Flames",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Arcanist",
+    "level": 100
+   },
+   "jobs100": 18,
+   "jobs_total": 22,
+   "mounts": 27,
+   "minions": 57
+  },
+  {
+   "id": "61288461",
+   "name": "Riku Tarwyll",
+   "avatar": "https://img2.finalfantasyxiv.com/f/0f734331a35c5c57f28ad77ca773f4d5_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786506495",
+   "portrait": "https://img2.finalfantasyxiv.com/f/0f734331a35c5c57f28ad77ca773f4d5_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786506495",
+   "race": "Viera",
+   "title": null,
+   "grand_company": null,
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Lancer",
+    "level": 4
+   },
+   "jobs100": 0,
+   "jobs_total": 1,
+   "mounts": 0,
+   "minions": 0
+  },
+  {
+   "id": "61489283",
+   "name": "Rolo Hirth",
+   "avatar": "https://img2.finalfantasyxiv.com/f/c6d97591dfed8eafb097fc5b1780a575_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786507058",
+   "portrait": "https://img2.finalfantasyxiv.com/f/c6d97591dfed8eafb097fc5b1780a575_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786507058",
+   "race": "Hyur",
+   "title": null,
+   "grand_company": "Adder",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Dragoon",
+    "level": 52
+   },
+   "jobs100": 0,
+   "jobs_total": 3,
+   "mounts": 1,
+   "minions": 5
+  },
+  {
+   "id": "61493774",
+   "name": "King Pumpkinking",
+   "avatar": "https://img2.finalfantasyxiv.com/f/889d0ab8819bf7e88afdcfa8c9b25828_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786507546",
+   "portrait": "https://img2.finalfantasyxiv.com/f/889d0ab8819bf7e88afdcfa8c9b25828_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786507546",
+   "race": "Hyur",
+   "title": null,
+   "grand_company": "Adder",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Machinist",
+    "level": 60
+   },
+   "jobs100": 0,
+   "jobs_total": 2,
+   "mounts": 5,
+   "minions": 9
+  },
+  {
+   "id": "61495054",
+   "name": "Byrtahrm Bhirblaetsyn",
+   "avatar": "https://img2.finalfantasyxiv.com/f/d4e297bdb4a862111371aba36b04f16d_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786506443",
+   "portrait": "https://img2.finalfantasyxiv.com/f/d4e297bdb4a862111371aba36b04f16d_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786506443",
+   "race": "Roegadyn",
+   "title": "The Heart of the Party",
+   "grand_company": "Maelstrom",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Warrior",
+    "level": 69
+   },
+   "jobs100": 0,
+   "jobs_total": 4,
+   "mounts": 8,
+   "minions": 30
+  },
+  {
+   "id": "61521923",
+   "name": "Ellie Trublood",
+   "avatar": "https://img2.finalfantasyxiv.com/f/f8f4550a139891bd0045dd1d9d4c8692_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786507050",
+   "portrait": "https://img2.finalfantasyxiv.com/f/f8f4550a139891bd0045dd1d9d4c8692_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786507050",
+   "race": "Miqo'te",
+   "title": null,
+   "grand_company": "Maelstrom",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Warrior",
+    "level": 54
+   },
+   "jobs100": 0,
+   "jobs_total": 10,
+   "mounts": 8,
+   "minions": 7
+  },
+  {
+   "id": "61523346",
+   "name": "W'samha Tia",
+   "avatar": "https://img2.finalfantasyxiv.com/f/25b065b758836f01ce15b981ecd80ede_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786505386",
+   "portrait": "https://img2.finalfantasyxiv.com/f/25b065b758836f01ce15b981ecd80ede_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786505386",
+   "race": "Miqo'te",
+   "title": "The Finest Pupil's Ally",
+   "grand_company": "Flames",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Samurai",
+    "level": 97
+   },
+   "jobs100": 0,
+   "jobs_total": 33,
+   "mounts": 28,
+   "minions": 41
+  },
+  {
+   "id": "61544975",
+   "name": "Risha Muscadet",
+   "avatar": "https://img2.finalfantasyxiv.com/f/cdc7e56abe0e217687afda76aa6d2835_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786506433",
+   "portrait": "https://img2.finalfantasyxiv.com/f/cdc7e56abe0e217687afda76aa6d2835_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786506433",
+   "race": "Viera",
+   "title": null,
+   "grand_company": "Flames",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Pugilist",
+    "level": 36
+   },
+   "jobs100": 0,
+   "jobs_total": 8,
+   "mounts": 1,
+   "minions": 2
+  },
+  {
+   "id": "61602397",
+   "name": "Snowy Ikar",
+   "avatar": "https://img2.finalfantasyxiv.com/f/fb07d8d6bbfe5a0cb840e9747a153b9c_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786507338",
+   "portrait": "https://img2.finalfantasyxiv.com/f/fb07d8d6bbfe5a0cb840e9747a153b9c_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786507338",
+   "race": "Hrothgar",
+   "title": null,
+   "grand_company": "Flames",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Samurai",
+    "level": 90
+   },
+   "jobs100": 0,
+   "jobs_total": 29,
+   "mounts": 21,
+   "minions": 26
+  },
+  {
+   "id": "61633995",
+   "name": "Kyalwann Thish",
+   "avatar": "https://img2.finalfantasyxiv.com/f/fae939cc0286ba2c6a0c5a2c8a5449ac_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786505705",
+   "portrait": "https://img2.finalfantasyxiv.com/f/fae939cc0286ba2c6a0c5a2c8a5449ac_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786505705",
+   "race": "Miqo'te",
+   "title": "The Azure Dragoon",
+   "grand_company": "Adder",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Dragoon",
+    "level": 66
+   },
+   "jobs100": 0,
+   "jobs_total": 2,
+   "mounts": 8,
+   "minions": 13
+  },
+  {
+   "id": "61677224",
+   "name": "Pastafrola Demembrilo",
+   "avatar": "https://img2.finalfantasyxiv.com/f/6d3705aa5cffe96fa7e2cb30136519fe_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786506521",
+   "portrait": "https://img2.finalfantasyxiv.com/f/6d3705aa5cffe96fa7e2cb30136519fe_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786506521",
+   "race": "Roegadyn",
+   "title": null,
+   "grand_company": null,
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Lancer",
+    "level": 28
+   },
+   "jobs100": 0,
+   "jobs_total": 2,
+   "mounts": 0,
+   "minions": 3
+  },
+  {
+   "id": "61702220",
+   "name": "Lost Sauce",
+   "avatar": "https://img2.finalfantasyxiv.com/f/dbc60b3a73500feb584d6c3e0a089882_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786506511",
+   "portrait": "https://img2.finalfantasyxiv.com/f/dbc60b3a73500feb584d6c3e0a089882_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786506511",
+   "race": "Lalafell",
+   "title": null,
+   "grand_company": "Flames",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Paladin",
+    "level": 37
+   },
+   "jobs100": 0,
+   "jobs_total": 1,
+   "mounts": 16,
+   "minions": 16
+  },
+  {
+   "id": "61723299",
+   "name": "Floross Fumblestein",
+   "avatar": "https://img2.finalfantasyxiv.com/f/f22aeccfd74c176a16decc4137c50a67_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786506908",
+   "portrait": "https://img2.finalfantasyxiv.com/f/f22aeccfd74c176a16decc4137c50a67_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786506908",
+   "race": "Roegadyn",
+   "title": null,
+   "grand_company": "Flames",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Paladin",
+    "level": 67
+   },
+   "jobs100": 0,
+   "jobs_total": 6,
+   "mounts": 5,
+   "minions": 20
+  },
+  {
+   "id": "61826240",
+   "name": "Carl Thecrawler",
+   "avatar": "https://img2.finalfantasyxiv.com/f/e879ec79894f53914a55fad83d61f412_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786505115",
+   "portrait": "https://img2.finalfantasyxiv.com/f/e879ec79894f53914a55fad83d61f412_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786505115",
+   "race": "Hyur",
+   "title": null,
+   "grand_company": "Maelstrom",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Pugilist",
+    "level": 28
+   },
+   "jobs100": 0,
+   "jobs_total": 1,
+   "mounts": 1,
+   "minions": 1
+  },
+  {
+   "id": "61846154",
+   "name": "Batty Moonhare",
+   "avatar": "https://img2.finalfantasyxiv.com/f/7a20786300d67cb00de2fcd266a7502a_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786507737",
+   "portrait": "https://img2.finalfantasyxiv.com/f/7a20786300d67cb00de2fcd266a7502a_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786507737",
+   "race": "Viera",
+   "title": "Bug Girl",
+   "grand_company": "Adder",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Dragoon",
+    "level": 57
+   },
+   "jobs100": 0,
+   "jobs_total": 3,
+   "mounts": 11,
+   "minions": 20
+  },
+  {
+   "id": "61878273",
+   "name": "Yashketh Erenden",
+   "avatar": "https://img2.finalfantasyxiv.com/f/8db0bf0c29a4d6e9e44d0aa09ecfe794_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786506265",
+   "portrait": "https://img2.finalfantasyxiv.com/f/8db0bf0c29a4d6e9e44d0aa09ecfe794_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786506265",
+   "race": "Hrothgar",
+   "title": null,
+   "grand_company": null,
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Conjurer",
+    "level": 19
+   },
+   "jobs100": 0,
+   "jobs_total": 7,
+   "mounts": 0,
+   "minions": 0
+  },
+  {
+   "id": "61878753",
+   "name": "Razzz Berry",
+   "avatar": "https://img2.finalfantasyxiv.com/f/046bcd92dc775ce87c23e2427267f816_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786507029",
+   "portrait": "https://img2.finalfantasyxiv.com/f/046bcd92dc775ce87c23e2427267f816_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786507029",
+   "race": "Lalafell",
+   "title": null,
+   "grand_company": "Flames",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "Summoner",
+    "level": 48
+   },
+   "jobs100": 0,
+   "jobs_total": 1,
+   "mounts": 6,
+   "minions": 15
+  },
+  {
+   "id": "61914625",
+   "name": "Numbers Mason",
+   "avatar": "https://img2.finalfantasyxiv.com/f/f2fd16eaf0dc59a037fe3e2e8fbbbd24_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786505179",
+   "portrait": "https://img2.finalfantasyxiv.com/f/f2fd16eaf0dc59a037fe3e2e8fbbbd24_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786505179",
+   "race": "Roegadyn",
+   "title": null,
+   "grand_company": "Maelstrom",
+   "fc_rank": "Hearts",
+   "main_job": {
+    "job": "White Mage",
+    "level": 43
+   },
+   "jobs100": 0,
+   "jobs_total": 1,
+   "mounts": 3,
+   "minions": 0
+  },
+  {
+   "id": "8005804",
+   "name": "Hiei Urameshi",
+   "avatar": "https://img2.finalfantasyxiv.com/f/266003bf5becf824ee5b5bd37537502c_2e97c13fdd593d15d543093f8a37b6f0fc0.jpg?1786508230",
+   "portrait": "https://img2.finalfantasyxiv.com/f/266003bf5becf824ee5b5bd37537502c_2e97c13fdd593d15d543093f8a37b6f0fl0.jpg?1786508230",
+   "race": "Hyur",
+   "title": null,
+   "grand_company": "Adder",
+   "fc_rank": "Wildlings",
+   "main_job": {
+    "job": "Monk",
+    "level": 100
+   },
+   "jobs100": 4,
+   "jobs_total": 23,
+   "mounts": 86,
+   "minions": 180
+  }
+ ]
+}

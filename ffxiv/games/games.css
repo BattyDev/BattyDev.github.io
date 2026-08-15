@@ -1,0 +1,366 @@
+/* Wild Hearts mini-games — shares the token set and type ramp with ffxiv.css so
+   the games read as part of the same site: slate-blue panels, thin gold rules,
+   gold small-caps headers. */
+
+:root {
+  --void: #07151c;
+  --deep: #0b1d28;
+  --panel: rgba(18, 40, 56, 0.78);
+  --panel-solid: #12283a;
+  --rule: rgba(198, 166, 100, 0.38);
+  --gold: #c6a664;
+  --gold-bright: #e6cf95;
+  --ink: #e8eef2;
+  --ink-dim: #9db2c0;
+  --ink-faint: #6b8496;
+
+  --tank: #4d80c4;
+  --healer: #58b070;
+  --dps: #c4544d;
+
+  --radius: 3px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--void);
+  color: var(--ink);
+  font-family: 'Roboto Condensed', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+a { color: inherit; }
+
+/* ---- chrome ---- */
+
+.game-bar {
+  position: relative; z-index: 5;
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px clamp(16px, 4vw, 48px);
+  border-bottom: 1px solid var(--rule);
+  background: linear-gradient(180deg, #0b1d28 0%, #08171f 100%);
+}
+.game-bar .back {
+  display: inline-flex; align-items: center; gap: 7px;
+  color: var(--ink-dim); font-size: .82rem; text-decoration: none;
+  padding: 6px 10px; border: 1px solid var(--rule); border-radius: var(--radius);
+  transition: color .15s ease, border-color .15s ease;
+}
+.game-bar .back:hover, .game-bar .back:focus-visible { color: var(--gold-bright); border-color: var(--gold); }
+.game-bar h1 {
+  margin: 0; font-family: Cinzel, Georgia, serif; font-size: clamp(1.05rem, 2.4vw, 1.4rem);
+  font-weight: 600; letter-spacing: .04em; color: var(--gold-bright);
+}
+.game-bar .spacer { margin-left: auto; }
+.game-bar .stamp { color: var(--ink-faint); font-size: .72rem; letter-spacing: .05em; }
+
+main.game {
+  width: min(1180px, calc(100% - 32px));
+  margin: clamp(20px, 4vh, 40px) auto 80px;
+}
+
+/* ---- panels ---- */
+
+.panel {
+  position: relative;
+  padding: clamp(16px, 3vw, 24px);
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  backdrop-filter: blur(6px);
+}
+.panel + .panel { margin-top: 16px; }
+
+.eyebrow {
+  margin: 0 0 2px;
+  color: var(--gold); font-size: .68rem; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase;
+}
+h2.section {
+  margin: 0 0 14px;
+  font-family: Cinzel, Georgia, serif; font-size: clamp(1.2rem, 3vw, 1.7rem);
+  font-weight: 600; color: var(--ink);
+}
+.hint { color: var(--ink-dim); font-size: .82rem; margin: 0 0 14px; }
+
+/* ---- buttons ---- */
+
+button, .btn {
+  font-family: inherit; font-size: .85rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 10px 18px;
+  color: var(--ink); background: #16303f;
+  border: 1px solid var(--rule); border-radius: var(--radius);
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease, opacity .15s ease;
+}
+button:hover:not(:disabled), .btn:hover { background: #1d3f52; border-color: var(--gold); }
+button:focus-visible, .btn:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button.primary {
+  background: linear-gradient(180deg, #c6a664, #a8873f);
+  color: #0b1d28; border-color: var(--gold-bright);
+}
+button.primary:hover:not(:disabled) { background: linear-gradient(180deg, #e6cf95, #c6a664); }
+button.ghost { background: transparent; }
+
+/* ---- role colour ---- */
+
+.role-tank { --role: var(--tank); }
+.role-healer { --role: var(--healer); }
+.role-dps { --role: var(--dps); }
+
+.role-pill {
+  display: inline-block; padding: 1px 7px;
+  font-size: .62rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: #08171f; background: var(--role, var(--ink-faint)); border-radius: 2px;
+}
+
+/* ---- roster / draft grid ---- */
+
+.roster-grid {
+  display: grid; gap: 12px;
+  /* the stacked cost frees horizontal room, so cards need less width */
+  grid-template-columns: repeat(auto-fill, minmax(265px, 1fr));
+}
+
+/* Portrait on the left, then a stacked column: points, name, role and job.
+   Stacking the cost above the name keeps it from competing with the name for
+   horizontal room, which is what made these collide at the doubled size. */
+.unit-card {
+  position: relative; display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "face cost" "face who";
+  grid-template-rows: auto auto;
+  align-content: center; column-gap: 12px; row-gap: 2px;
+  padding: 9px; text-align: left;
+  background: #10222e; border: 1px solid #ffffff14; border-left: 3px solid var(--role, var(--ink-faint));
+  border-radius: var(--radius);
+  text-transform: none; letter-spacing: normal; font-weight: 400;
+  transition: background .14s ease, border-color .14s ease, transform .14s ease;
+}
+.unit-card:hover:not(:disabled) { background: #17303f; transform: translateY(-2px); }
+.unit-card.is-picked { background: #1c3a4a; border-color: var(--gold); }
+.unit-card.is-locked { opacity: .32; }
+
+/* head-to-waist thumb rather than a headshot — you pick a character, so show
+   enough of one to recognise them and their gear. Framing set by setArt. */
+.unit-card .face {
+  grid-area: face; position: relative;
+  width: 100px; height: 112px; border-radius: 3px;
+  background: #0b1d28 center no-repeat;
+  border: 1px solid var(--rule);
+  overflow: hidden;
+}
+.unit-card .face::before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 34%;
+  background: linear-gradient(0deg, #0a1a23cc, transparent);
+}
+.unit-card .face .job {
+  position: absolute; z-index: 1; right: -7px; bottom: -7px;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: #08171f; border: 1px solid var(--rule);
+  object-fit: contain; padding: 3px;
+}
+.unit-card .who { grid-area: who; min-width: 0; }
+.unit-card .who b {
+  display: block; font-size: 1.15rem; font-weight: 700; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.unit-card .who small { display: block; color: var(--ink-dim); font-size: .92rem; margin-top: 3px; }
+.unit-card .cost {
+  grid-area: cost; align-self: end;
+  font-size: 1.5rem; font-weight: 700; line-height: 1.05; color: var(--gold-bright);
+}
+.unit-card .role-pill { font-size: .74rem; padding: 2px 8px; }
+
+/* ---- budget meter ---- */
+
+.budget {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 14px; flex-wrap: wrap;
+}
+.budget .track {
+  flex: 1; min-width: 160px; height: 8px;
+  background: #0a1a23; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden;
+}
+.budget .fill {
+  height: 100%; width: 0;
+  background: linear-gradient(90deg, #c6a664, #e6cf95);
+  transition: width .2s ease, background .2s ease;
+}
+.budget .fill.over { background: linear-gradient(90deg, #c4544d, #e07a72); }
+.budget .num { font-size: .8rem; color: var(--ink-dim); letter-spacing: .04em; }
+.budget .num b { color: var(--gold-bright); }
+
+/* ---- battle ---- */
+
+.arena { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.side h3 {
+  margin: 0 0 8px; font-size: .74rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.side.foe h3 { text-align: right; }
+
+/* One per row: at two-up the figures were still small. Each side is a column, so
+   a single card fills the full half-width. Costs vertical space — see .lineup
+   height note in the arena section below. */
+.lineup { display: grid; grid-template-columns: 1fr; gap: 12px; }
+
+.fighter {
+  position: relative;
+  display: flex; flex-direction: column;
+  background: #10222e; border: 1px solid #ffffff10;
+  border-bottom: 3px solid var(--role, var(--ink-faint));
+  border-radius: var(--radius); overflow: visible;
+  transition: opacity .35s ease, filter .35s ease;
+}
+.fighter.is-down { opacity: .3; filter: grayscale(1); }
+
+/* Square framing on a head-to-waist crop; the zoom is applied per-element by
+   WHGame.setArt so the headshot placeholder can frame itself differently. */
+.fighter .face {
+  position: relative; width: 100%; aspect-ratio: 1 / 1;
+  background: #0b1d28 center no-repeat;
+  border-radius: var(--radius) var(--radius) 0 0;
+  overflow: hidden;
+}
+/* bottom scrim so the name sits on something and the crop edge is soft */
+.fighter .face::before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 32%;
+  background: linear-gradient(0deg, #0f2029 0%, rgba(15,32,41,.5) 50%, transparent 100%);
+  pointer-events: none;
+}
+.fighter .job-tag {
+  position: absolute; z-index: 2; left: 8px; bottom: 8px;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: #08171fdd; border: 1px solid var(--rule); padding: 3px;
+}
+
+.fighter .bars { padding: 8px 10px 10px; }
+.fighter .nm { display: flex; flex-direction: column; gap: 0; font-size: 1.05rem; }
+.fighter .nm b { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fighter .nm span { color: var(--ink-faint); font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fighter .hp { height: 9px; margin-top: 5px; }
+.fighter .atb { height: 4px; margin-top: 3px; }
+
+/* HP is two stacked bars: the live one snaps, the "chip" behind it drains a beat
+   later, so you can see how big the hit was after it lands. */
+.fighter .hp { position: relative; height: 5px; margin-top: 3px; background: #0a1a23; border-radius: 3px; overflow: hidden; }
+.fighter .hp i { position: absolute; left: 0; top: 0; height: 100%; }
+.fighter .hp i.chip { background: #e07a72; transition: width .5s ease .14s; }
+.fighter .hp i.cur { background: var(--role, var(--ink-faint)); transition: width .12s linear; }
+.fighter .atb { height: 2px; margin-top: 2px; background: #0a1a23; border-radius: 2px; overflow: hidden; }
+.fighter .atb i { display: block; height: 100%; background: var(--gold); transition: width .1s linear; }
+
+/* ---- battle animation ---- */
+
+@keyframes lunge      { 0% { transform: translateX(0) } 32% { transform: translateX(15px) } 100% { transform: translateX(0) } }
+@keyframes lunge-back { 0% { transform: translateX(0) } 32% { transform: translateX(-15px) } 100% { transform: translateX(0) } }
+.fighter.fx-attack { animation: lunge .3s cubic-bezier(.3,1.4,.5,1); z-index: 2; }
+.side.foe .fighter.fx-attack { animation-name: lunge-back; }
+
+/* the shake lives on the portrait so it never fights the lunge transform */
+@keyframes jolt { 0%,100% { transform: translate(0,0) } 25% { transform: translate(-4px,1px) } 50% { transform: translate(3px,-1px) } 75% { transform: translate(-2px,1px) } }
+.fighter .face.fx-hit { animation: jolt .28s ease; }
+/* red wash over the figure on impact, green when mended */
+.fighter .face.fx-hit::after,
+.fighter .face.fx-heal::after {
+  content: ""; position: absolute; inset: 0; z-index: 1;
+  animation: fadeout .38s ease forwards;
+}
+.fighter .face.fx-hit::after { background: rgba(255,96,84,.42); box-shadow: inset 0 0 22px rgba(255,60,50,.6); }
+.fighter .face.fx-heal::after { background: rgba(110,232,150,.3); box-shadow: inset 0 0 22px rgba(110,232,150,.5); }
+@keyframes fadeout { to { opacity: 0 } }
+
+/* floating combat numbers — centred over the figure's chest */
+.pop {
+  position: absolute; z-index: 6; left: 0; right: 0; top: 26%;
+  text-align: center;
+  font-weight: 700; font-size: 2.1rem; letter-spacing: .02em;
+  text-shadow: 0 3px 10px #000, 0 0 16px #000c;
+  pointer-events: none; white-space: nowrap;
+  animation: pop-up .95s ease-out forwards;
+}
+@keyframes pop-up {
+  0%   { opacity: 0; transform: translateY(7px) scale(.75) }
+  16%  { opacity: 1; transform: translateY(0) scale(1.12) }
+  30%  { transform: translateY(-2px) scale(1) }
+  100% { opacity: 0; transform: translateY(-30px) scale(1) }
+}
+.pop.dmg  { color: #ffdcd8; }
+.pop.crit { color: var(--gold-bright); font-size: 2.9rem; }
+.pop.heal { color: #8ce8a5; }
+.pop.miss { color: var(--ink-faint); font-size: 1.5rem; font-style: italic; }
+
+/* a crit or a death nudges the whole arena */
+@keyframes shake-arena { 0%,100% { transform: translate(0,0) } 25% { transform: translate(-3px,2px) } 60% { transform: translate(2px,-2px) } }
+.arena.fx-shake { animation: shake-arena .22s ease; }
+
+@keyframes slump { 0% { transform: translateY(0) } 100% { transform: translateY(4px) } }
+.fighter.fx-down { animation: slump .4s ease forwards; }
+
+.combat-log {
+  height: 190px; overflow-y: auto; margin-top: 14px; padding: 10px 12px;
+  background: #08171f; border: 1px solid var(--rule); border-radius: var(--radius);
+  font-size: .76rem; line-height: 1.55;
+}
+.combat-log p { margin: 0 0 3px; color: var(--ink-dim); }
+.combat-log .crit { color: var(--gold-bright); font-weight: 700; }
+.combat-log .heal { color: var(--healer); }
+.combat-log .down { color: var(--dps); font-weight: 700; }
+.combat-log .tick { color: var(--ink-faint); }
+
+.verdict {
+  margin-top: 14px; padding: 14px; text-align: center;
+  border: 1px solid var(--rule); border-radius: var(--radius); background: #0d2231;
+}
+.verdict h3 { margin: 0 0 4px; font-family: Cinzel, Georgia, serif; font-size: 1.5rem; color: var(--gold-bright); }
+.verdict p { margin: 0; color: var(--ink-dim); font-size: .82rem; }
+
+/* ---- share code ---- */
+
+.share { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.share input {
+  flex: 1; min-width: 200px; padding: 9px 11px;
+  font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .74rem;
+  color: var(--ink); background: #08171f;
+  border: 1px solid var(--rule); border-radius: var(--radius);
+}
+.share input:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 1px; }
+
+/* ---- games index ---- */
+
+.game-list { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.game-list a {
+  display: block; padding: 20px; text-decoration: none;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius);
+  transition: transform .16s ease, border-color .16s ease, background .16s ease;
+}
+.game-list a:hover, .game-list a:focus-visible { transform: translateY(-3px); border-color: var(--gold); background: #16303f; }
+.game-list h3 { margin: 6px 0 6px; font-family: Cinzel, Georgia, serif; font-size: 1.2rem; color: var(--gold-bright); }
+.game-list p { margin: 0; color: var(--ink-dim); font-size: .82rem; }
+
+.loading { padding: 40px; text-align: center; color: var(--ink-faint); font-size: .85rem; }
+.error { padding: 16px; border: 1px solid var(--dps); border-radius: var(--radius); background: #2a1416; color: #f0c8c5; font-size: .82rem; }
+
+@media (max-width: 720px) {
+  /* stack the two parties; each keeps its four-across lineup */
+  .arena { grid-template-columns: 1fr; gap: 18px; }
+  .side.foe h3 { text-align: left; }
+  .lineup { gap: 6px; }
+  .fighter .bars { padding: 4px 4px 5px; }
+  .fighter .nm { font-size: .64rem; }
+  .fighter .nm span { font-size: .58rem; }
+  .pop { font-size: .9rem; }
+  .pop.crit { font-size: 1.1rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07151c">
+<title>Wild Hearts Derby</title>
+<meta name="description" content="Eight Free Company members, one daily race. Everyone sees the same result.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="games.css?v=6" rel="stylesheet">
+<style>
+  .track-list { display: grid; gap: 7px; margin-top: 4px; }
+  .lane {
+    position: relative; display: flex; align-items: center; gap: 10px;
+    padding: 7px 10px;
+    background: #10222e; border: 1px solid #ffffff10;
+    border-left: 3px solid var(--role, var(--ink-faint)); border-radius: var(--radius);
+    cursor: pointer; text-align: left; width: 100%;
+    text-transform: none; letter-spacing: normal; font-weight: 400;
+    transition: background .14s ease, border-color .14s ease;
+  }
+  .lane:hover:not(:disabled) { background: #17303f; }
+  .lane.is-bet { border-color: var(--gold); background: #1c3a4a; }
+  .lane.is-won { border-color: var(--gold-bright); background: #23402c; }
+  /* head-to-waist runners at double size */
+  .lane .face { flex: 0 0 auto; width: 84px; height: 92px; border-radius: 3px; background: #0b1d28 center no-repeat; border: 1px solid var(--rule); }
+  .lane .nm { flex: 0 0 190px; min-width: 0; }
+  .lane .nm b { display: block; font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lane .nm small { color: var(--ink-dim); font-size: .84rem; }
+  .lane .rail { position: relative; flex: 1; height: 96px; background: #0a1a23; border-radius: 5px; overflow: hidden; }
+  .lane .rail i {
+    position: absolute; top: 4px; left: 0; width: 80px; height: 88px; border-radius: 4px;
+    background: var(--role, var(--gold)) center no-repeat;
+    border: 1px solid #ffffff22;
+    box-shadow: 0 4px 14px #000b;
+  }
+  /* a little bob so they read as running rather than sliding */
+  @keyframes bob { 0%,100% { margin-top: 0 } 50% { margin-top: -3px } }
+  .lane.is-running .rail i { animation: bob .42s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .lane.is-running .rail i { animation: none } }
+  .lane .place { flex: 0 0 56px; text-align: right; font-family: Cinzel, Georgia, serif; font-size: 1.6rem; color: var(--gold-bright); }
+  .finish { position: absolute; right: 6px; top: 0; bottom: 0; width: 2px; background: repeating-linear-gradient(180deg, var(--gold) 0 4px, transparent 4px 8px); }
+</style>
+</head>
+<body>
+
+<header class="game-bar">
+  <a class="back" href="index.html">&larr; Games</a>
+  <h1>Wild Hearts Derby</h1>
+  <span class="spacer"></span>
+  <span class="stamp" id="stamp">—</span>
+</header>
+
+<main class="game">
+  <div id="loading" class="loading">Walking the horses to the gate&hellip;</div>
+
+  <section id="game" class="panel" hidden>
+    <p class="eyebrow" id="race-day">Today's card</p>
+    <h2 class="section">Pick a winner</h2>
+    <p class="hint">
+      Eight of the company run once a day. The field and the result are seeded from
+      today's date, so everyone in the FC sees the identical race — no refreshing
+      for a better outcome. Come back tomorrow for a new card.
+    </p>
+
+    <div class="track-list" id="track"></div>
+
+    <div class="share">
+      <button class="primary" id="start" disabled>Pick a runner first</button>
+      <button class="ghost" id="reset" hidden>Watch again</button>
+    </div>
+
+    <div id="verdict" class="verdict" hidden>
+      <h3 id="verdict-title">—</h3>
+      <p id="verdict-text"></p>
+    </div>
+  </section>
+</main>
+
+<script src="game-data.js?v=6"></script>
+<script src="derby.js?v=6"></script>
+</body>
+</html>

@@ -84,7 +84,8 @@ body {
 .account small { display: block; color: var(--ink-faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; }
 
 .system-icons { display: flex; gap: 4px; margin-left: auto; }
-.system-icons button {
+.system-icons button,
+.system-icons a {
   background: transparent;
   border: 1px solid transparent;
   color: var(--ink-dim);
@@ -94,13 +95,23 @@ body {
   font-size: 16px;
   transition: color .15s, background .15s, border-color .15s;
 }
-.system-icons button:hover { color: var(--gold-bright); background: rgba(198,166,100,0.08); }
+/* The anchor needs these to sit level with the buttons; a button centres its
+   own label, an inline anchor does not. */
+.system-icons a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+.system-icons button:hover,
+.system-icons a:hover { color: var(--gold-bright); background: rgba(198,166,100,0.08); }
 .system-icons button.is-active {
   color: var(--gold-bright);
   border-color: var(--rule);
   background: rgba(198,166,100,0.12);
 }
-.system-icons button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.system-icons button:focus-visible,
+.system-icons a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
 .system-status { margin-left: 8px; }
 .stamp {
