@@ -12,6 +12,15 @@
 const SUPABASE_URL = 'https://uvpaezhtddlanogmnwam.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Y2fH0X0TUepT6fwobaMiUQ_145DCcDw';
 
+/* The gate asks for a PIN alone rather than email + password, so the account is
+   named here and the PIN is that account's password. This is only a shortcut
+   through the form: the PIN is still checked by Supabase, never by this file, so
+   reading it out of the page source gets an attacker no further than knowing the
+   email does. Do not be tempted to compare a PIN in JavaScript instead -- that
+   would move the check to the client and require reopening anonymous read access
+   to the whole database. */
+const ACCOUNT_EMAIL = 'codyadcock10@gmail.com';
+
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const $ = (id) => document.getElementById(id);
@@ -372,19 +381,24 @@ $('login-form').addEventListener('submit', async (ev) => {
   const errorEl = $('login-error');
   errorEl.textContent = '';
   button.disabled = true;
-  button.textContent = 'Signing in…';
+  button.textContent = 'Unlocking…';
 
   const { error } = await db.auth.signInWithPassword({
-    email: $('email').value.trim(),
-    password: $('password').value,
+    email: ACCOUNT_EMAIL,
+    password: $('pin').value,
   });
 
   button.disabled = false;
-  button.textContent = 'Sign in';
+  button.textContent = 'Unlock';
 
   if (error) {
-    errorEl.textContent = error.message;
-    $('password').value = '';
+    /* Supabase says "Invalid login credentials" for a wrong password, which is
+       confusing when the form only ever collected a PIN. */
+    errorEl.textContent = /invalid login/i.test(error.message)
+      ? 'Incorrect PIN.'
+      : error.message;
+    $('pin').value = '';
+    $('pin').focus();
     return;
   }
   boot();
