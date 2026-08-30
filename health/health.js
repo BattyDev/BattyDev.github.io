@@ -79,12 +79,9 @@ function goalState(value, target, dir) {
 
 const DIR_WORD = { ceiling: 'ceiling', floor: 'floor', target: 'target' };
 
-function renderGoals(el, totals, targets) {
-  if (!totals) {
-    el.innerHTML = '<p class="empty">Nothing logged yet.</p>';
-    return;
-  }
-  el.innerHTML = GOALS.map((g) => {
+function goalsHTML(totals, targets) {
+  if (!totals) return '<p class="empty">Nothing logged yet.</p>';
+  return GOALS.map((g) => {
     const value = Number(totals[g.key] ?? 0);
     const target = targets ? Number(targets[g.target]) : null;
     const state = goalState(value, target, g.dir);
@@ -104,7 +101,34 @@ function renderGoals(el, totals, targets) {
   }).join('');
 }
 
+function renderGoals(el, totals, targets) {
+  el.innerHTML = goalsHTML(totals, targets);
+}
+
 /* ---------- nutrition ---------- */
+
+function itemsTableHTML(items) {
+  if (!items.length) return '<p class="empty">No items recorded for this day.</p>';
+  return `<div class="scroll-x"><table class="items">
+      <thead><tr>
+        <th>Item</th><th class="num">Serv</th><th class="num">kcal</th>
+        <th class="num">P</th><th class="num">F</th><th class="num">C</th>
+        <th class="num">Fib</th><th class="num">Na</th>
+      </tr></thead>
+      <tbody>${items.map((it) => `
+        <tr>
+          <td>${esc(it.name)}${it.estimated ? ' <span class="est">est</span>' : ''}
+              ${it.note ? `<span class="note">${esc(it.note)}</span>` : ''}</td>
+          <td class="num">${num(it.servings, 2)}</td>
+          <td class="num">${num(it.kcal)}</td>
+          <td class="num">${num(it.protein_g, 1)}</td>
+          <td class="num">${num(it.fat_g, 1)}</td>
+          <td class="num">${num(it.carbs_g, 1)}</td>
+          <td class="num">${num(it.fiber_g, 1)}</td>
+          <td class="num">${num(it.sodium_mg)}</td>
+        </tr>`).join('')}</tbody>
+    </table></div>`;
+}
 
 function renderDays(el, totals, entries, targets) {
   if (!totals.length) {
@@ -120,27 +144,7 @@ function renderDays(el, totals, entries, targets) {
   el.innerHTML = totals.map((t, i) => {
     const items = byDate.get(t.log_date) || [];
     const kcalState = goalState(Number(t.kcal ?? 0), targets && Number(targets.kcal_ceiling), 'ceiling');
-    const rows = items.length
-      ? `<div class="scroll-x"><table class="items">
-           <thead><tr>
-             <th>Item</th><th class="num">Serv</th><th class="num">kcal</th>
-             <th class="num">P</th><th class="num">F</th><th class="num">C</th>
-             <th class="num">Fib</th><th class="num">Na</th>
-           </tr></thead>
-           <tbody>${items.map((it) => `
-             <tr>
-               <td>${esc(it.name)}${it.estimated ? ' <span class="est">est</span>' : ''}
-                   ${it.note ? `<span class="note">${esc(it.note)}</span>` : ''}</td>
-               <td class="num">${num(it.servings, 2)}</td>
-               <td class="num">${num(it.kcal)}</td>
-               <td class="num">${num(it.protein_g, 1)}</td>
-               <td class="num">${num(it.fat_g, 1)}</td>
-               <td class="num">${num(it.carbs_g, 1)}</td>
-               <td class="num">${num(it.fiber_g, 1)}</td>
-               <td class="num">${num(it.sodium_mg)}</td>
-             </tr>`).join('')}</tbody>
-         </table></div>`
-      : '<p class="empty">No items recorded for this day.</p>';
+    const rows = itemsTableHTML(items);
 
     return `
       <div class="day${i === 0 ? ' is-open' : ''}">
@@ -230,20 +234,37 @@ async function loadAll() {
     return data || [];
   });
 
-  return Promise.all([
-    q('daily_totals', db.from('daily_totals').select('*').order('log_date', { ascending: false }).limit(30)),
-    q('entries', db.from('entries').select('*').order('log_date', { ascending: false }).order('id', { ascending: true }).limit(500)),
-    q('targets', db.from('targets').select('*').order('effective_from', { ascending: false }).limit(1)),
-    q('weight_trend', db.from('weight_trend').select('*').order('log_date', { ascending: false }).limit(60)),
-    q('inbody', db.from('inbody').select('*').order('scan_date', { ascending: false })),
-    q('cardio_estimate', db.from('cardio_estimate').select('*').order('session_date', { ascending: false }).limit(60)),
-    q('sessions', db.from('sessions').select('*').order('session_date', { ascending: false }).limit(60)),
-    q('progression_status', db.from('progression_status').select('*').order('last_performed', { ascending: false })),
-  ]);
+  /* Limits are generous rather than paged: the whole log is a few thousand rows
+     at most, and holding it lets the calendar redraw a month without a round
+     trip. Revisit if this ever grows to years of dense logging. */
+  const [daily, entries, targetRows, weights, inbody, cardio, sessions, progression, symptoms, sets] =
+    await Promise.all([
+      q('daily_totals', db.from('daily_totals').select('*').order('log_date', { ascending: false }).limit(1000)),
+      q('entries', db.from('entries').select('*').order('log_date', { ascending: false }).order('id', { ascending: true }).limit(5000)),
+      q('targets', db.from('targets').select('*').order('effective_from', { ascending: false }).limit(1)),
+      q('weight_trend', db.from('weight_trend').select('*').order('log_date', { ascending: false }).limit(1000)),
+      q('inbody', db.from('inbody').select('*').order('scan_date', { ascending: false })),
+      q('cardio_estimate', db.from('cardio_estimate').select('*').order('session_date', { ascending: false }).limit(500)),
+      q('sessions', db.from('sessions').select('*').order('session_date', { ascending: false }).limit(500)),
+      q('progression_status', db.from('progression_status').select('*').order('last_performed', { ascending: false })),
+      q('symptoms', db.from('symptoms').select('*').order('log_date', { ascending: false }).limit(1000)),
+      /* Embeds the exercise name and the parent session's date. Both tables carry
+         the same owner policy, so the embedded rows are filtered by RLS too. */
+      q('lift_sets', db.from('lift_sets')
+        .select('*, exercises(name, block), sessions(session_date)')
+        .order('id', { ascending: true }).limit(5000)),
+    ]);
+
+  return { daily, entries, targets: targetRows[0] || null, weights, inbody,
+           cardio, sessions, progression, symptoms, sets };
 }
 
-function renderAll([daily, entries, targetRows, weights, inbody, cardio, sessions, progression]) {
-  const targets = targetRows[0] || null;
+function renderAll(data) {
+  const { daily, entries, targets, weights, inbody, cardio, sessions, progression, symptoms, sets } = data;
+
+  DATA = data;
+  BY_DATE = indexByDate(data);
+  initCalendar();
 
   /* Today's panel falls back to the most recent logged day, and says so, rather
      than showing an empty card before the first meal of the day is logged. */
@@ -335,16 +356,246 @@ function renderAll([daily, entries, targetRows, weights, inbody, cardio, session
   /* A signed-in account that is not the owner passes auth but fails every RLS
      policy, so it would otherwise just see a dashboard of empty panels. */
   const anyData = daily.length || entries.length || weights.length || inbody.length ||
-                  cardio.length || sessions.length || progression.length;
+                  cardio.length || sessions.length || progression.length ||
+                  symptoms.length || sets.length;
   if (!anyData) {
     showBanner('Signed in, but this account has no access to the health data.');
   }
 }
 
+/* ---------- calendar ----------
+   Everything loaded is indexed by date once, so moving between months is a
+   redraw rather than a round trip. Each source contributes on its own date
+   column: entries and symptoms on log_date, cardio and sessions on
+   session_date, scans on scan_date. */
+
+let DATA = null;
+let BY_DATE = new Map();
+let calYear = null, calMonth = null, selectedISO = null;
+
+const pad2 = (n) => String(n).padStart(2, '0');
+const isoOf = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
+
+function indexByDate(d) {
+  const m = new Map();
+  const slot = (iso) => {
+    if (!iso) return null;
+    const k = String(iso).slice(0, 10);
+    if (!m.has(k)) {
+      m.set(k, { date: k, totals: null, entries: [], cardio: [], sessions: [],
+                 sets: [], weight: null, scan: null, symptoms: [] });
+    }
+    return m.get(k);
+  };
+  d.daily.forEach((t) => { slot(t.log_date).totals = t; });
+  d.entries.forEach((e) => slot(e.log_date).entries.push(e));
+  d.cardio.forEach((c) => slot(c.session_date).cardio.push(c));
+  d.sessions.forEach((x) => slot(x.session_date).sessions.push(x));
+  d.weights.forEach((w) => { slot(w.log_date).weight = w; });
+  d.inbody.forEach((x) => { slot(x.scan_date).scan = x; });
+  d.symptoms.forEach((x) => slot(x.log_date).symptoms.push(x));
+  /* A set's date lives on its parent session, not on the set. */
+  d.sets.forEach((x) => {
+    const date = x.sessions && x.sessions.session_date;
+    if (date) slot(date).sets.push(x);
+  });
+  return m;
+}
+
+function initCalendar() {
+  /* Open on the most recent day that has anything on it, falling back to today,
+     so the first view is never an empty month. */
+  const dates = [...BY_DATE.keys()].sort();
+  selectedISO = selectedISO || dates[dates.length - 1] || todayISO();
+  const d = parseDate(selectedISO);
+  calYear = d.getFullYear();
+  calMonth = d.getMonth();
+  renderCalendar();
+  renderDayDetail(selectedISO);
+}
+
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function renderCalendar() {
+  const first = new Date(calYear, calMonth, 1);
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = todayISO();
+
+  $('cal-month').textContent =
+    first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+  const cells = WEEKDAYS.map((w) => `<div class="cal-wd" aria-hidden="true">${w}</div>`);
+  for (let i = 0; i < first.getDay(); i++) cells.push('<div class="cal-pad"></div>');
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const iso = isoOf(calYear, calMonth, day);
+    const rec = BY_DATE.get(iso);
+    const dots = rec ? [
+      rec.entries.length && 'd-food',
+      rec.cardio.length && 'd-cardio',
+      rec.sets.length && 'd-lift',
+      rec.weight && 'd-weight',
+      rec.scan && 'd-scan',
+      rec.symptoms.length && 'd-symptom',
+    ].filter(Boolean) : [];
+
+    const cls = ['cal-day'];
+    if (iso === selectedISO) cls.push('is-selected');
+    if (iso === today) cls.push('is-today');
+    if (!rec) cls.push('is-empty');
+
+    cells.push(`
+      <button type="button" class="${cls.join(' ')}" data-date="${iso}"
+              aria-pressed="${iso === selectedISO}"
+              aria-label="${esc(fmtDate(iso, { weekday: 'long', month: 'long', day: 'numeric' }))}">
+        <span class="dnum">${day}</span>
+        <span class="dkcal">${rec && rec.totals ? num(rec.totals.kcal) : ''}</span>
+        <span class="dots">${dots.map((c) => `<i class="dot ${c}"></i>`).join('')}</span>
+      </button>`);
+  }
+
+  const grid = $('cal-grid');
+  grid.innerHTML = cells.join('');
+  grid.querySelectorAll('.cal-day').forEach((b) => {
+    b.addEventListener('click', () => {
+      selectedISO = b.dataset.date;
+      renderCalendar();
+      renderDayDetail(selectedISO);
+      $('cal-detail-heading').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+  });
+}
+
+function shiftMonth(by) {
+  const d = new Date(calYear, calMonth + by, 1);
+  calYear = d.getFullYear();
+  calMonth = d.getMonth();
+  renderCalendar();
+}
+
+function renderDayDetail(iso) {
+  const rec = BY_DATE.get(iso);
+  const targets = DATA && DATA.targets;
+  $('cal-detail-heading').textContent =
+    fmtDate(iso, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+  if (!rec) {
+    $('cal-detail').innerHTML = '<p class="empty">Nothing logged on this day.</p>';
+    return;
+  }
+
+  const out = [];
+
+  if (rec.totals || rec.entries.length) {
+    out.push(`<section class="cal-sec">
+      <h3>Nutrition</h3>
+      <div class="goals">${goalsHTML(rec.totals, targets)}</div>
+      ${itemsTableHTML(rec.entries)}
+    </section>`);
+  }
+
+  const training = [];
+  rec.sessions.forEach((x) => {
+    const bits = [
+      x.duration_min ? `${num(x.duration_min)} min` : null,
+      x.bodyweight_lbs ? `${num(x.bodyweight_lbs, 1)} lb` : null,
+      x.sleep_hours ? `slept ${num(x.sleep_hours, 1)} h` : null,
+      x.readiness ? `readiness ${num(x.readiness)}` : null,
+    ].filter(Boolean).join(' · ');
+    training.push(`<p class="cal-line"><b>${esc(x.block || 'Session')}</b>
+      ${bits ? `<span>${esc(bits)}</span>` : ''}
+      ${x.note ? `<span class="note">${esc(x.note)}</span>` : ''}</p>`);
+  });
+
+  if (rec.sets.length) {
+    const byExercise = new Map();
+    rec.sets.forEach((x) => {
+      const name = (x.exercises && x.exercises.name) || 'Unknown exercise';
+      if (!byExercise.has(name)) byExercise.set(name, []);
+      byExercise.get(name).push(x);
+    });
+    byExercise.forEach((sets, name) => {
+      const detail = sets.map((x) =>
+        `${num(x.weight_lbs, 1)}×${num(x.reps)}${x.rpe ? ` @${num(x.rpe, 1)}` : ''}` +
+        `${x.warmup ? ' <i class="wu">warm-up</i>' : ''}`).join(' · ');
+      training.push(`<p class="cal-line"><b>${esc(name)}</b><span>${detail}</span></p>`);
+    });
+  }
+
+  if (rec.cardio.length) {
+    training.push(table(
+      [{ label: 'Modality' }, { label: 'Min', num: true }, { label: 'Console kcal', num: true },
+       { label: 'Est. kcal', num: true }, { label: 'Avg HR', num: true }, { label: 'Max HR', num: true }],
+      rec.cardio.map((c) => `<tr>
+        <td>${esc(c.modality)}</td>
+        <td class="num">${num(c.duration_min, 1)}</td>
+        <td class="num">${num(c.console_kcal)}</td>
+        <td class="num">${num(c.est_kcal_gross)}</td>
+        <td class="num">${num(c.avg_hr)}</td>
+        <td class="num">${num(c.max_hr)}</td>
+      </tr>`), ''));
+    rec.cardio.forEach((c) => {
+      if (c.note) training.push(`<p class="note">${esc(c.note)}</p>`);
+    });
+  }
+
+  if (training.length) {
+    out.push(`<section class="cal-sec"><h3>Training</h3>${training.join('')}</section>`);
+  }
+
+  const body = [];
+  if (rec.weight) {
+    body.push(`<p class="cal-line"><b>Weigh-in</b><span>${num(rec.weight.lbs, 1)} lb${
+      Number(rec.weight.days_in_window) > 1 ? ` · 7-day avg ${num(rec.weight.avg_7d, 2)}` : ''}</span></p>`);
+  }
+  if (rec.scan) {
+    const x = rec.scan;
+    body.push(`<p class="cal-line"><b>InBody scan</b><span>${num(x.weight_lbs, 1)} lb · ${
+      num(x.body_fat_pct, 1)}% fat · ${num(x.smm_lbs, 1)} lb muscle · score ${num(x.inbody_score)}</span>
+      ${x.note ? shortNote(x.note, 160) : ''}</p>`);
+  }
+  if (body.length) out.push(`<section class="cal-sec"><h3>Body</h3>${body.join('')}</section>`);
+
+  if (rec.symptoms.length) {
+    out.push(`<section class="cal-sec"><h3>Symptoms</h3>${rec.symptoms.map((x) => `
+      <p class="cal-line"><b>${esc([x.location, x.side].filter(Boolean).join(' ') || 'Symptom')}</b>
+        <span>${esc([x.quality, x.severity ? `severity ${x.severity}` : null, x.context]
+          .filter(Boolean).join(' · '))}</span>
+        ${x.provoked_by ? `<span class="note">provoked by ${esc(x.provoked_by)}</span>` : ''}
+        ${x.relieved_by ? `<span class="note">relieved by ${esc(x.relieved_by)}</span>` : ''}
+        ${x.note ? `<span class="note">${esc(x.note)}</span>` : ''}</p>`).join('')}</section>`);
+  }
+
+  $('cal-detail').innerHTML = out.length
+    ? out.join('')
+    : '<p class="empty">Nothing logged on this day.</p>';
+}
+
+$('cal-prev').addEventListener('click', () => shiftMonth(-1));
+$('cal-next').addEventListener('click', () => shiftMonth(1));
+$('cal-today').addEventListener('click', () => {
+  selectedISO = todayISO();
+  const d = parseDate(selectedISO);
+  calYear = d.getFullYear();
+  calMonth = d.getMonth();
+  renderCalendar();
+  renderDayDetail(selectedISO);
+});
+
 function showBanner(msg) {
   const b = $('banner');
   b.textContent = msg;
   b.hidden = false;
+}
+
+async function rememberCredential(form) {
+  if (!window.PasswordCredential || !navigator.credentials) return;
+  try {
+    await navigator.credentials.store(new PasswordCredential(form));
+  } catch {
+    /* Declined, blocked, or an insecure context. The sign-in already
+       succeeded, so this is never worth interrupting the user over. */
+  }
 }
 
 async function boot() {
@@ -388,6 +639,13 @@ $('login-form').addEventListener('submit', async (ev) => {
     password: $('pin').value,
   });
 
+  /* This form signs in over XHR and never navigates, so Chrome's save-password
+     heuristic -- which keys off a submit that unloads the page -- never fires.
+     Asking outright is the supported way to get the credential stored, and is
+     what makes autofill work on the next visit. Chromium-only; Firefox and
+     Safari fall back to their own heuristics, helped by the username field. */
+  if (!error) await rememberCredential(ev.target);
+
   button.disabled = false;
   button.textContent = 'Unlock';
 
@@ -406,8 +664,17 @@ $('login-form').addEventListener('submit', async (ev) => {
 
 $('signout').addEventListener('click', async () => {
   await db.auth.signOut();
+  /* Without this the browser may silently hand the credential straight back,
+     so "sign out" would bounce into a signed-in page. */
+  if (navigator.credentials && navigator.credentials.preventSilentAccess) {
+    await navigator.credentials.preventSilentAccess();
+  }
   location.reload();
 });
+
+/* ACCOUNT_EMAIL stays the single source of truth; the markup only carries a copy
+   so credential managers see a username before this file runs. */
+$('account').value = ACCOUNT_EMAIL;
 
 /* supabase-js persists the session in localStorage, so a return visit skips the form. */
 db.auth.getSession().then(({ data }) => {
