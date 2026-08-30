@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;700;900&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
-<link href="health.css?v=1" rel="stylesheet">
+<link href="health.css?v=2" rel="stylesheet">
 </head>
 <body>
 
@@ -24,6 +24,14 @@
   <form id="login-form" autocomplete="on">
     <h2>Health</h2>
     <p>Enter your PIN to view this dashboard.</p>
+    <!-- Password managers key a credential to an identity, so a lone password
+         field gives them nothing to match on. This supplies the account name for
+         them to save and fill against. It is visually hidden rather than
+         display:none or type=hidden, both of which browsers skip when matching.
+         The value is a pre-JS hint; health.js rewrites it from ACCOUNT_EMAIL. -->
+    <label for="account" class="visually-hidden">Account</label>
+    <input type="email" id="account" name="username" autocomplete="username"
+           value="codyadcock10@gmail.com" readonly tabindex="-1" class="visually-hidden">
     <label for="pin">PIN</label>
     <input type="password" id="pin" name="password" autocomplete="current-password"
            enterkeyhint="go" required autofocus>
@@ -119,6 +127,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="health.js?v=1"></script>
+<script src="health.js?v=2"></script>
 </body>
 </html>

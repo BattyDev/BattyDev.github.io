@@ -347,6 +347,16 @@ function showBanner(msg) {
   b.hidden = false;
 }
 
+async function rememberCredential(form) {
+  if (!window.PasswordCredential || !navigator.credentials) return;
+  try {
+    await navigator.credentials.store(new PasswordCredential(form));
+  } catch {
+    /* Declined, blocked, or an insecure context. The sign-in already
+       succeeded, so this is never worth interrupting the user over. */
+  }
+}
+
 async function boot() {
   $('gate').hidden = true;
   $('app').hidden = false;
@@ -388,6 +398,13 @@ $('login-form').addEventListener('submit', async (ev) => {
     password: $('pin').value,
   });
 
+  /* This form signs in over XHR and never navigates, so Chrome's save-password
+     heuristic -- which keys off a submit that unloads the page -- never fires.
+     Asking outright is the supported way to get the credential stored, and is
+     what makes autofill work on the next visit. Chromium-only; Firefox and
+     Safari fall back to their own heuristics, helped by the username field. */
+  if (!error) await rememberCredential(ev.target);
+
   button.disabled = false;
   button.textContent = 'Unlock';
 
@@ -406,8 +423,17 @@ $('login-form').addEventListener('submit', async (ev) => {
 
 $('signout').addEventListener('click', async () => {
   await db.auth.signOut();
+  /* Without this the browser may silently hand the credential straight back,
+     so "sign out" would bounce into a signed-in page. */
+  if (navigator.credentials && navigator.credentials.preventSilentAccess) {
+    await navigator.credentials.preventSilentAccess();
+  }
   location.reload();
 });
+
+/* ACCOUNT_EMAIL stays the single source of truth; the markup only carries a copy
+   so credential managers see a username before this file runs. */
+$('account').value = ACCOUNT_EMAIL;
 
 /* supabase-js persists the session in localStorage, so a return visit skips the form. */
 db.auth.getSession().then(({ data }) => {
