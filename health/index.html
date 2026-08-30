@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07151c">
+<title>Health · BattyDev</title>
+<!-- Private page: keep it out of search results regardless of the login gate. -->
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;700;900&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="health.css?v=1" rel="stylesheet">
+</head>
+<body>
+
+<div class="wallpaper" aria-hidden="true"></div>
+
+<!-- The gate is only the UI half of the lock. The real protection is RLS: every
+     table grants SELECT to the owner's authenticated session and nothing else,
+     so the publishable key below returns zero rows without a valid login. -->
+<div class="gate" id="gate">
+  <form id="login-form" autocomplete="on">
+    <h2>Health</h2>
+    <p>Enter your PIN to view this dashboard.</p>
+    <label for="pin">PIN</label>
+    <input type="password" id="pin" name="password" autocomplete="current-password"
+           enterkeyhint="go" required autofocus>
+    <p class="err" id="login-error" role="alert"></p>
+    <button type="submit" id="login-button">Unlock</button>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <header class="home-bar">
+    <a class="account" href="../index.html" aria-label="Return to BattyDev">
+      <span class="gamerpic">B</span>
+      <span><b>Health</b><small>BattyDev</small></span>
+    </a>
+    <nav class="system-icons" aria-label="Views">
+      <button type="button" class="is-active" data-view-target="nutrition" aria-current="page" aria-label="Nutrition"><i class="bi bi-egg-fried"></i></button>
+      <button type="button" data-view-target="body" aria-label="Body composition"><i class="bi bi-clipboard2-pulse-fill"></i></button>
+      <button type="button" data-view-target="training" aria-label="Training"><i class="bi bi-activity"></i></button>
+    </nav>
+    <div class="system-status">
+      <span id="updated" class="stamp">—</span>
+      <button type="button" class="signout" id="signout">Sign out</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="banner" class="notice" hidden></div>
+
+    <section id="view-nutrition" class="view is-active" aria-labelledby="nutrition-heading">
+      <div class="section-head">
+        <p class="eyebrow">Intake</p>
+        <h1 id="nutrition-heading">Nutrition</h1>
+        <p class="lede" id="nutrition-lede">Logged food, against the current targets.</p>
+      </div>
+
+      <div class="panel">
+        <h2 id="today-heading">Today</h2>
+        <div class="goals" id="today-goals"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Recent days</h2>
+        <div id="days"></div>
+      </div>
+    </section>
+
+    <section id="view-body" class="view" aria-labelledby="body-heading" hidden>
+      <div class="section-head">
+        <p class="eyebrow">Over time</p>
+        <h1 id="body-heading">Body</h1>
+        <p class="lede">Scale weight and InBody composition scans.</p>
+      </div>
+
+      <div class="panel">
+        <h2>Latest scan</h2>
+        <div class="stat-grid" id="inbody-latest"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Weight log</h2>
+        <div class="scroll-x" id="weights"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Scan history</h2>
+        <div class="scroll-x" id="inbody-history"></div>
+      </div>
+    </section>
+
+    <section id="view-training" class="view" aria-labelledby="training-heading" hidden>
+      <div class="section-head">
+        <p class="eyebrow">Work done</p>
+        <h1 id="training-heading">Training</h1>
+        <p class="lede">Cardio, lifting sessions, and where each lift sits in its rep range.</p>
+      </div>
+
+      <div class="panel">
+        <h2>Cardio</h2>
+        <div class="scroll-x" id="cardio"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Sessions</h2>
+        <div class="scroll-x" id="sessions"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Lift progression</h2>
+        <div class="scroll-x" id="progression"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="health.js?v=1"></script>
+</body>
+</html>
