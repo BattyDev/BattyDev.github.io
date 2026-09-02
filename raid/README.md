@@ -134,6 +134,13 @@ The row *is* the fact: a `(member_id, slot)` row means "free then". There is no
 boolean to fall out of sync, which is why there is no UPDATE policy on
 `raid_availability` — writes are inserts and deletes only.
 
+Both grids save on an explicit button, not on a timer. The autosave they replace
+**dropped hours**: it re-read the grid *after* its awaits to decide what was
+safely stored, so anything painted during the round-trip was marked saved
+without ever having been sent, and the next diff then found nothing to do. The
+button removes the overlap; snapshotting the set at send time removes the bug
+itself. They are independent fixes and neither relies on the other.
+
 ## Setup
 
 Steps 1, 2 and 6 are already done — the project exists, the schema is applied,
@@ -239,6 +246,29 @@ combat/craft/gather, which answers a different question, so `JOB_ROLE` in
 levelled combat jobs then preselect the role checkboxes on signup. It is a
 suggestion that saves three clicks, never a constraint — the member still
 submits, and the database only ever receives what they ticked.
+
+## Linking an event
+
+Every view lives in the URL hash, so a reload keeps you where you were, and an
+event has a link of its own: `battydev.com/raid/#/event/<id>`, with a **Copy
+link** button on the event. A hash rather than a path because this is GitHub
+Pages — there is no server to route `/raid/event/<id>` back to the page.
+
+**On unfurling in Discord, one honest limitation.** The page carries Open Graph
+tags, so any link to it unfurls as a card — but those tags are *page-level*, not
+per-event. Discord's crawler does not run JavaScript, and static hosting cannot
+render per-event tags, so an event link previews as "Raid Nights · Wild Hearts"
+rather than as that event's title, time and roster.
+
+Two ways to get a per-event card, when it is wanted:
+
+1. **The webhook** (already built). `announce-event` posts a full card — title,
+   time in each reader's own timezone, composition, who is signed up — into the
+   channel. Blocked only on the webhook URL.
+2. **An Edge Function renderer.** A function that serves OG tags for one event
+   and redirects humans to the page. Works today with no Discord permission, but
+   the shareable URL becomes a `supabase.co` one rather than `battydev.com`,
+   which is why it is not built yet — say the word.
 
 ## Announcing to Discord
 

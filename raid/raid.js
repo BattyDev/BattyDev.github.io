@@ -203,6 +203,36 @@ function banner(msg, warn = false) {
 
 function stamp(text) { $('stamp').textContent = text; }
 
+/* ---------- routing ----------
+   The view lives in the URL hash, so a reload keeps you where you were and an
+   event can be linked to directly. Hash rather than a path because this is
+   GitHub Pages: there is no server to route /raid/event/<id> back to the page.
+
+   replaceState rather than pushState for plain view switches -- back should
+   leave the page, not walk the tab history. Opening an event does push, so
+   Back returns to the list, which is what the arrow means there. */
+const VIEWS = ['overlap', 'events', 'mine', 'chars', 'company'];
+
+function readRoute() {
+  const h = location.hash.replace(/^#\/?/, '');
+  if (h.startsWith('event/')) {
+    const id = h.slice('event/'.length);
+    return /^[0-9a-f-]{36}$/i.test(id) ? { view: 'events', event: id } : null;
+  }
+  return VIEWS.includes(h) ? { view: h } : null;
+}
+
+function writeRoute(view, eventId, push = false) {
+  const next = eventId ? `#/event/${eventId}` : `#${view}`;
+  if (location.hash === next) return;
+  routing = true;
+  if (push) history.pushState(null, '', next);
+  else history.replaceState(null, '', next);
+  routing = false;
+}
+
+let routing = false;
+
 function showView(name) {
   for (const s of document.querySelectorAll('.view')) {
     const on = s.id === `view-${name}`;
@@ -215,6 +245,7 @@ function showView(name) {
     if (on) b.setAttribute('aria-current', 'page');
     else b.removeAttribute('aria-current');
   }
+  if (!(name === 'events' && state.openEvent)) writeRoute(name);
 }
 
 for (const b of document.querySelectorAll('.system-icons button')) {
@@ -250,11 +281,36 @@ function syncChrome() {
    something to DO about -- sign up, or put one on. The signed-out public still
    lands on the heatmap, because events are not theirs to see. */
 let landed = false;
-function landOnDefaultView() {
+async function landOnDefaultView() {
   if (landed || !state.session) return;
   landed = true;
+  const route = readRoute();
+  if (route) {
+    showView(route.view);
+    if (route.event) {
+      try { await openEvent(route.event); }
+      catch { banner('That event link could not be opened — it may have been removed.', true); }
+    }
+    return;
+  }
   showView('events');
 }
+
+/* Back and forward, and a hash typed by hand. */
+window.addEventListener('hashchange', async () => {
+  if (routing || !state.session) return;
+  const route = readRoute();
+  if (!route) return;
+  if (route.event) {
+    if (state.openEvent?.id !== route.event) {
+      showView('events');
+      try { await openEvent(route.event); } catch { /* stale link */ }
+    }
+  } else {
+    if (state.openEvent) closeEvent();
+    showView(route.view);
+  }
+});
 
 /* ---------- grid construction ---------- */
 /* One builder for all three grids. `mode` is 'read' (heatmap), 'edit' (the
@@ -417,12 +473,19 @@ function renderBest(counts, max) {
 /* ---------- my times (member) ---------- */
 let mineCells = null;
 let painting = false, paintTo = false, suppressClick = false;
-let saveTimer = null;
 
 function setCell(i, on) {
   const slot = LOCAL_TO_SLOT[i];
   if (on) state.mine.add(slot); else state.mine.delete(slot);
   mineCells[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+}
+
+/* How far the grid has drifted from what the server holds. */
+function pendingCount(desired, saved) {
+  let n = 0;
+  for (const x of desired) if (!saved.has(x)) n++;
+  for (const x of saved) if (!desired.has(x)) n++;
+  return n;
 }
 
 function renderMine() {
@@ -434,8 +497,7 @@ function renderMine() {
   for (let i = 0; i < 168; i++) {
     mineCells[i].setAttribute('aria-pressed', state.mine.has(LOCAL_TO_SLOT[i]) ? 'true' : 'false');
   }
-  $('mine-count').textContent =
-    `${state.mine.size} hour${state.mine.size === 1 ? '' : 's'} marked · ${tzLabel()}`;
+  markDirty();
 }
 
 function wirePainting() {
@@ -453,7 +515,7 @@ function wirePainting() {
     painting = true;
     suppressClick = true;
     setCell(i, paintTo);
-    queueSave();
+    markDirty();
   });
 
   el.addEventListener('mouseover', (e) => {
@@ -461,7 +523,7 @@ function wirePainting() {
     const cell = e.target.closest('.cell');
     if (!cell) return;
     setCell(Number(cell.dataset.i), paintTo);
-    queueSave();
+    markDirty();
   });
 
   window.addEventListener('mouseup', () => { painting = false; });
@@ -472,21 +534,31 @@ function wirePainting() {
     if (suppressClick) { suppressClick = false; return; }
     const i = Number(cell.dataset.i);
     setCell(i, cell.getAttribute('aria-pressed') !== 'true');
-    queueSave();
+    markDirty();
   });
 
   $('clear-all').addEventListener('click', () => {
     for (let i = 0; i < 168; i++) setCell(i, false);
-    queueSave();
+    markDirty();
   });
+
+  $('mine-save').addEventListener('click', saveMine);
 }
 
-function queueSave() {
+/* Formerly a debounced autosave. It dropped hours: saveMine() read
+   state.mine AFTER its awaits to decide what was now safely stored, so
+   anything painted during the round-trip was marked saved without ever having
+   been sent, and the next diff then found nothing to do. An explicit save
+   removes the overlap entirely; snapshotting the target below removes the bug
+   itself, so the two are independent fixes and neither relies on the other. */
+function markDirty() {
+  const pending = pendingCount(state.mine, state.saved);
   $('mine-count').textContent =
     `${state.mine.size} hour${state.mine.size === 1 ? '' : 's'} marked · ${tzLabel()}`;
-  $('mine-status').textContent = 'Saving…';
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(saveMine, 600);
+  $('mine-save').disabled = pending === 0;
+  $('mine-status').textContent = pending
+    ? `${pending} unsaved change${pending === 1 ? '' : 's'}`
+    : 'Saved';
 }
 
 /* Writes the difference, not the whole grid: an insert for newly marked hours
@@ -496,10 +568,18 @@ async function saveMine() {
   const uid = state.session?.user?.id;
   if (!uid) return;
 
-  const add = [...state.mine].filter((s) => !state.saved.has(s));
-  const del = [...state.saved].filter((s) => !state.mine.has(s));
-  if (!add.length && !del.length) { $('mine-status').textContent = 'Saved'; return; }
+  /* Snapshot what is being sent. Marking state.mine as saved after the awaits
+     would claim credit for anything painted meanwhile -- the bug this replaces.
+     Only the set actually written becomes the new baseline; anything added
+     during the round-trip stays pending and the button stays live. */
+  const target = new Set(state.mine);
+  const add = [...target].filter((s) => !state.saved.has(s));
+  const del = [...state.saved].filter((s) => !target.has(s));
+  if (!add.length && !del.length) { markDirty(); return; }
 
+  const btn = $('mine-save');
+  btn.disabled = true;
+  $('mine-status').textContent = 'Saving…';
   try {
     if (add.length) {
       const { error } = await db.from('raid_availability')
@@ -511,11 +591,15 @@ async function saveMine() {
         .delete().eq('member_id', uid).in('slot', del);
       if (error) throw error;
     }
-    state.saved = new Set(state.mine);
-    $('mine-status').textContent = `Saved ${new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
+    state.saved = target;
     await loadPublic();      // the member's own change moves the public heatmap
     if (isLeader()) await loadLeader();
+    markDirty();
+    if (pendingCount(state.mine, state.saved) === 0) {
+      $('mine-status').textContent = `Saved ${new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
+    }
   } catch (err) {
+    markDirty();
     $('mine-status').textContent = 'Not saved';
     banner(`Could not save your availability: ${esc(err.message || err)}`, true);
   }
@@ -640,7 +724,6 @@ async function loadMine() {
   state.saved = new Set((data || []).map((r) => r.slot));
   state.mine = new Set(state.saved);
   renderMine();
-  $('mine-status').textContent = 'Saved';
 }
 
 async function loadLeader() {
@@ -704,7 +787,8 @@ async function onSession(session) {
       await loadCharacters();
       await loadEvents();
       if (isLeader()) await loadLeader();
-      landOnDefaultView();
+      maybeOpenGuide();
+      await landOnDefaultView();
     } else {
       landed = false;
     }
@@ -770,6 +854,7 @@ async function main() {
   wireEventForm();
   wireChars();
   wireTimezone();
+  wireGuide();
   const { data } = await db.auth.getSession();
   await onSession(data?.session ?? null);
 }
@@ -1017,6 +1102,7 @@ async function openEvent(id) {
 
   $('events-index').hidden = true;
   $('events-detail').hidden = false;
+  writeRoute(null, id, true);
   renderDetail();
 }
 
@@ -1024,6 +1110,7 @@ function closeEvent() {
   state.openEvent = null;
   $('events-detail').hidden = true;
   $('events-index').hidden = false;
+  writeRoute('events');
   renderEvents();
 }
 
@@ -1067,7 +1154,10 @@ function renderDetail() {
     : `<span class="ev-when">${ev.mode === 'poll' ? 'Time not picked yet' : 'No time set'}</span>`;
 
   $('events-detail').innerHTML = `
-    <button type="button" class="back-link" id="ev-back">&larr; All events</button>
+    <div class="detail-top">
+      <button type="button" class="back-link" id="ev-back">&larr; All events</button>
+      <button type="button" class="ghost" id="ev-copy">Copy link</button>
+    </div>
 
     <div class="section-head">
       <p class="eyebrow">${esc(compText(ev))} · by ${esc(who(ev.created_by).display_name)}</p>
@@ -1110,6 +1200,7 @@ function renderDetail() {
           : 'Drag to mark the hours you could make. Only the organiser and FC leaders see these.'}</p>
         <div class="grid-scroll"><div class="dayg" id="poll-grid"></div></div>
         <div class="grid-actions">
+          ${!manage ? '<button type="button" class="primary" id="poll-save" disabled>Save my hours</button>' : ''}
           ${!manage ? '<button type="button" class="ghost" id="ev-prefill">Use my weekly times</button>' : ''}
           <span class="grid-note" id="poll-picked"></span>
           ${manage ? '<button type="button" class="primary" id="ev-schedule" disabled>Schedule this hour</button>' : ''}
@@ -1141,6 +1232,7 @@ function renderDetail() {
   `;
 
   $('ev-back').addEventListener('click', closeEvent);
+  $('ev-copy').addEventListener('click', copyEventLink);
   wireSignup();
   if (ev.mode === 'poll' && ev.status !== 'cancelled') renderPoll();
   renderRoster();
@@ -1183,6 +1275,28 @@ async function announce() {
   } finally {
     btn.disabled = false;
   }
+}
+
+/* A link straight to this event. Anyone following it lands on the event once
+   signed in; signed out they get the public heatmap, because events are not
+   the public's to see. */
+function eventLink(ev) {
+  return `${location.origin}${location.pathname}#/event/${ev.id}`;
+}
+
+async function copyEventLink() {
+  const url = eventLink(state.openEvent);
+  const btn = $('ev-copy');
+  try {
+    await navigator.clipboard.writeText(url);
+    btn.textContent = 'Copied';
+  } catch {
+    /* Clipboard access can be refused (permissions, insecure context). Put the
+       link on screen so it can still be copied by hand rather than failing. */
+    btn.textContent = 'Copy failed';
+    banner(`Event link: <code>${esc(url)}</code>`);
+  }
+  setTimeout(() => { btn.textContent = 'Copy link'; }, 2000);
 }
 
 /* ---------- roster ---------- */
@@ -1302,7 +1416,7 @@ function wireSignup() {
 
 /* ---------- poll grid ---------- */
 let pollCells = null, pollDaysCache = null, pollPicked = null;
-let pollPainting = false, pollPaintTo = false, pollSuppress = false, pollTimer = null;
+let pollPainting = false, pollPaintTo = false, pollSuppress = false;
 
 function renderPoll() {
   const ev = state.openEvent;
@@ -1363,8 +1477,15 @@ function renderPoll() {
 function updatePollStatus() {
   const s = $('poll-status');
   if (!s) return;
-  s.textContent = canManage(state.openEvent)
-    ? `${new Set(state.evResponses.map((r) => r.member_id)).size} responded · ${tzLabel()}`
+  if (canManage(state.openEvent)) {
+    s.textContent = `${new Set(state.evResponses.map((r) => r.member_id)).size} responded · ${tzLabel()}`;
+    return;
+  }
+  const pending = pendingCount(state.evMarks, state.evSavedMarks);
+  const btn = $('poll-save');
+  if (btn) btn.disabled = pending === 0;
+  s.textContent = pending
+    ? `${pending} unsaved change${pending === 1 ? '' : 's'} · ${tzLabel()}`
     : `${state.evMarks.size} hour${state.evMarks.size === 1 ? '' : 's'} marked · ${tzLabel()}`;
 }
 
@@ -1385,18 +1506,18 @@ function wirePollPaint() {
     e.preventDefault();
     pollPaintTo = c.getAttribute('aria-pressed') !== 'true';
     pollPainting = true; pollSuppress = true;
-    apply(c, pollPaintTo); queuePollSave();
+    apply(c, pollPaintTo); updatePollStatus();
   });
   el.addEventListener('mouseover', (e) => {
     if (!pollPainting) return;
     const c = e.target.closest('.cell'); if (!c) return;
-    apply(c, pollPaintTo); queuePollSave();
+    apply(c, pollPaintTo); updatePollStatus();
   });
   window.addEventListener('mouseup', () => { pollPainting = false; });
   el.addEventListener('click', (e) => {
     const c = e.target.closest('.cell'); if (!c) return;
     if (pollSuppress) { pollSuppress = false; return; }
-    apply(c, c.getAttribute('aria-pressed') !== 'true'); queuePollSave();
+    apply(c, c.getAttribute('aria-pressed') !== 'true'); updatePollStatus();
   });
 
   const pre = $('ev-prefill');
@@ -1407,14 +1528,11 @@ function wirePollPaint() {
       const d = new Date(key);
       if (state.saved.has(d.getUTCDay() * 24 + d.getUTCHours())) apply(cell, true);
     }
-    queuePollSave();
+    updatePollStatus();
   });
-}
 
-function queuePollSave() {
-  updatePollStatus();
-  clearTimeout(pollTimer);
-  pollTimer = setTimeout(savePoll, 600);
+  const save = $('poll-save');
+  if (save) save.addEventListener('click', savePoll);
 }
 
 async function savePoll() {
@@ -1429,9 +1547,9 @@ async function savePoll() {
   if (!mySignup()) {
     const roles = [...document.querySelectorAll('#role-picker input:checked')].map((i) => i.value);
     if (!roles.length) {
-      $('poll-status').textContent = 'Pick your roles above first.';
-      state.evMarks = new Set(state.evSavedMarks);
-      renderPoll();
+      /* Do NOT roll the grid back here -- that threw away what they had just
+         painted. Leave it pending; the save button stays live. */
+      $('poll-status').textContent = 'Pick your roles above, then save.';
       return;
     }
     const { error } = await db.from('raid_event_signups')
@@ -1441,8 +1559,15 @@ async function savePoll() {
     state.evSignups = data || [];
   }
 
-  const add = [...state.evMarks].filter((k) => !state.evSavedMarks.has(k));
-  const del = [...state.evSavedMarks].filter((k) => !state.evMarks.has(k));
+  /* Snapshot, for the same reason saveMine() does -- see the note there. */
+  const target = new Set(state.evMarks);
+  const add = [...target].filter((k) => !state.evSavedMarks.has(k));
+  const del = [...state.evSavedMarks].filter((k) => !target.has(k));
+  if (!add.length && !del.length) { updatePollStatus(); return; }
+
+  const btn = $('poll-save');
+  if (btn) btn.disabled = true;
+  $('poll-status').textContent = 'Saving…';
   try {
     if (add.length) {
       const { error } = await db.from('raid_event_responses')
@@ -1454,9 +1579,13 @@ async function savePoll() {
         .delete().eq('event_id', ev.id).eq('member_id', uid).in('starts_at', del);
       if (error) throw error;
     }
-    state.evSavedMarks = new Set(state.evMarks);
-    $('poll-status').textContent = `Saved · ${state.evMarks.size} hours`;
+    state.evSavedMarks = target;
+    updatePollStatus();
+    if (pendingCount(state.evMarks, state.evSavedMarks) === 0) {
+      $('poll-status').textContent = `Saved · ${state.evMarks.size} hours · ${tzLabel()}`;
+    }
   } catch (err) {
+    updatePollStatus();
     banner(`Could not save your hours: ${esc(err.message || err)}`, true);
   }
 }
@@ -1617,6 +1746,28 @@ function wireEventForm() {
     if (card) openEvent(card.dataset.event).catch((x) =>
       banner(`Could not open that event: ${esc(x.message || x)}`, true));
   });
+}
+
+/* ---------- getting started ----------
+   Opens itself once for somebody who has not linked a character or marked any
+   hours -- that is exactly the person it is for -- and never again after they
+   close it. localStorage, because it is a per-browser convenience and not worth
+   a column; if it is unavailable the guide simply opens each time. */
+const GUIDE_SEEN = 'raid.guide.seen';
+
+function wireGuide() {
+  $('guide-open').addEventListener('click', () => { $('guide').hidden = false; });
+  $('guide-close').addEventListener('click', () => {
+    $('guide').hidden = true;
+    try { localStorage.setItem(GUIDE_SEEN, '1'); } catch { /* private mode */ }
+  });
+}
+
+function maybeOpenGuide() {
+  let seen = false;
+  try { seen = localStorage.getItem(GUIDE_SEEN) === '1'; } catch { seen = false; }
+  const fresh = !charsOf(state.session?.user?.id).length && state.saved.size === 0;
+  if (!seen && fresh) $('guide').hidden = false;
 }
 
 /* ---------- loading ---------- */

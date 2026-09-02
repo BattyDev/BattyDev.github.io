@@ -65,7 +65,12 @@ const TYPES = [
 
 /* The stub, stringified into the page before any of its own scripts run. */
 function installStub(seed, members, types) {
-  const T = {
+  /* Tables and session live in sessionStorage so a page reload keeps them, the
+     way a real Supabase client keeps its session. Without that, "does reloading
+     keep me on the same tab" could not be tested at all -- the reload would
+     wipe the data out from under the assertion. */
+  const KEY = '__raid_stub__';
+  const fresh = () => ({
     raid_availability: seed.slice(),
     raid_members: members.slice(),
     raid_event_types: types.slice(),
@@ -73,16 +78,23 @@ function installStub(seed, members, types) {
     raid_event_signups: [],
     raid_event_responses: [],
     raid_characters: [],
+  });
+  let saved = null;
+  try { saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch { saved = null; }
+  const T = saved?.T || fresh();
+  let session = saved?.session ?? null;
+  let seq = saved?.seq ?? 0;
+  const persist = () => {
+    try { sessionStorage.setItem(KEY, JSON.stringify({ T, session, seq })); } catch { /* ignore */ }
   };
-  let session = null;
-  let seq = 0;
   const listeners = [];
 
   window.__stub = {
     T,
     calls: [],
-    signIn(user) { session = { user: { id: user.id } }; listeners.forEach((f) => f('SIGNED_IN', session)); },
-    signOut() { session = null; listeners.forEach((f) => f('SIGNED_OUT', null)); },
+    signIn(user) { session = { user: { id: user.id } }; persist(); listeners.forEach((f) => f('SIGNED_IN', session)); },
+    signOut() { session = null; persist(); listeners.forEach((f) => f('SIGNED_OUT', null)); },
+    reset() { try { sessionStorage.removeItem(KEY); } catch { /* ignore */ } },
     get session() { return session; },
   };
 
@@ -166,6 +178,7 @@ function installStub(seed, members, types) {
           T[table].push(r);
           rows.push(r);
         }
+        persist();
         return { data: q.single ? (rows[0] ?? null) : rows, error: null };
       }
 
@@ -184,6 +197,7 @@ function installStub(seed, members, types) {
           if (table === 'raid_events') { delete patch.id; delete patch.created_by; }
           Object.assign(r, patch);
         }
+        persist();
         return { data: targets, error: null };
       }
 
@@ -204,6 +218,7 @@ function installStub(seed, members, types) {
               .filter((x) => !(x.event_id === r.event_id && x.member_id === r.member_id));
           }
         }
+        persist();
         return { data: doomed, error: null };
       }
 
@@ -422,6 +437,26 @@ function check(label, actual, expected) {
   await page.selectOption('#tz-pick', 'UTC');
   await page.waitForTimeout(300);
 
+  // ---- B3. the view survives a reload ------------------------------------
+  console.log('\n=== B3. routing ===');
+  check('switching tabs writes the view to the URL',
+    await page.evaluate(() => location.hash), '#mine');
+
+  await page.locator('[data-view-target="chars"]').click();
+  await page.waitForTimeout(150);
+  check('and follows the tab', await page.evaluate(() => location.hash), '#chars');
+
+  await page.reload();
+  await page.waitForFunction(() => document.querySelectorAll('#overlap-grid .cell').length === 168);
+  await page.waitForTimeout(500);
+  check('reloading keeps you on the tab you were on',
+    await page.evaluate(() => document.getElementById('view-chars').classList.contains('is-active')), true);
+  check('and keeps the saved timezone',
+    await page.evaluate(() => document.getElementById('tz-pick').value), 'UTC');
+
+  await page.locator('[data-view-target="mine"]').click();
+  await page.waitForSelector('#mine-grid .cell');
+
   // ---- C. member creates a poll event ------------------------------------
   console.log('\n=== C. creating a poll event ===');
   await openEvents();
@@ -468,6 +503,19 @@ function check(label, actual, expected) {
     await page.locator('#ev-schedule').count(), 1);
   await page.screenshot({ path: `${SHOTS}/c-event-created.png`, fullPage: true });
 
+  check('opening an event puts it in the URL',
+    await page.evaluate(() => /^#\/event\/.+/.test(location.hash)), true);
+
+  /* Reload straight onto the event URL. Deliberately NOT via about:blank --
+     a file:// origin loses its sessionStorage across that hop, which would
+     sign the stub out and make this test fail for the wrong reason. */
+  const eventUrl = await page.evaluate(() => location.href);
+  await page.goto(eventUrl);
+  await page.waitForFunction(() => document.querySelectorAll('#overlap-grid .cell').length === 168);
+  await page.waitForSelector('#events-detail h1', { timeout: 15000 });
+  check('following an event link opens that event',
+    (await page.locator('#events-detail h1').innerText()).trim(), 'Savage reclear');
+
   check('creating signed the organiser up in the same step',
     await page.evaluate(() => window.__stub.T.raid_event_signups
       .filter((x) => x.member_id === 'u-cedho').map((x) => x.roles)), [['healer']]);
@@ -511,8 +559,15 @@ function check(label, actual, expected) {
   const targetCell = '#poll-grid .cell[data-key="2026-09-08T23:00:00.000Z"]';
   if (await page.locator(targetCell).count()) {
     await page.locator(targetCell).click();
-    await page.waitForTimeout(900);
-    check('marking an hour persists as this member\'s response',
+    await page.waitForTimeout(200);
+    check('marking an hour does not write until saved',
+      await page.evaluate(() => window.__stub.T.raid_event_responses
+        .filter((r) => r.member_id === 'u-tataru').length), 0);
+    check('the poll save button is armed',
+      await page.locator('#poll-save').isDisabled(), false);
+    await page.locator('#poll-save').click();
+    await page.waitForTimeout(400);
+    check('saving persists it as this member\'s response',
       await page.evaluate(() => window.__stub.T.raid_event_responses
         .filter((r) => r.member_id === 'u-tataru').length), 1);
   }
@@ -761,6 +816,7 @@ function check(label, actual, expected) {
   check('and no event titles either',
     await page.evaluate(() => document.body.innerText.includes('Savage reclear')), false);
 
+  await page.evaluate(() => window.__stub.reset());
   await browser.close();
 
   const failed = results.filter((r) => !r.ok);
