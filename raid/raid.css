@@ -239,7 +239,8 @@ h1 {
   min-width: 460px;
 }
 
-.wk .dh {
+.dh {
+  /* Shared by both grids -- the weekly .wk one and the event .dayg one. */
   font-family: 'Cinzel', serif;
   font-size: 11px;
   letter-spacing: 0.12em;
@@ -248,7 +249,7 @@ h1 {
   text-align: center;
   padding-bottom: 6px;
 }
-.wk .hh {
+.hh {
   font-size: 11px;
   color: var(--ink-faint);
   text-align: right;
@@ -260,7 +261,7 @@ h1 {
 }
 /* Every third hour keeps its label; the rest are blank so the gutter does not
    turn into a wall of numbers at 24 rows tall. */
-.wk .hh.is-quiet { color: transparent; }
+.hh.is-quiet { color: transparent; }
 
 .cell {
   height: 22px;
@@ -415,3 +416,278 @@ button.cell:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px;
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* ---- events ------------------------------------------------------------
+   The day grid is the week grid with a variable column count: an event
+   happens on a date, so its poll runs over absolute days rather than the
+   recurring 0..167 week that /raid's own heatmap uses. --cols is set inline
+   by the renderer from the event's poll window. */
+.dayg {
+  display: grid;
+  grid-template-columns: 46px repeat(var(--cols, 14), minmax(46px, 1fr));
+  gap: 2px;
+  min-width: 100%;
+}
+.dayg .dh { line-height: 1.15; }
+.dayg .dh small {
+  display: block;
+  font-family: 'Roboto Condensed', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+}
+
+/* ---- event list ---- */
+.ev-list { display: grid; gap: 12px; }
+.ev-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: rgba(11, 29, 40, 0.55);
+  border: 1px solid var(--rule);
+  border-left-width: 3px;
+  border-radius: var(--radius);
+  padding: 13px 15px;
+  transition: background .15s, border-color .15s, transform .15s;
+}
+.ev-card:hover { background: rgba(198,166,100,0.08); transform: translateX(2px); }
+.ev-card:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.ev-card.is-scheduled { border-left-color: var(--ok); }
+.ev-card.is-open      { border-left-color: var(--gold); }
+.ev-card.is-cancelled { border-left-color: var(--ink-faint); opacity: 0.6; }
+
+.ev-card h3 {
+  margin: 0;
+  font-family: 'Cinzel', serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--gold-bright);
+}
+.ev-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 5px;
+  font-size: 13px;
+  color: var(--ink-dim);
+}
+.ev-meta .who { color: var(--ink-faint); }
+
+.pill {
+  display: inline-block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 1px 9px;
+  color: var(--gold);
+  white-space: nowrap;
+}
+.pill.is-scheduled { color: var(--ok); border-color: rgba(111,191,115,0.5); }
+.pill.is-cancelled { color: var(--ink-faint); }
+.pill.is-mine      { color: var(--gold-bright); border-color: var(--gold-bright); }
+
+/* ---- forms ---- */
+.field { margin-bottom: 16px; }
+.field > label,
+.field legend {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--gold);
+  margin-bottom: 5px;
+  padding: 0;
+}
+.field input[type="text"],
+.field input[type="date"],
+.field input[type="datetime-local"],
+.field input[type="number"],
+.field select,
+.field textarea {
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink);
+  background: rgba(7, 21, 28, 0.6);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  width: 100%;
+  max-width: 460px;
+}
+.field textarea { resize: vertical; }
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+fieldset.field { border: 0; margin-inline: 0; padding: 0; }
+
+.field.comp { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.field.comp legend { width: 100%; }
+.field.comp label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-dim);
+}
+.field.comp input { width: 84px; }
+.field.comp .hint { width: 100%; }
+
+#ev-poll-fields { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+#ev-poll-fields > label { margin: 0 0 10px; }
+#ev-poll-fields input, #ev-poll-fields select { width: auto; }
+
+.hint { margin: 5px 0 0; font-size: 12px; color: var(--ink-faint); }
+.hint-inline { text-transform: none; letter-spacing: 0; color: var(--ink-faint); font-size: 11px; }
+.err { color: var(--warn); font-size: 13px; margin: 0 0 12px; }
+
+label.radio {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--ink-dim);
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+label.radio b { color: var(--ink); font-weight: 700; }
+label.radio input { margin-top: 4px; accent-color: var(--gold); }
+
+.primary {
+  background: linear-gradient(160deg, var(--gold) 0%, #8a6f30 100%);
+  border: 1px solid var(--gold-bright);
+  color: var(--void);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 8px 18px;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.primary:hover { filter: brightness(1.1); }
+.primary:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
+.primary:disabled { opacity: 0.5; cursor: default; filter: none; }
+
+/* ---- event detail ---- */
+.back-link {
+  background: transparent;
+  border: 0;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 14px;
+}
+.back-link:hover { color: var(--gold-bright); }
+.back-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.ev-when {
+  font-family: 'Cinzel', serif;
+  font-size: 18px;
+  color: var(--gold-bright);
+}
+.ev-desc { color: var(--ink-dim); font-size: 14px; white-space: pre-wrap; margin: 10px 0 0; }
+
+/* ---- role chooser ---- */
+.roles { display: flex; flex-wrap: wrap; gap: 8px; }
+.roles label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 6px 14px 6px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  background: rgba(11, 29, 40, 0.6);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+.roles label:hover { border-color: var(--gold); }
+.roles input { accent-color: var(--gold); }
+.roles label:has(input:checked) {
+  border-color: var(--gold-bright);
+  background: rgba(198,166,100,0.16);
+}
+
+/* Role colours follow the game's own: blue tank, green healer, red DPS. */
+.r-tank   { color: #5aa9e6; }
+.r-healer { color: #6fbf73; }
+.r-dps    { color: #d9584f; }
+
+/* ---- roster ---- */
+.slots { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.slot-group h4 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.slot-group h4 .count { color: var(--ink-faint); font-size: 11px; }
+.slot-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.slot-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: rgba(11, 29, 40, 0.6);
+  padding: 6px 10px;
+  font-size: 14px;
+}
+.slot-list li.is-empty {
+  border-style: dashed;
+  border-color: rgba(198,166,100,0.22);
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-style: italic;
+}
+.slot-list li.is-you { border-color: var(--gold-bright); }
+.slot-list .pos {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+  font-size: 12px;
+  min-width: 18px;
+}
+.slot-list .can { margin-left: auto; font-size: 11px; color: var(--ink-faint); }
+.slot-list img, .slot-list .fallback {
+  width: 22px; height: 22px; border-radius: 50%;
+  object-fit: cover; background: var(--deep);
+}
+.slot-list .fallback {
+  display: grid; place-items: center;
+  background: linear-gradient(160deg, var(--gold) 0%, #8a6f30 100%);
+  color: var(--void);
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  font-weight: 700;
+}
+.pin {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ink-faint);
+  font: inherit;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-radius: var(--radius);
+  padding: 2px 7px;
+  cursor: pointer;
+}
+.pin:hover { color: var(--gold-bright); border-color: var(--rule); }
+.pin.is-pinned { color: var(--gold-bright); border-color: var(--gold-bright); }
