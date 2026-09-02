@@ -842,6 +842,61 @@ function check(label, actual, expected) {
   check('and no event titles either',
     await page.evaluate(() => document.body.innerText.includes('Savage reclear')), false);
 
+  // ---- J. phone layout ----------------------------------------------------
+  /* A 390px viewport. The header used to be one nowrap row measuring 509px
+     there, which pushed Sign out off the screen and made the whole DOCUMENT
+     scroll sideways; the week grid's 460px floor meant only five of seven days
+     were visible. Both are asserted here because both were reported from a
+     real phone, not found by looking. */
+  console.log('\n=== J. phone layout (390px) ===');
+  const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await phone.route('**/supabase-js@2/**', (r) => r.fulfill({ status: 200, contentType: 'application/javascript', body: '' }));
+  await phone.route('**/config.js*', (r) => r.fulfill({
+    status: 200, contentType: 'application/javascript',
+    body: "window.RAID_CONFIG={url:'https://stub.supabase.co',key:'sb_publishable_stub'};",
+  }));
+  await phone.route('**/ffxiv.json*', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(FC_ROSTER) }));
+  await phone.route('**/job-icons.json*', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
+  await phone.addInitScript({
+    content: `(${installStub.toString()})(${JSON.stringify(SEED)},`
+      + `${JSON.stringify([LEADER, MEMBER, OTHER, FOURTH])},${JSON.stringify(TYPES)});`,
+  });
+  await phone.goto(PAGE);
+  await phone.waitForFunction(() => document.querySelectorAll('#overlap-grid .cell').length === 168);
+
+  const noOverflow = () => phone.evaluate(() =>
+    document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+
+  check('signed out: the page does not scroll sideways', await noOverflow(), true);
+
+  await phone.evaluate((u) => window.__stub.signIn(u), LEADER);
+  await phone.waitForTimeout(700);
+  await phone.evaluate(() => { const d = document.getElementById('guide'); if (d.open) d.close(); });
+
+  check('signed in: the page still does not scroll sideways', await noOverflow(), true);
+  check('sign out is on screen',
+    await phone.evaluate(() => document.getElementById('auth-btn').getBoundingClientRect().right <= 390), true);
+  check('every nav control is on screen',
+    await phone.evaluate(() => [...document.querySelectorAll('.system-icons button, .system-icons a')]
+      .filter((b) => !b.hidden)
+      .every((b) => { const r = b.getBoundingClientRect(); return r.left >= 0 && r.right <= 390; })), true);
+  check('the brand stays on one line',
+    await phone.evaluate(() => document.querySelector('.account').getBoundingClientRect().height < 60), true);
+
+  await phone.locator('[data-view-target="mine"]').click();
+  await phone.waitForSelector('#mine-grid .cell');
+  check('all seven days fit without sideways scrolling',
+    await phone.evaluate(() => {
+      const g = document.getElementById('mine-grid');
+      return g.scrollWidth <= g.parentElement.clientWidth + 1;
+    }), true);
+  check('and the cells stay tappable',
+    await phone.evaluate(() =>
+      document.querySelector('#mine-grid .cell').getBoundingClientRect().height >= 24), true);
+  await phone.screenshot({ path: `${SHOTS}/j-phone.png`, fullPage: true });
+  await phone.evaluate(() => window.__stub.reset());
+  await phone.close();
+
   await page.evaluate(() => window.__stub.reset());
   await browser.close();
 

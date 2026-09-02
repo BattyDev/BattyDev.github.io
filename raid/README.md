@@ -247,6 +247,24 @@ levelled combat jobs then preselect the role checkboxes on signup. It is a
 suggestion that saves three clicks, never a constraint — the member still
 submits, and the database only ever receives what they ticked.
 
+## On a phone
+
+The header used to be one no-wrap flex row — brand, six icons, Sign out — which
+at 390px measured 509px. Sign out sat 119px off the right edge and the whole
+*document* scrolled sideways, which is what made the rest of the page feel like
+it would not scroll. Below 720px the bar wraps and the icons take a row of their
+own, which fixes the button and the page scroll together, since the header was
+the only thing overflowing.
+
+The week grid had a 460px floor and a 52px per-day minimum, so only five of
+seven days fitted — on the one view whose entire point is comparing days. On a
+phone the gutter narrows to 38px and days share what is left (about 42px each),
+with taller cells so they stay tappable. The event poll can be 28 days wide and
+still scrolls, just with more of it on screen per swipe.
+
+Seven checks in the harness run at 390px and assert all of this, because it was
+reported from a real phone rather than found by looking.
+
 ## The two landings
 
 A **signed-out** visitor gets `#welcome`: what the site is, a Discord sign-in,
