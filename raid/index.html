@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
-<link href="raid.css?v=2" rel="stylesheet">
+<link href="raid.css?v=3" rel="stylesheet">
 </head>
 <body>
 
@@ -25,6 +25,7 @@
     <button type="button" class="is-active" data-view-target="overlap" aria-current="page" aria-label="Overlap"><i class="bi bi-grid-3x3-gap-fill"></i></button>
     <button type="button" data-view-target="events" data-needs="member" aria-label="Events" hidden><i class="bi bi-calendar-event-fill"></i></button>
     <button type="button" data-view-target="mine" data-needs="member" aria-label="My times" hidden><i class="bi bi-calendar2-check-fill"></i></button>
+    <button type="button" data-view-target="chars" data-needs="member" aria-label="Characters" hidden><i class="bi bi-person-badge-fill"></i></button>
     <button type="button" data-view-target="company" data-needs="leader" aria-label="Company" hidden><i class="bi bi-people-fill"></i></button>
     <!-- Leaves the page rather than switching a view, so it is an anchor. The
          view switcher binds ".system-icons button", which skips it by design. -->
@@ -196,6 +197,54 @@
   </section>
 
   <!-- ------------------------------------------------------------------
+       Characters. A member claims one or more FFXIV characters off the
+       existing FC roster. Self-asserted by design -- there is no verification
+       step and none is wanted -- but a leader can correct a bad claim, and the
+       unique constraint on lodestone_id means a character can only be claimed
+       once, so a wrong claim blocks rather than duplicates.
+
+       Claims are readable by every member (migration 003): the whole point of
+       linking is for the company to know who is who. What a claim never
+       reveals is availability — that stays exactly as restricted as it was.
+       ------------------------------------------------------------------ -->
+  <section id="view-chars" class="view" aria-labelledby="chars-heading" hidden>
+    <div class="section-head">
+      <p class="eyebrow">Who you are in game</p>
+      <h1 id="chars-heading">Characters</h1>
+      <p class="lede">Link your adventurers so rosters show your character, not your Discord handle.</p>
+    </div>
+
+    <div class="panel">
+      <div class="grid-head">
+        <h2>Yours</h2>
+        <p class="grid-note" id="chars-status">—</p>
+      </div>
+      <div id="my-chars" class="plate-grid"></div>
+    </div>
+
+    <div class="panel">
+      <div class="grid-head">
+        <h2>Claim a character</h2>
+        <p class="grid-note" id="claim-note"></p>
+      </div>
+      <div class="field">
+        <label for="char-search" class="visually-hidden">Search the Free Company roster</label>
+        <input type="search" id="char-search" placeholder="Search the Wild Hearts roster…"
+               autocomplete="off" spellcheck="false">
+      </div>
+      <div id="claim-list" class="plate-grid"></div>
+    </div>
+
+    <div class="panel" id="claims-admin" hidden>
+      <div class="grid-head">
+        <h2>All claims</h2>
+        <p class="grid-note">Leaders only — correct a bad claim here.</p>
+      </div>
+      <div id="all-claims"></div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------------
        Company — the leader view, with names. It is not gated by this markup
        being hidden: a non-leader who unhides it gets an empty grid, because
        the underlying SELECT returns them only their own row.
@@ -236,7 +285,7 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="config.js?v=2"></script>
-<script src="raid.js?v=2"></script>
+<script src="config.js?v=3"></script>
+<script src="raid.js?v=3"></script>
 </body>
 </html>

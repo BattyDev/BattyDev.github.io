@@ -463,7 +463,10 @@ function pickSlot(i) {
 }
 
 function chip(m, leader) {
-  const name = esc(m.display_name || 'Adventurer');
+  /* Prefer the linked character where there is one, for the same reason the
+     roster does. m may be a bare directory row, so guard on the id. */
+  const linked = m.id ? charsOf(m.id)[0] : null;
+  const name = esc(linked ? linked.character_name : (m.display_name || 'Adventurer'));
   const face = m.avatar_url
     ? `<img src="${esc(m.avatar_url)}" alt="" width="24" height="24" loading="lazy">`
     : `<span class="fallback">${esc((m.display_name || '?').trim().charAt(0).toUpperCase())}</span>`;
@@ -540,6 +543,8 @@ async function onSession(session) {
     if (session) {
       await loadMine();
       await loadEventContext();
+      await loadFcRoster();
+      await loadCharacters();
       await loadEvents();
       if (isLeader()) await loadLeader();
     }
@@ -561,6 +566,8 @@ function wireAuth() {
       state.openEvent = null;
       state.evSignups = [];
       state.evResponses = [];
+      state.characters = [];
+      state.charFilter = '';
       $('events-detail').hidden = true;
       $('events-index').hidden = false;
       $('events-list').innerHTML = '';
@@ -601,6 +608,7 @@ async function main() {
 
   wireAuth();
   wireEventForm();
+  wireChars();
   const { data } = await db.auth.getSession();
   await onSession(data?.session ?? null);
 }
@@ -847,6 +855,17 @@ function closeEvent() {
 }
 
 const canManage = (ev) => ev && (ev.created_by === state.session?.user?.id || isLeader());
+
+/* An existing signup is the member's own answer and is shown back verbatim.
+   With no signup yet, seed the boxes from what their linked characters could
+   actually fill -- a suggestion to save three clicks, never a constraint. The
+   member still submits, and the database only ever receives what they ticked. */
+function roleChecked(signup, role) {
+  if (signup) return Boolean(signup.roles?.includes(role));
+  const uid = state.session?.user?.id;
+  return charsOf(uid).some((claim) =>
+    rolesFromJobs(byLodestone(claim.lodestone_id) || {}).includes(role));
+}
 const mySignup = () => state.evSignups.find((s) => s.member_id === state.session?.user?.id) || null;
 
 function renderDetail() {
@@ -880,7 +899,7 @@ function renderDetail() {
            more chance of a seat when the party is short one.</p>
         <div class="roles" id="role-picker">
           ${ROLES.map((r) => `<label class="r-${r}">
-            <input type="checkbox" value="${r}"${mine?.roles?.includes(r) ? ' checked' : ''}>
+            <input type="checkbox" value="${r}"${roleChecked(mine, r) ? ' checked' : ''}>
             <i class="bi ${ROLE_ICON[r]}"></i> ${ROLE_LABEL[r]}
           </label>`).join('')}
         </div>
@@ -994,9 +1013,11 @@ function renderRoster() {
 
   const line = (s, i, pinnable) => {
     const m = who(s.member_id);
+    const d = displayFor(s.member_id);
     return `<li class="${s.member_id === uid ? 'is-you' : ''}">
       <span class="pos">${i + 1}</span>${face(m)}
-      <span>${esc(m.display_name)}</span>
+      <span>${esc(d.character || d.name)}</span>
+      ${d.showTag ? `<span class="char-tag">${esc(d.name)}</span>` : ''}
       <span class="can">${(s.roles || []).map((r) => ROLE_LABEL[r]).join('/')}</span>
       ${manage && pinnable ? `<button type="button" class="pin${s.assigned_role ? ' is-pinned' : ''}"
         data-pin="${esc(s.id)}">${s.assigned_role ? 'pinned' : 'pin'}</button>` : ''}
@@ -1404,4 +1425,256 @@ async function loadEvents() {
   if (error) throw error;
   state.events = data || [];
   renderEvents();
+}
+
+/* =========================================================================
+   CHARACTERS
+   =========================================================================
+   A member claims one or more FFXIV characters off the existing FC roster.
+   Self-asserted on purpose -- there is no verification step and none is wanted
+   -- but the unique constraint on lodestone_id means a character can be claimed
+   only once, so a wrong claim blocks rather than duplicates, and a leader can
+   reassign or remove it.
+
+   Claims are readable by every member (migration 003), because the whole point
+   of linking is for the company to know who is who. What a claim never carries
+   is availability: raid_availability and raid_event_responses are untouched by
+   any of this.
+
+   Nothing about the character is stored beyond the Lodestone id, name and
+   world. Portraits, titles, Grand Company and jobs are read from the roster
+   JSON at render time, so a plate stays current as that file is republished
+   rather than freezing whatever was true on the day someone clicked claim. */
+
+const ROSTER_URL = 'https://raw.githubusercontent.com/BattyDev/batty-ffxiv-status/data/ffxiv.json';
+const ROSTER_FALLBACK = '../ffxiv/ffxiv.json';
+const JOB_ICONS = '../ffxiv/assets/job-icons/';
+
+/* Duty Finder's role split. The roster JSON's own `role` field says
+   combat/craft/gather, which is a different question, so this map is the one
+   that can answer "what could this character actually be in a party". */
+const JOB_ROLE = (() => {
+  const m = {};
+  for (const j of ['Paladin', 'Warrior', 'Dark Knight', 'Gunbreaker', 'Gladiator', 'Marauder']) m[j] = 'tank';
+  for (const j of ['White Mage', 'Scholar', 'Astrologian', 'Sage', 'Conjurer']) m[j] = 'healer';
+  for (const j of ['Monk', 'Dragoon', 'Ninja', 'Samurai', 'Reaper', 'Viper', 'Bard', 'Machinist',
+                   'Dancer', 'Black Mage', 'Summoner', 'Red Mage', 'Pictomancer', 'Blue Mage',
+                   'Pugilist', 'Lancer', 'Rogue', 'Archer', 'Thaumaturge', 'Arcanist']) m[j] = 'dps';
+  return m;
+})();
+
+Object.assign(state, {
+  fcRoster: [],           // the Lodestone roster, from the published JSON
+  jobIcons: {},
+  characters: [],         // every claim this viewer can read (all of them)
+  charFilter: '',
+});
+
+const slug = (s) => String(s ?? '').toLowerCase();
+const byLodestone = (id) => state.fcRoster.find((c) => String(c.id) === String(id)) || null;
+const gcClass = (c) => `gc-${slug(c?.grand_company || 'none').replace(/[^a-z]/g, '') || 'none'}`;
+
+/* Which raid roles this character's levelled combat jobs could cover. Used to
+   preselect the role checkboxes on signup -- a suggestion, never a constraint:
+   the member still chooses, and the database only ever sees what they picked. */
+function rolesFromJobs(c, minLevel = 50) {
+  const found = new Set();
+  for (const j of (c?.jobs || [])) {
+    const r = JOB_ROLE[j.job];
+    if (r && (j.level || 0) >= minLevel) found.add(r);
+  }
+  return ROLES.filter((r) => found.has(r));
+}
+
+/* Every claim held by one member, newest first. */
+const charsOf = (memberId) => state.characters.filter((c) => c.member_id === memberId);
+
+/* The name to show for somebody on a shared roster: their character if they
+   have linked one, else their Discord display name. */
+function displayFor(memberId) {
+  const m = who(memberId);
+  const character = charsOf(memberId)[0]?.character_name ?? null;
+  return {
+    name: m.display_name,
+    character,
+    /* Plenty of people use their character name as their Discord name. Showing
+       it twice reads as a rendering bug rather than as extra information. */
+    showTag: Boolean(character) && slug(character) !== slug(m.display_name),
+    avatar_url: m.avatar_url,
+  };
+}
+
+/* ---------- rendering a plate ---------- */
+function jobChip(j, main) {
+  const icon = state.jobIcons[j.job];
+  return `<span class="job${main ? ' is-main' : ''}">${
+    icon ? `<img src="${esc(JOB_ICONS + icon)}" alt="" width="20" height="20" loading="lazy">` : ''
+  }${esc(j.job)} <span class="lv">${Number(j.level) || 0}</span></span>`;
+}
+
+function plate(c, { tag = 'div', body = '', attrs = '' } = {}) {
+  const main = c.main_job;
+  const roles = rolesFromJobs(c);
+  return `<${tag} class="adventurer ${gcClass(c)}" ${attrs}>
+    <div class="char-head">
+      ${c.avatar
+        ? `<img class="portrait" src="${esc(c.avatar)}" alt="" width="56" height="56" loading="lazy">`
+        : '<span class="portrait"></span>'}
+      <div class="char-id">
+        <h3 class="char-name">${esc(c.name)}</h3>
+        ${c.title ? `<span class="char-title">${esc(c.title)}</span>` : ''}
+        <div class="char-meta">${esc(c.race || '')}${c.world ? ` · ${esc(c.world)}` : ''}</div>
+        ${c.grand_company
+          ? `<span class="gc-badge">${esc(c.grand_company)}</span>` : ''}
+      </div>
+    </div>
+    ${main ? `<div class="job-list">${jobChip(main, true)}</div>` : ''}
+    ${roles.length
+      ? `<div class="role-hint">${roles.map((r) => `<span class="r-${r}">${ROLE_LABEL[r]}</span>`).join('')}</div>`
+      : ''}
+    ${body}
+  </${tag}>`;
+}
+
+/* ---------- views ---------- */
+function renderChars() {
+  const uid = state.session?.user?.id;
+  const mine = charsOf(uid);
+  const claimedIds = new Set(state.characters.map((c) => String(c.lodestone_id)));
+
+  /* Yours */
+  const my = $('my-chars');
+  if (!state.fcRoster.length) {
+    my.innerHTML = '<p class="empty">Could not load the Free Company roster.</p>';
+  } else if (!mine.length) {
+    my.innerHTML = '<p class="empty">No characters linked yet. Claim one below.</p>';
+  } else {
+    my.innerHTML = mine.map((claim) => {
+      const c = byLodestone(claim.lodestone_id)
+        /* The roster JSON is the source of truth for everything cosmetic, but
+           a character who has left the FC drops out of it. Fall back to what
+           the claim itself stored so the plate degrades instead of vanishing. */
+        || { id: claim.lodestone_id, name: claim.character_name, world: claim.world, jobs: [] };
+      return plate(c, {
+        body: `<div class="plate-foot">
+          <span class="grid-note">${byLodestone(claim.lodestone_id) ? 'Linked' : 'Linked · no longer on the FC roster'}</span>
+          <button type="button" class="ghost" data-unlink="${esc(claim.id)}">Unlink</button>
+        </div>`,
+      });
+    }).join('');
+  }
+  $('chars-status').textContent = mine.length
+    ? `${mine.length} linked` : 'None linked';
+
+  /* Claim a character */
+  const q = slug(state.charFilter).trim();
+  const available = state.fcRoster
+    .filter((c) => !claimedIds.has(String(c.id)))
+    .filter((c) => !q || slug(c.name).includes(q) || slug(c.main_job?.job).includes(q));
+  const shown = available.slice(0, 24);
+
+  $('claim-list').innerHTML = shown.length
+    ? shown.map((c) => plate(c, {
+        tag: 'button',
+        attrs: `type="button" data-claim="${esc(c.id)}"`,
+        body: '<div class="plate-foot"><span class="grid-note">Claim this character</span></div>',
+      })).join('')
+    : '<p class="empty">No unclaimed characters match.</p>';
+  $('claim-note').textContent = state.fcRoster.length
+    ? `${available.length} unclaimed${shown.length < available.length ? ` · showing ${shown.length}` : ''}`
+    : '';
+
+  /* Leaders: every claim, correctable */
+  $('claims-admin').hidden = !isLeader();
+  if (isLeader()) {
+    $('all-claims').innerHTML = state.characters.length
+      ? `<div class="claims-table">${state.characters.map((claim) => `
+          <div class="claim-row">
+            <span>${esc(claim.character_name)}</span>
+            <span class="arrow">&rarr;</span>
+            <span>${esc(who(claim.member_id).display_name)}</span>
+            <span class="spacer"></span>
+            <button type="button" class="ghost" data-unlink="${esc(claim.id)}">Remove</button>
+          </div>`).join('')}</div>`
+      : '<p class="empty">Nobody has linked a character yet.</p>';
+  }
+}
+
+function wireChars() {
+  $('char-search').addEventListener('input', (e) => {
+    state.charFilter = e.target.value;
+    renderChars();
+  });
+
+  /* One delegated handler for both lists -- claim buttons live in the roster
+     grid, unlink buttons in the member's own plates and the leader table. */
+  document.getElementById('view-chars').addEventListener('click', async (e) => {
+    const claimBtn = e.target.closest('[data-claim]');
+    if (claimBtn) return claimCharacter(claimBtn.dataset.claim);
+    const unlinkBtn = e.target.closest('[data-unlink]');
+    if (unlinkBtn) return unlinkCharacter(unlinkBtn.dataset.unlink);
+  });
+}
+
+async function claimCharacter(lodestoneId) {
+  const c = byLodestone(lodestoneId);
+  if (!c) return;
+  try {
+    const { error } = await db.from('raid_characters').insert({
+      member_id: state.session.user.id,
+      lodestone_id: String(c.id),
+      character_name: c.name,
+      world: c.world || null,
+    });
+    if (error) throw error;
+    await loadCharacters();
+    banner('');
+  } catch (err) {
+    /* The unique constraint is the race-condition guard: two people claiming
+       the same character at once, or a stale page. Say which it was. */
+    banner(/duplicate|unique/i.test(err.message || '')
+      ? `${esc(c.name)} has already been claimed by someone else. Reload to see who.`
+      : `Could not claim that character: ${esc(err.message || err)}`, true);
+  }
+}
+
+async function unlinkCharacter(id) {
+  const { error } = await db.from('raid_characters').delete().eq('id', id);
+  if (error) { banner(`Could not unlink: ${esc(error.message)}`, true); return; }
+  await loadCharacters();
+}
+
+/* ---------- loading ---------- */
+async function loadCharacters() {
+  const { data, error } = await db.from('raid_characters')
+    .select('id, member_id, lodestone_id, character_name, world')
+    .order('created_at');
+  if (error) throw error;
+  state.characters = data || [];
+  renderChars();
+  /* An event roster may now have a character name to show where it previously
+     had a Discord handle. */
+  if (state.openEvent) renderRoster();
+}
+
+/* The published roster, with the same URL and local fallback /ffxiv uses. */
+async function loadFcRoster() {
+  const grab = async (url) => {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`${res.status}`);
+    return res.json();
+  };
+  let data = null;
+  try {
+    data = await grab(ROSTER_URL);
+  } catch {
+    try { data = await grab(ROSTER_FALLBACK); } catch { data = null; }
+  }
+  state.fcRoster = (data?.roster || []).filter((c) => c && c.id && c.name);
+
+  try {
+    state.jobIcons = await grab(`${JOB_ICONS}job-icons.json`);
+  } catch {
+    state.jobIcons = {};   // chips fall back to a bare label
+  }
 }

@@ -19,6 +19,14 @@
   --ok: #6fbf73;
   --warn: #d4722a;
 
+  /* Grand Company colours, from the in-game emblems -- same values as /ffxiv,
+     so a character reads the same on both pages. Drives the plate accent. */
+  --gc-maelstrom: #c0392b;
+  --gc-adder: #d4b13f;
+  --gc-flames: #d4722a;
+  --gc-none: #6b8496;
+  --accent: var(--gc-none);
+
   --radius: 3px;
 }
 
@@ -504,6 +512,7 @@ button.cell:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px;
   padding: 0;
 }
 .field input[type="text"],
+.field input[type="search"],
 .field input[type="date"],
 .field input[type="datetime-local"],
 .field input[type="number"],
@@ -691,3 +700,183 @@ label.radio input { margin-top: 4px; accent-color: var(--gold); }
 }
 .pin:hover { color: var(--gold-bright); border-color: var(--rule); }
 .pin.is-pinned { color: var(--gold-bright); border-color: var(--gold-bright); }
+
+/* ---- adventurer plates -------------------------------------------------
+   Lifted from /ffxiv's .adventurer skin so a character looks the same on both
+   pages: translucent slate panel, Grand Company accent on the top rule, gold
+   corner flourishes. Trimmed to what a claim card needs -- the full card over
+   there also carries gear, achievements and collections. */
+.plate-grid {
+  display: grid;
+  /* min() clamps the track floor to the container, for the same reason
+     /ffxiv's roster does it: a bare fixed minimum scrolls the page sideways
+     inside a narrow panel. */
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+  gap: 14px;
+}
+
+.adventurer {
+  --accent: var(--gc-none);
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-top: 2px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 14px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  backdrop-filter: blur(3px);
+  transition: transform .18s, border-color .18s, box-shadow .18s;
+}
+.adventurer::before, .adventurer::after {
+  content: "";
+  position: absolute;
+  width: 9px; height: 9px;
+  border: 1px solid var(--accent);
+  opacity: 0.7;
+  pointer-events: none;
+}
+.adventurer::before { top: 4px; left: 4px; border-right: 0; border-bottom: 0; }
+.adventurer::after { bottom: 4px; right: 4px; border-left: 0; border-top: 0; }
+
+.gc-maelstrom { --accent: var(--gc-maelstrom); }
+.gc-adder     { --accent: var(--gc-adder); }
+.gc-flames    { --accent: var(--gc-flames); }
+
+/* The claim list is a grid of buttons, so the plate has to work as one. */
+button.adventurer {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+button.adventurer:hover { transform: translateY(-2px); box-shadow: 0 8px 26px rgba(0,0,0,0.4); }
+button.adventurer:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+button.adventurer:disabled { cursor: default; opacity: 0.45; }
+button.adventurer:disabled:hover { transform: none; box-shadow: none; }
+
+.char-head { display: flex; gap: 12px; align-items: flex-start; }
+.portrait {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent);
+  background: var(--deep);
+  flex-shrink: 0;
+}
+.char-id { min-width: 0; flex: 1; }
+.char-name {
+  margin: 0;
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.char-title {
+  display: block;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--gold);
+  opacity: 0.9;
+}
+.char-meta {
+  font-size: 11px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+.gc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: var(--accent);
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  padding: 1px 6px;
+  margin-top: 5px;
+  opacity: 0.92;
+}
+
+.job {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(7, 21, 28, 0.55);
+  border: 1px solid rgba(198,166,100,0.22);
+  border-radius: 2px;
+  padding: 3px 8px 3px 4px;
+  font-size: 13px;
+  color: var(--ink);
+}
+.job img { width: 20px; height: 20px; display: block; }
+.job .lv { color: var(--gold-bright); font-weight: 700; font-variant-numeric: tabular-nums; }
+.job.is-main { border-color: var(--accent); background: rgba(7,21,28,0.75); }
+.job-list { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.plate-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 9px;
+  border-top: 1px solid rgba(198,166,100,0.18);
+}
+.plate-foot .grid-note { margin-right: auto; }
+
+/* The roles a character's levelled combat jobs say they can fill. */
+.role-hint {
+  display: inline-flex;
+  gap: 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.claimed-by {
+  font-size: 11px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* The character name, where one is linked, standing in for a Discord handle
+   on a shared roster. */
+.char-tag {
+  font-size: 11px;
+  color: var(--gold);
+  font-style: italic;
+}
+
+#char-search { max-width: 100%; }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.claims-table { display: grid; gap: 8px; }
+.claim-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: rgba(11, 29, 40, 0.6);
+  padding: 8px 12px;
+  font-size: 14px;
+}
+.claim-row .arrow { color: var(--ink-faint); }
+.claim-row .spacer { margin-left: auto; }

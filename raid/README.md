@@ -23,7 +23,7 @@ Three audiences, enforced in Postgres — not in `raid.js`:
 | Who | Sees |
 |---|---|
 | Anonymous public | An aggregate heatmap only. No table privilege at all — not on events either. |
-| A signed-in member | Their own availability; every event and roster; other members' names. |
+| A signed-in member | Their own availability; every event and roster; other members' names and character claims. |
 | An event's creator | Who can make **their** event, by name — and nothing more than a member otherwise. |
 | A leader | Every member's availability, by name, and every event. |
 
@@ -90,10 +90,11 @@ backup, in the same order.
 | `config.js` | Supabase URL + publishable key. Both public by design. |
 | `sql/001_schema.sql` | Members, availability, characters: RLS, triggers, aggregate functions |
 | `sql/002_events.sql` | Events, signups, responses, duty presets, the member directory |
+| `sql/003_character_visibility.sql` | Opens character claims to members (SELECT only) |
 | `functions/announce-event/index.ts` | Edge Function that posts an event to Discord |
 | `sql/test/00_supabase_shim.sql` | Local-only: fakes Supabase's auth schema and roles |
 | `sql/test/01_rls_proof.sql` | Local-only: proves the availability split with role impersonation |
-| `sql/test/02_events_proof.sql` | Local-only: proves the event/consent split, and the escalation |
+| `sql/test/02_events_proof.sql` | Local-only: proves the event/consent split, the escalation, and claims |
 | `sql/test/ui-harness.js` | Local-only: drives the page in Chromium with a stubbed client |
 
 ## How a slot is stored
@@ -170,6 +171,42 @@ the last two would recurse inside the very policies that call them.
 What *would* be a real finding is a missing-RLS warning on any `raid_` table.
 There are none — all seven have RLS enabled and 24 policies between them.
 
+## Character linking
+
+A member claims one or more FFXIV characters off the published FC roster.
+Self-asserted by design — there is no verification step and none is wanted —
+but the `unique (lodestone_id)` constraint means a character can be claimed only
+once, so a wrong claim **blocks rather than duplicates**, and a leader can
+reassign or remove it.
+
+Migration 003 opens `raid_characters` SELECT to every member. 001 had given it a
+self-or-leader policy by analogy with availability, and that was the wrong
+analogy: a claim is not a schedule, it is the mapping from a Discord login to a
+character, and a roster reading `cedho_1998 — Tank` instead of
+`Cedho Nalen — Tank` has thrown away the only thing linking was for. Writes are
+unchanged, and `anon` still holds no privilege on the table.
+
+That needed no new view — unlike `raid_member_directory`, every column here is
+something the claim exists to publish, so a plain policy does it and the schema
+gains no third RLS-bypassing object.
+
+Nothing cosmetic is stored. Only the Lodestone id, name and world are kept;
+portraits, titles, Grand Company and jobs are read from the roster JSON at
+render time, so a plate stays current as that file is republished rather than
+freezing whatever was true on the day someone clicked claim. A character who
+later leaves the FC drops out of that JSON, so the plate falls back to the name
+and world the claim itself stored rather than vanishing.
+
+The plate skin is `/ffxiv`'s `.adventurer` — same Grand Company accents, corner
+flourishes and job chips — so a character reads the same on both pages.
+
+**Role suggestions.** The roster JSON's own `role` field says
+combat/craft/gather, which answers a different question, so `JOB_ROLE` in
+`raid.js` maps jobs to Duty Finder's tank/healer/DPS split. A character's
+levelled combat jobs then preselect the role checkboxes on signup. It is a
+suggestion that saves three clicks, never a constraint — the member still
+submits, and the database only ever receives what they ticked.
+
 ## Announcing to Discord
 
 The organiser panel on an event has an **Announce to Discord** button. It calls
@@ -206,6 +243,7 @@ The SQL proof, against any local Postgres:
 psql -f sql/test/00_supabase_shim.sql \
      -f sql/001_schema.sql \
      -f sql/002_events.sql \
+     -f sql/003_character_visibility.sql \
      -f sql/test/01_rls_proof.sql \
      -f sql/test/02_events_proof.sql
 ```
@@ -227,10 +265,15 @@ event to Discord.
 The page cannot sign anyone in until the Discord steps above are finished; until
 then the public heatmap renders and reads empty.
 
-Not built yet:
+Also done: character linking and the adventurer-plate skin.
 
-- **Character linking and the adventurer-plate skin.** The `raid_characters`
-  table and its policies are already in `001_schema.sql`, so this needs no
-  further migration.
+Blocked, both on the same thing:
+
+- **Posting to Discord.** The `announce-event` function is deployed and the
+  button is live, but `DISCORD_WEBHOOK_URL` is not set, so it reports
+  *"DISCORD_WEBHOOK_URL is not set"* rather than posting. Creating a webhook
+  needs Manage Server on the Discord side.
 - **The Discord slash command** — HTTP interactions via an Edge Function, Ed25519
-  signature verified, deferring inside the 3-second reply window.
+  signature verified, deferring inside the 3-second reply window. Installing an
+  application into the server needs Manage Server too, so this is blocked by the
+  same permission, not by anything in the code.

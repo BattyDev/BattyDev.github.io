@@ -36,6 +36,27 @@ const SEED = [
   { member_id: 'u-tataru', slot: 42 }, { member_id: 'u-tataru', slot: 90 },
 ];
 
+/* A stand-in for the published Lodestone roster. Shapes match ffxiv.json:
+   the job list is what rolesFromJobs() reads to suggest raid roles. */
+const FC_ROSTER = { roster: [
+  { id: '2299082', name: 'Cedho Nalen', world: 'Malboro', race: 'Hrothgar', title: 'Heliodrome Hero',
+    grand_company: 'Flames', avatar: null,
+    main_job: { job: 'Astrologian', level: 100 },
+    jobs: [{ job: 'Astrologian', level: 100, role: 'combat' }, { job: 'Warrior', level: 90, role: 'combat' }] },
+  { id: '27685561', name: 'Azathio Magnus', world: 'Malboro', race: 'Au Ra', title: 'The Unsevered',
+    grand_company: 'Flames', avatar: null,
+    main_job: { job: 'Dark Knight', level: 60 },
+    jobs: [{ job: 'Dark Knight', level: 60, role: 'combat' }] },
+  { id: '3000001', name: 'Lyse Hext', world: 'Malboro', race: 'Hyur', title: null,
+    grand_company: 'Maelstrom', avatar: null,
+    main_job: { job: 'Black Mage', level: 100 },
+    jobs: [{ job: 'Black Mage', level: 100, role: 'combat' }] },
+  { id: '3000002', name: 'Krile Baldesion', world: 'Malboro', race: 'Lalafell', title: null,
+    grand_company: null, avatar: null,
+    main_job: { job: 'Carpenter', level: 90 },
+    jobs: [{ job: 'Carpenter', level: 90, role: 'craft' }] },
+] };
+
 const TYPES = [
   { code: 'savage', label: 'Savage Raid (8)', tanks: 2, healers: 2, dps: 4, party_size: 8, sort_order: 20 },
   { code: 'light_party', label: 'Light Party (4)', tanks: 1, healers: 1, dps: 2, party_size: 4, sort_order: 60 },
@@ -51,6 +72,7 @@ function installStub(seed, members, types) {
     raid_events: [],
     raid_event_signups: [],
     raid_event_responses: [],
+    raid_characters: [],
   };
   let session = null;
   let seq = 0;
@@ -93,6 +115,8 @@ function installStub(seed, members, types) {
       case 'raid_event_types':
       case 'raid_events':
       case 'raid_event_signups':
+      /* Migration 003: a claim is an identity mapping, readable by all. */
+      case 'raid_characters':
         return T[table].slice();
       default:
         return T[table] ? T[table].slice() : [];
@@ -119,7 +143,15 @@ function installStub(seed, members, types) {
           /* WITH CHECK halves of the insert policies. */
           if (table === 'raid_events' && r.created_by !== uid()) return rlsViolation(table);
           if ((table === 'raid_event_signups' || table === 'raid_event_responses'
-               || table === 'raid_availability') && r.member_id !== uid()) return rlsViolation(table);
+               || table === 'raid_availability' || table === 'raid_characters')
+              && r.member_id !== uid()) return rlsViolation(table);
+          if (table === 'raid_characters') {
+            /* unique (lodestone_id): a character can be claimed only once. */
+            if (T.raid_characters.some((x) => String(x.lodestone_id) === String(r.lodestone_id))) {
+              return { data: null, error: { message: 'duplicate key value violates unique constraint' } };
+            }
+            r.id = r.id || 'ch-' + (++seq);
+          }
           if (table === 'raid_event_signups') {
             /* raid_guard_signup: assigned_role is the manager's alone. */
             if (!canManage(r.event_id)) r.assigned_role = null;
@@ -160,6 +192,8 @@ function installStub(seed, members, types) {
         if (!uid()) return { data: null, error: DENIED };
         const doomed = applyFilters(T[table]).filter((r) => {
           if (table === 'raid_event_signups') return r.member_id === uid() || canManage(r.event_id);
+          /* self, or a leader correcting a bad claim */
+          if (table === 'raid_characters') return r.member_id === uid() || isLeader();
           return r.member_id === uid();
         });
         for (const r of doomed) {
@@ -306,6 +340,17 @@ function check(label, actual, expected) {
     contentType: 'application/javascript',
     body: "window.RAID_CONFIG={url:'https://stub.supabase.co',key:'sb_publishable_stub'};",
   }));
+  /* The page fetches the published roster from raw.githubusercontent, with a
+     local file fallback. Serve the fixture for both, plus the job-icon map. */
+  await page.route('**/ffxiv.json*', (r) => r.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify(FC_ROSTER),
+  }));
+  await page.route('**/job-icons.json*', (r) => r.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ Astrologian: 'astrologian.png', 'Dark Knight': 'dark-knight.png',
+                           'Black Mage': 'black-mage.png', Warrior: 'warrior.png', Carpenter: 'carpenter.png' }),
+  }));
+
   await page.addInitScript({
     content: `(${installStub.toString()})(${JSON.stringify(SEED)},`
       + `${JSON.stringify([LEADER, MEMBER, OTHER, FOURTH])},${JSON.stringify(TYPES)});`,
@@ -504,8 +549,121 @@ function check(label, actual, expected) {
     await page.evaluate(() => document.querySelectorAll('#poll-grid .cell:not(.h0)').length > 0), true);
   await page.screenshot({ path: `${SHOTS}/h-leader-event.png`, fullPage: true });
 
+  // ---- H1. characters ----------------------------------------------------
+  console.log('\n=== H1. character linking ===');
+  await signIn(MEMBER);
+  await page.locator('[data-view-target="chars"]').click();
+  await page.waitForSelector('#claim-list .adventurer');
+
+  check('the FC roster renders as claimable plates',
+    await page.locator('#claim-list button.adventurer').count(), 4);
+  check('nothing linked yet', (await page.locator('#chars-status').innerText()).trim(), 'None linked');
+  check('a plate carries the Grand Company accent class',
+    await page.evaluate(() => Boolean(document.querySelector('#claim-list .adventurer.gc-flames'))), true);
+  check('a plate shows the character title',
+    (await page.locator('#claim-list .char-title').first().innerText()).trim(), 'Heliodrome Hero');
+  check('roles are inferred from levelled combat jobs',
+    await page.evaluate(() => {
+      const p = [...document.querySelectorAll('#claim-list button.adventurer')]
+        .find((el) => el.innerText.includes('Cedho Nalen'));
+      return [...p.querySelectorAll('.role-hint span')].map((s) => s.textContent.trim());
+    }), ['Tank', 'Healer']);
+  check('a crafter suggests no raid role',
+    await page.evaluate(() => {
+      const p = [...document.querySelectorAll('#claim-list button.adventurer')]
+        .find((el) => el.innerText.includes('Krile'));
+      return p.querySelectorAll('.role-hint span').length;
+    }), 0);
+  await page.screenshot({ path: `${SHOTS}/h1-claim-list.png`, fullPage: true });
+
+  await page.locator('#claim-list button.adventurer').first().click();
+  await page.waitForTimeout(300);
+  check('claiming moves the character into "Yours"',
+    (await page.locator('#my-chars .char-name').allInnerTexts()).map((s) => s.trim()), ['Cedho Nalen']);
+  check('and takes it out of the claimable list',
+    await page.locator('#claim-list button.adventurer').count(), 3);
+  check('the claim was written as this member',
+    await page.evaluate(() => window.__stub.T.raid_characters.map((c) => [c.member_id, c.character_name])),
+    [['u-cedho', 'Cedho Nalen']]);
+
+  await page.locator('#char-search').fill('krile');
+  await page.waitForTimeout(150);
+  check('search filters the roster',
+    (await page.locator('#claim-list .char-name').allInnerTexts()).map((s) => s.trim()), ['Krile Baldesion']);
+  await page.locator('#char-search').fill('');
+
+  check('a plain member sees no leader claims panel',
+    await page.locator('#claims-admin').isHidden(), true);
+
+  /* Another member claims a different character, so the roster below has two. */
+  await signIn(OTHER);
+  await page.locator('[data-view-target="chars"]').click();
+  await page.waitForSelector('#claim-list .adventurer');
+  check('a member sees someone else\'s claim as already taken',
+    await page.locator('#claim-list button.adventurer').count(), 3);
+  await page.evaluate(() => {
+    const p = [...document.querySelectorAll('#claim-list button.adventurer')]
+      .find((el) => el.innerText.includes('Azathio'));
+    p.click();
+  });
+  await page.waitForTimeout(300);
+  check('second member linked their own character',
+    await page.evaluate(() => window.__stub.T.raid_characters.length), 2);
+
+  // ---- H1b. characters show up on shared rosters --------------------------
+  console.log('\n=== H1b. rosters lead with the character ===');
+  await openEvents();
+  await page.locator('.ev-card').first().click();
+  await page.waitForSelector('#roster');
+  check('the roster leads with the character, handle as a tag',
+    await page.evaluate(() => {
+      const li = [...document.querySelectorAll('#roster .slot-list li')]
+        .find((x) => x.innerText.includes('Azathio Magnus'));
+      return li ? li.querySelector('.char-tag')?.textContent.trim() : null;
+    }), 'Tataru');
+  check('a handle identical to the character name is not printed twice',
+    await page.evaluate(() => {
+      const li = [...document.querySelectorAll('#roster .slot-list li')]
+        .find((x) => x.innerText.includes('Cedho Nalen'));
+      return li ? li.querySelectorAll('.char-tag').length : -1;
+    }), 0);
+  check('someone with no linked character still shows their handle',
+    await page.evaluate(() => document.getElementById('roster').innerText.includes('Batty')), true);
+  await page.screenshot({ path: `${SHOTS}/h1b-roster-characters.png`, fullPage: true });
+
+  // ---- H1c. leaders correct a bad claim -----------------------------------
+  console.log('\n=== H1c. a leader corrects a bad claim ===');
+  await signIn(LEADER);
+  await page.locator('[data-view-target="chars"]').click();
+  await page.waitForSelector('#claim-list .adventurer');
+  check('a leader sees the all-claims panel', await page.locator('#claims-admin').isHidden(), false);
+  check('listing every claim', await page.locator('#all-claims .claim-row').count(), 2);
+
+  await page.locator('#all-claims .claim-row [data-unlink]').first().click();
+  await page.waitForTimeout(300);
+  check('a leader can remove someone else\'s claim',
+    await page.evaluate(() => window.__stub.T.raid_characters.length), 1);
+
+  await signIn(FOURTH);
+  await page.locator('[data-view-target="chars"]').click();
+  await page.waitForSelector('#claim-list .adventurer');
+  check('a plain member cannot remove another member\'s claim',
+    await page.evaluate(async () => {
+      const before = window.__stub.T.raid_characters.length;
+      const target = window.__stub.T.raid_characters[0];
+      const c = window.supabase.createClient();
+      await c.from('raid_characters').delete().eq('id', target.id);
+      return window.__stub.T.raid_characters.length === before;
+    }), true);
+
   // ---- H2. announcing to Discord -----------------------------------------
   console.log('\n=== H2. announce to Discord ===');
+  /* Back to the event as its creator: the previous block left the page on the
+     Characters view as a different member. */
+  await signIn(MEMBER);
+  await openEvents();
+  await page.locator('.ev-card').first().click();
+  await page.waitForSelector('#roster');
   check('organiser sees the announce button', await page.locator('#ev-announce').count(), 1);
 
   await page.locator('#ev-announce').click();

@@ -275,3 +275,56 @@ union all select 'call raid_can_manage_event()',
 union all select 'still gets the weekly heatmap, counts only',
        test.as_role('anon', null,
          $q$ select string_agg(slot || ':' || available, '  ' order by slot) from public.raid_heatmap() $q$);
+
+\echo ''
+\echo '=== L. character claims after 003: readable by all, writable by few ==='
+
+-- Tataru claims a character of her own, so there are two claims in play.
+select test.as_role('authenticated', '33333333-3333-3333-3333-333333333333', $q$
+  with i as (insert into public.raid_characters (member_id, lodestone_id, character_name, world)
+    values ('33333333-3333-3333-3333-333333333333', '27685561', 'Azathio Magnus', 'Malboro')
+    returning 1) select count(*)::text from i
+$q$) as "member claimed a character";
+
+select 'a plain member reads every claim' as attempt,
+       test.as_role('authenticated', '55555555-5555-5555-5555-555555555555',
+         $q$ select string_agg(character_name, ', ' order by character_name)
+             from public.raid_characters $q$) as result
+union all select 'and can join them to names for a roster',
+       test.as_role('authenticated', '55555555-5555-5555-5555-555555555555',
+         $q$ select string_agg(m.display_name || ' = ' || c.character_name, ', ' order by c.character_name)
+             from public.raid_characters c
+             join public.raid_member_directory m on m.id = c.member_id $q$)
+union all select 'but cannot claim a character FOR someone else',
+       test.as_role('authenticated', '55555555-5555-5555-5555-555555555555',
+         $q$ with i as (insert into public.raid_characters (member_id, lodestone_id, character_name, world)
+             values ('33333333-3333-3333-3333-333333333333', '9999999', 'Impostor Mcfake', 'Malboro')
+             returning 1) select count(*)::text from i $q$)
+union all select 'and cannot unclaim someone else''s',
+       test.as_role('authenticated', '55555555-5555-5555-5555-555555555555',
+         $q$ with d as (delete from public.raid_characters
+             where member_id = '33333333-3333-3333-3333-333333333333' returning 1)
+             select count(*)::text || ' deleted' from d $q$)
+union all select 'a second claim on the same character is refused',
+       test.as_role('authenticated', '55555555-5555-5555-5555-555555555555',
+         $q$ with i as (insert into public.raid_characters (member_id, lodestone_id, character_name, world)
+             values ('55555555-5555-5555-5555-555555555555', '27685561', 'Azathio Magnus', 'Malboro')
+             returning 1) select count(*)::text from i $q$)
+union all select 'a leader corrects a bad claim',
+       test.as_role('authenticated', '11111111-1111-1111-1111-111111111111',
+         $q$ with u as (update public.raid_characters
+             set member_id = '55555555-5555-5555-5555-555555555555'
+             where lodestone_id = '27685561' returning character_name)
+             select * from u $q$)
+union all select 'a leader removes one entirely',
+       test.as_role('authenticated', '11111111-1111-1111-1111-111111111111',
+         $q$ with d as (delete from public.raid_characters
+             where lodestone_id = '27685561' returning 1)
+             select count(*)::text || ' deleted' from d $q$)
+union all select 'anon still gets nothing',
+       test.as_role('anon', null, $q$ select count(*)::text from public.raid_characters $q$)
+union all select 'and a claim still reveals no availability',
+       test.as_role('authenticated', '55555555-5555-5555-5555-555555555555',
+         $q$ select count(*)::text || ' availability rows'
+             from public.raid_characters c
+             join public.raid_availability a on a.member_id = c.member_id $q$);
