@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07151c">
+<title>Raid Nights · Wild Hearts</title>
+<meta name="description" content="When the Wild Hearts Free Company is free to raid.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="raid.css?v=1" rel="stylesheet">
+</head>
+<body>
+
+<div class="wallpaper" aria-hidden="true"></div>
+
+<header class="home-bar">
+  <a class="account" href="../index.html" aria-label="Return to BattyDev">
+    <span class="gamerpic">B</span>
+    <span><b>Raid Nights</b><small>Wild Hearts · Malboro</small></span>
+  </a>
+  <nav class="system-icons" aria-label="Views">
+    <button type="button" class="is-active" data-view-target="overlap" aria-current="page" aria-label="Overlap"><i class="bi bi-grid-3x3-gap-fill"></i></button>
+    <button type="button" data-view-target="mine" data-needs="member" aria-label="My times" hidden><i class="bi bi-calendar2-check-fill"></i></button>
+    <button type="button" data-view-target="company" data-needs="leader" aria-label="Company" hidden><i class="bi bi-people-fill"></i></button>
+    <!-- Leaves the page rather than switching a view, so it is an anchor. The
+         view switcher binds ".system-icons button", which skips it by design. -->
+    <a href="../ffxiv/" aria-label="Adventurers"><i class="bi bi-shield-fill"></i></a>
+  </nav>
+  <div class="system-status">
+    <span id="stamp" class="stamp">—</span>
+    <button type="button" class="auth-btn" id="auth-btn" hidden></button>
+  </div>
+</header>
+
+<main>
+  <div id="banner" class="notice" hidden></div>
+
+  <!-- ------------------------------------------------------------------
+       Overlap — the public view. Everything it draws comes from the
+       availability_heatmap() RPC, which returns {slot, available} and no
+       identities at all. There is nothing to hide in this view because the
+       names never reach the browser.
+       ------------------------------------------------------------------ -->
+  <section id="view-overlap" class="view is-active" aria-labelledby="overlap-heading">
+    <div class="section-head">
+      <p class="eyebrow">When the company is free</p>
+      <h1 id="overlap-heading">Overlap</h1>
+      <p class="lede" id="overlap-lede">Darker gold means more of the company is free.</p>
+    </div>
+
+    <div class="panel grid-panel">
+      <div class="grid-head">
+        <h2>Every week</h2>
+        <p class="grid-note" id="overlap-stats">—</p>
+      </div>
+      <div class="grid-scroll">
+        <div class="wk" id="overlap-grid" role="img" aria-label="Weekly availability heatmap"></div>
+      </div>
+      <div class="legend" id="overlap-legend"></div>
+    </div>
+
+    <div class="panel best-panel">
+      <div class="grid-head"><h2>Best windows</h2></div>
+      <ol class="best" id="best-windows"></ol>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------------
+       My times — a member editing their own rows. RLS scopes every read and
+       write here to auth.uid(), so this grid cannot show or touch anyone
+       else's availability even if the JS asked it to.
+       ------------------------------------------------------------------ -->
+  <section id="view-mine" class="view" aria-labelledby="mine-heading" hidden>
+    <div class="section-head">
+      <p class="eyebrow">Your hours</p>
+      <h1 id="mine-heading">My times</h1>
+      <p class="lede">Drag across the grid to mark when you can raid. Saved automatically.</p>
+    </div>
+
+    <div class="panel grid-panel">
+      <div class="grid-head">
+        <h2>Every week</h2>
+        <p class="grid-note" id="mine-status">—</p>
+      </div>
+      <div class="grid-scroll">
+        <div class="wk is-editable" id="mine-grid" role="grid" aria-label="Your weekly availability"></div>
+      </div>
+      <div class="grid-actions">
+        <button type="button" class="ghost" id="clear-all">Clear all</button>
+        <span class="grid-note" id="mine-count">—</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------------
+       Company — the leader view, with names. It is not gated by this markup
+       being hidden: a non-leader who unhides it gets an empty grid, because
+       the underlying SELECT returns them only their own row.
+       ------------------------------------------------------------------ -->
+  <section id="view-company" class="view" aria-labelledby="company-heading" hidden>
+    <div class="section-head">
+      <p class="eyebrow">Leaders only</p>
+      <h1 id="company-heading">Company</h1>
+      <p class="lede">Who is free, by name. Pick an hour to see the roster for it.</p>
+    </div>
+
+    <div class="panel grid-panel">
+      <div class="grid-head">
+        <h2>Every week</h2>
+        <p class="grid-note" id="company-stats">—</p>
+      </div>
+      <div class="grid-scroll">
+        <div class="wk is-selectable" id="company-grid" role="grid" aria-label="Company availability"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="grid-head"><h2 id="company-slot-heading">Select an hour</h2></div>
+      <div class="who" id="company-who"></div>
+    </div>
+
+    <div class="panel">
+      <div class="grid-head"><h2>Members</h2></div>
+      <div class="who" id="company-members"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="credits">
+  <p>FFXIV assets and data are &copy; SQUARE ENIX CO., LTD. All Rights Reserved. Used under the
+     <a href="https://na.finalfantasyxiv.com/lodestone/special/fankit/" rel="noopener">Fan Kit</a> terms.</p>
+  <p>Not affiliated with Square Enix or Discord.</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js?v=1"></script>
+<script src="raid.js?v=1"></script>
+</body>
+</html>

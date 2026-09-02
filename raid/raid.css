@@ -1,0 +1,417 @@
+/* Wild Hearts · Raid Nights
+   Chrome (home-bar, wallpaper, main, panels) is lifted from /ffxiv so the two
+   pages read as one site. What is new here is the week grid, which borrows the
+   same language -- thin gold rules, translucent slate panels -- rather than
+   inventing a second one. */
+
+:root {
+  --void: #07151c;
+  --deep: #0b1d28;
+  --panel: rgba(18, 40, 56, 0.78);
+  --panel-solid: #12283a;
+  --rule: rgba(198, 166, 100, 0.38);
+  --gold: #c6a664;
+  --gold-bright: #e6cf95;
+  --ink: #e8eef2;
+  --ink-dim: #9db2c0;
+  --ink-faint: #6b8496;
+
+  --ok: #6fbf73;
+  --warn: #d4722a;
+
+  --radius: 3px;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--void);
+  color: var(--ink);
+  font-family: 'Roboto Condensed', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ---- wallpaper ---- */
+/* Shares /ffxiv's key art rather than carrying a second copy of a 400kB jpg. */
+.wallpaper {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(180deg, rgba(7,21,28,0.86) 0%, rgba(7,21,28,0.94) 55%, rgba(7,21,28,0.99) 100%),
+    url("../ffxiv/assets/keyart.jpg");
+  background-size: cover;
+  background-position: center 22%;
+  background-attachment: fixed;
+}
+@media (max-width: 700px) {
+  /* fixed attachment is janky on mobile and forces a full-size repaint on scroll */
+  .wallpaper { background-attachment: scroll; }
+}
+
+/* ---- home bar (shared with /ffxiv and /palworld) ---- */
+.home-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 18px;
+  padding-top: calc(10px + env(safe-area-inset-top));
+  background: rgba(5, 15, 21, 0.88);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--rule);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.account { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+.gamerpic {
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(160deg, var(--gold) 0%, #8a6f30 100%);
+  color: var(--void);
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+}
+.account b { display: block; font-weight: 700; font-size: 15px; letter-spacing: 0.01em; }
+.account small { display: block; color: var(--ink-faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; }
+
+.system-icons { display: flex; gap: 4px; margin-left: auto; }
+.system-icons button,
+.system-icons a {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ink-dim);
+  width: 38px; height: 34px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 16px;
+  transition: color .15s, background .15s, border-color .15s;
+}
+.system-icons a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 19px;
+  line-height: 1;
+  color: var(--ink);
+}
+.system-icons button:hover,
+.system-icons a:hover { color: var(--gold-bright); background: rgba(198,166,100,0.08); }
+.system-icons button.is-active {
+  color: var(--gold-bright);
+  border-color: var(--rule);
+  background: rgba(198,166,100,0.12);
+}
+.system-icons button:focus-visible,
+.system-icons a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.system-status { margin-left: 8px; display: flex; align-items: center; gap: 10px; }
+.stamp {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.auth-btn {
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--gold-bright);
+  font: inherit;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, color .15s;
+}
+.auth-btn:hover { background: rgba(198,166,100,0.14); }
+.auth-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+@media (max-width: 620px) { #stamp { display: none; } }
+
+/* ---- layout ---- */
+main { max-width: 1140px; margin: 0 auto; padding: 28px 20px 72px; }
+.view { display: none; }
+.view.is-active { display: block; }
+
+.section-head { margin-bottom: 26px; }
+.eyebrow {
+  margin: 0 0 4px;
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--gold);
+  opacity: 0.85;
+}
+h1 {
+  margin: 0;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: clamp(28px, 5vw, 40px);
+  letter-spacing: 0.04em;
+  color: var(--gold-bright);
+  text-shadow: 0 2px 18px rgba(198,166,100,0.22);
+}
+.lede { margin: 6px 0 0; color: var(--ink-dim); font-weight: 300; }
+
+.notice {
+  border: 1px solid var(--rule);
+  border-left-width: 3px;
+  background: var(--panel);
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  color: var(--ink-dim);
+  font-size: 14px;
+}
+.notice.is-warn { border-left-color: var(--warn); }
+.notice code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--gold-bright);
+}
+
+/* ---- panels with corner flourishes ---- */
+.panel {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  backdrop-filter: blur(3px);
+  padding: 18px;
+  margin-bottom: 20px;
+}
+.panel::before, .panel::after {
+  content: "";
+  position: absolute;
+  width: 9px; height: 9px;
+  border: 1px solid var(--gold);
+  opacity: 0.75;
+  pointer-events: none;
+}
+.panel::before { top: 4px; left: 4px; border-right: 0; border-bottom: 0; }
+.panel::after { bottom: 4px; right: 4px; border-left: 0; border-top: 0; }
+
+.grid-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.grid-head h2 {
+  margin: 0;
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.grid-note { margin: 0; color: var(--ink-faint); font-size: 12px; }
+
+/* ---- the week grid ----------------------------------------------------
+   One CSS grid for all three views. Column 1 is the hour gutter, then seven
+   day columns. Rows are hours; row 1 is the day header.
+
+   The grid is 24 rows tall, so it scrolls sideways on a phone rather than
+   squeezing cells below a usable tap target. min() clamps the track floor to
+   the container for the same reason /ffxiv's roster does -- a bare fixed
+   minimum forces the page itself to scroll sideways in a narrow side panel. */
+.grid-scroll { overflow-x: auto; padding-bottom: 4px; }
+
+.wk {
+  display: grid;
+  grid-template-columns: 46px repeat(7, minmax(52px, 1fr));
+  gap: 2px;
+  min-width: 460px;
+}
+
+.wk .dh {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-align: center;
+  padding-bottom: 6px;
+}
+.wk .hh {
+  font-size: 11px;
+  color: var(--ink-faint);
+  text-align: right;
+  padding-right: 8px;
+  font-variant-numeric: tabular-nums;
+  /* Nudged up so the label reads as the line between hours rather than as a
+     caption centred on the cell below it. */
+  transform: translateY(-3px);
+}
+/* Every third hour keeps its label; the rest are blank so the gutter does not
+   turn into a wall of numbers at 24 rows tall. */
+.wk .hh.is-quiet { color: transparent; }
+
+.cell {
+  height: 22px;
+  border: 1px solid rgba(198,166,100,0.16);
+  border-radius: 2px;
+  background: rgba(11, 29, 40, 0.55);
+  padding: 0;
+  /* Set per-cell by the renderer from the heat scale below. */
+  transition: background .12s, border-color .12s;
+}
+/* A darker rule every 6 hours gives the eye something to count by. */
+.cell.is-daybreak { border-top-color: rgba(198,166,100,0.42); }
+
+/* Heat scale: transparent through to full gold. Kept as discrete steps rather
+   than a continuous alpha because the counts are small integers and a
+   continuous ramp makes 2-of-9 and 3-of-9 indistinguishable. */
+.cell.h0 { background: rgba(11, 29, 40, 0.55); }
+.cell.h1 { background: rgba(198, 166, 100, 0.16); }
+.cell.h2 { background: rgba(198, 166, 100, 0.32); }
+.cell.h3 { background: rgba(198, 166, 100, 0.50); }
+.cell.h4 { background: rgba(198, 166, 100, 0.68); }
+.cell.h5 { background: rgba(230, 207, 149, 0.88); }
+
+button.cell { cursor: pointer; }
+button.cell:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; z-index: 1; }
+
+/* Editable grid: the member's own on/off state. Distinct from the heat scale
+   because it is a binary, not a count. */
+.is-editable .cell[aria-pressed="true"] {
+  background: linear-gradient(160deg, var(--gold) 0%, #8a6f30 100%);
+  border-color: var(--gold-bright);
+}
+.is-editable .cell:hover { border-color: var(--gold); }
+
+.is-selectable .cell.is-picked {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: -1px;
+  z-index: 1;
+}
+
+.grid-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.ghost {
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 7px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.ghost:hover { color: var(--gold-bright); background: rgba(198,166,100,0.1); }
+.ghost:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ---- legend ---- */
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 11px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  flex-wrap: wrap;
+}
+.legend i {
+  width: 22px; height: 12px;
+  border: 1px solid rgba(198,166,100,0.24);
+  border-radius: 2px;
+  display: inline-block;
+}
+
+/* ---- best windows ---- */
+.best { list-style: none; margin: 0; padding: 0; }
+.best li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(198,166,100,0.14);
+}
+.best li:last-child { border-bottom: 0; }
+.best b {
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  color: var(--gold-bright);
+  font-size: 15px;
+  min-width: 190px;
+}
+.best span { color: var(--ink-dim); font-size: 14px; }
+.best .count { margin-left: auto; color: var(--gold); font-variant-numeric: tabular-nums; }
+
+/* ---- who lists (leader view) ---- */
+.who { display: flex; flex-wrap: wrap; gap: 8px; }
+.who .chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 4px 12px 4px 4px;
+  background: rgba(11, 29, 40, 0.6);
+  font-size: 14px;
+}
+.who .chip img {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--deep);
+}
+.who .chip .fallback {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: linear-gradient(160deg, var(--gold) 0%, #8a6f30 100%);
+  color: var(--void);
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  font-weight: 700;
+}
+.who .chip.is-leader { border-color: var(--gold-bright); }
+.who .chip .tag {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+}
+.empty { color: var(--ink-faint); font-size: 14px; margin: 0; }
+
+/* ---- footer ---- */
+.credits {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  color: var(--ink-faint);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.credits p { margin: 0 0 4px; }
+.credits a { color: var(--ink-dim); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
