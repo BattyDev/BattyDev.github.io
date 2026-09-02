@@ -1,7 +1,7 @@
-/* BattyRaid · announce-event
+/* FC Events · announce-event
  *
  * Posts an event to the FC's Discord channel through an incoming webhook.
- * Called from raid.js when the organiser presses "Announce to Discord".
+ * Called from fcevents.js when the organiser presses "Announce to Discord".
  *
  * WHY THIS IS A FUNCTION AND NOT A fetch() FROM THE PAGE
  *
@@ -20,7 +20,7 @@
  * which returns false. The webhook is never reachable by an anonymous request.
  *
  * ON THE ROSTER: this deliberately does NOT re-solve the seat assignment. That
- * solver lives in raid.js and porting it here would mean two copies of a
+ * solver lives in fcevents.js and porting it here would mean two copies of a
  * matching algorithm drifting apart, with Discord quietly disagreeing with the
  * page about who is playing. Instead this announces the facts the database
  * holds directly -- who signed up, in order, with the roles they offered and
@@ -42,7 +42,7 @@ const json = (body: unknown, status = 200) =>
   });
 
 const ROLE_LABEL: Record<string, string> = { tank: 'Tank', healer: 'Healer', dps: 'DPS' };
-const PAGE_URL = 'https://battydev.com/raid/';
+const PAGE_URL = 'https://battydev.com/fcevents/';
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });

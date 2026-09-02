@@ -1,12 +1,17 @@
-# FC Events — battydev.com/raid
+# FC Events — battydev.com/fcevents
 
 Event scheduler for the Wild Hearts FC. Members log the hours they are free, the
 company finds the overlap, and anyone can put an event on — raids, dungeons,
 maps, Frontline, whatever is being run.
 
-The path stays `/raid` for now; the name does not. Internal identifiers keep the
-`raid_` prefix too (tables, functions, `raid.js`), because renaming them would
-churn every migration and policy to no user-visible end.
+Everything a person or a browser sees is `fcevents` — the path, the page, the
+asset filenames, the config global. The **database** keeps its `raid_` prefix
+(`raid_events`, `raid_members`, `raid_heatmap()`), because renaming those would
+churn every migration, policy and proof to no user-visible end. That is the line:
+user-facing names moved, storage names did not.
+
+`/raid/` still resolves — it redirects here, hash and all, so links already
+shared in Discord keep working.
 
 Static page on GitHub Pages + Supabase as the backend, same shape as `/health`.
 No build step, no server.
@@ -23,7 +28,7 @@ any of this.
 
 ## The visibility split
 
-Three audiences, enforced in Postgres — not in `raid.js`:
+Three audiences, enforced in Postgres — not in `fcevents.js`:
 
 | Who | Sees |
 |---|---|
@@ -39,7 +44,7 @@ access — it is the one audited exception in the schema, and it returns
 `{slot, available}` so there is no identity in its result type to leak.
 
 Doing this split in JavaScript would not work: the publishable key is in the
-page source, so anyone can re-run the queries themselves. `raid.js` hides the
+page source, so anyone can re-run the queries themselves. `fcevents.js` hides the
 "Company" tab from non-leaders as a courtesy; a non-leader who unhides it gets
 an empty grid because the database returns them nothing.
 
@@ -90,8 +95,8 @@ backup, in the same order.
 | Path | What |
 |---|---|
 | `index.html` | Page shell and the three views |
-| `raid.css` | Chrome lifted from `/ffxiv`, plus the week grid |
-| `raid.js` | Rendering, auth, and the availability read/write |
+| `fcevents.css` | Chrome lifted from `/ffxiv`, plus the week grid |
+| `fcevents.js` | Rendering, auth, and the availability read/write |
 | `config.js` | Supabase URL + publishable key. Both public by design. |
 | `sql/001_schema.sql` | Members, availability, characters: RLS, triggers, aggregate functions |
 | `sql/002_events.sql` | Events, signups, responses, duty presets, the member directory |
@@ -168,7 +173,10 @@ leaders.
    the Supabase dashboard and nowhere else — never into this repo.
 
 5. **Allow the redirect** in Supabase → Authentication → URL Configuration →
-   Redirect URLs: `https://battydev.com/raid/`.
+   Redirect URLs: `https://battydev.com/fcevents/`. Keep the old
+   `https://battydev.com/raid/` entry too while links from before the move are
+   still circulating — the redirect stub sends people to the new path, but a
+   sign-in started from a stale tab still returns to the old one.
 
 6. ~~Fill in `config.js`.~~ Done. Both values there are public by design and
    safe to commit; the service role key is not, and must never appear here.
@@ -247,7 +255,7 @@ flourishes and job chips — so a character reads the same on both pages.
 
 **Role suggestions.** The roster JSON's own `role` field says
 combat/craft/gather, which answers a different question, so `JOB_ROLE` in
-`raid.js` maps jobs to Duty Finder's tank/healer/DPS split. A character's
+`fcevents.js` maps jobs to Duty Finder's tank/healer/DPS split. A character's
 levelled combat jobs then preselect the role checkboxes on signup. It is a
 suggestion that saves three clicks, never a constraint — the member still
 submits, and the database only ever receives what they ticked.
@@ -291,9 +299,9 @@ it (`localStorage`, per browser — not worth a column).
 ## Linking an event
 
 Every view lives in the URL hash, so a reload keeps you where you were, and an
-event has a link of its own: `battydev.com/raid/#/event/<id>`, with a **Copy
+event has a link of its own: `battydev.com/fcevents/#/event/<id>`, with a **Copy
 link** button on the event. A hash rather than a path because this is GitHub
-Pages — there is no server to route `/raid/event/<id>` back to the page.
+Pages — there is no server to route `/fcevents/event/<id>` back to the page.
 
 **On unfurling in Discord, one honest limitation.** The page carries Open Graph
 tags, so any link to it unfurls as a card — but those tags are *page-level*, not
@@ -333,7 +341,7 @@ one is stated, and renders the time as `<t:unix:F>` so every reader sees it in
 their own zone.
 
 It deliberately does **not** re-solve the seat assignment. That solver lives in
-`raid.js`; a second copy here would drift, and Discord would quietly disagree
+`fcevents.js`; a second copy here would drift, and Discord would quietly disagree
 with the page about who is playing. The announcement carries what the database
 holds directly — who signed up, in order, with the roles they offered and any
 role the organiser pinned — and links to the page for the live roster.
