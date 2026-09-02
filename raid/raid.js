@@ -1,5 +1,6 @@
-/* Wild Hearts · Raid Nights
-   Members log the hours they can raid; the company finds the overlap.
+/* Wild Hearts · FC Events
+   Members log the hours they are free; the company finds the overlap and puts
+   events on -- raids, dungeons, maps, whatever is being run.
 
    On security: this is a static page, so the publishable key in config.js is
    public by necessity -- anyone can read it out of the page source and issue

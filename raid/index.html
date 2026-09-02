@@ -4,16 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#07151c">
-<title>Raid Nights · Wild Hearts</title>
-<meta name="description" content="When the Wild Hearts Free Company is free to raid.">
+<title>FC Events · Wild Hearts</title>
+<meta name="description" content="When the Wild Hearts Free Company is free, and what it is running — raids, dungeons, maps and everything else.">
 <!-- Link preview. These are page-level, not per-event: Discord's crawler does
      not run JavaScript, and GitHub Pages cannot render per-event tags without a
      server, so an event link unfurls as the site rather than as that event.
      See README, "Linking an event". -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BattyDev">
-<meta property="og:title" content="Raid Nights · Wild Hearts">
-<meta property="og:description" content="Log when you can raid, find the overlap, and sign up for events. Wild Hearts FC, Malboro.">
+<meta property="og:title" content="FC Events · Wild Hearts">
+<meta property="og:description" content="Log when you are free, find the overlap, and sign up for whatever the company is running. Wild Hearts FC, Malboro.">
 <meta property="og:url" content="https://battydev.com/raid/">
 <meta property="og:image" content="https://battydev.com/ffxiv/assets/keyart.jpg">
 <meta name="twitter:card" content="summary_large_image">
@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
-<link href="raid.css?v=7" rel="stylesheet">
+<link href="raid.css?v=9" rel="stylesheet">
 </head>
 <body>
 
@@ -31,7 +31,7 @@
 <header class="home-bar">
   <a class="account" href="../index.html" aria-label="Return to BattyDev">
     <span class="gamerpic">B</span>
-    <span><b>Raid Nights</b><small>Wild Hearts · Malboro</small></span>
+    <span><b>FC Events</b><small>Wild Hearts · Malboro</small></span>
   </a>
   <nav class="system-icons" aria-label="Views">
     <button type="button" data-view-target="welcome" data-anon aria-label="Welcome"><i class="bi bi-house-door-fill"></i></button>
@@ -80,7 +80,7 @@
              can correct a wrong one.</p>
         </li>
         <li>
-          <h3>Mark when you can raid</h3>
+          <h3>Mark when you are free</h3>
           <p>Under <b>My times</b>, drag across the grid for the hours you are usually
              free, then press <b>Save times</b>. This feeds the public <b>Overlap</b>
              heatmap, which shows counts only — never who.</p>
@@ -139,8 +139,8 @@
   <section id="view-welcome" class="view" aria-labelledby="welcome-heading" hidden>
     <div class="hero">
       <p class="eyebrow">Wild Hearts · Malboro · Crystal</p>
-      <h1 id="welcome-heading">Raid Nights</h1>
-      <p class="hero-lede">Log when you can raid. Find the overlap. Fill the party.</p>
+      <h1 id="welcome-heading">FC Events</h1>
+      <p class="hero-lede">Log when you are free. Find the overlap. Fill the party.</p>
 
       <div class="hero-cta">
         <button type="button" class="primary big" id="welcome-signin">
@@ -343,7 +343,7 @@
     <div class="section-head">
       <p class="eyebrow">Your hours</p>
       <h1 id="mine-heading">My times</h1>
-      <p class="lede">Drag across the grid to mark when you can raid. Saved automatically.</p>
+      <p class="lede">Drag across the grid to mark the hours you are usually free, then save.</p>
     </div>
 
     <div class="panel">

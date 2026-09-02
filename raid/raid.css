@@ -93,8 +93,11 @@ body {
   font-family: 'Cinzel', serif;
   font-weight: 700;
 }
-.account b { display: block; font-weight: 700; font-size: 15px; letter-spacing: 0.01em; }
-.account small { display: block; color: var(--ink-faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; }
+/* nowrap on both lines: "Free Company Events" is long enough to wrap in the
+   desktop header at tablet widths, which doubles the bar's height for no
+   reason. The mobile rules below add min-width:0 so it can ellipsis instead. */
+.account b { display: block; font-weight: 700; font-size: 15px; letter-spacing: 0.01em; white-space: nowrap; }
+.account small { display: block; color: var(--ink-faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; white-space: nowrap; }
 
 .system-icons { display: flex; gap: 4px; margin-left: auto; }
 .system-icons button,
@@ -1043,7 +1046,15 @@ button.adventurer:disabled:hover { transform: none; box-shadow: none; }
    like it would not scroll properly. Letting the bar wrap and giving the icons
    a row of their own fixes the button and the page scroll together, since the
    header was the only thing overflowing. */
-@media (max-width: 720px) {
+/* 800px, and the number is measured rather than picked. Above this width the
+   header is a single no-wrap row, and that row's natural width is 745px:
+   brand 213 (of which the "Wild Hearts · Malboro" subtitle is 169), nav 248,
+   stamp and Sign out 216, plus padding and gaps. Anything below that and Sign
+   out goes off the edge, which is what happened at 721px -- the original 720
+   breakpoint was always too low, and the longer brand only made it visible.
+   800 leaves room for the clock in the stamp to grow a character or two.
+   Verified by sweeping 320px to 1600px, not by eye. */
+@media (max-width: 800px) {
   main { padding: 20px 12px 60px; }
   .panel { padding: 13px; }
 
@@ -1057,8 +1068,8 @@ button.adventurer:disabled:hover { transform: none; box-shadow: none; }
   /* min-width:0 lets the brand shrink instead of forcing the row wider than
      the screen; nowrap stops "Wild Hearts · Malboro" stacking three deep. */
   .account { min-width: 0; flex: 1 1 auto; }
-  .account b { font-size: 14px; }
-  .account small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .account b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; }
+  .account small { overflow: hidden; text-overflow: ellipsis; }
   .system-status { order: 2; margin-left: auto; }
   .system-icons {
     order: 3;
