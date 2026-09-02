@@ -272,9 +272,9 @@ function renderAll(data) {
   const isToday = latest && latest.log_date === todayISO();
   $('today-heading').textContent = isToday ? 'Today' : `Latest logged · ${fmtDate(latest ? latest.log_date : null)}`;
   renderGoals($('today-goals'), latest, targets);
-  if (targets && targets.note) {
-    $('nutrition-lede').textContent = targets.note;
-  }
+  /* targets.note is clinical shorthand kept for the log, not a page subtitle --
+     it was surfacing a doctor's name and a pending question at the top of the
+     view. The static lede in the markup stands instead; the row is untouched. */
 
   renderDays($('days'), daily, entries, targets);
 
