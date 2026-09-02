@@ -918,8 +918,12 @@ function renderDetail() {
 
     ${manage ? `
       <div class="panel">
-        <div class="grid-head"><h2>Organiser</h2></div>
+        <div class="grid-head">
+          <h2>Organiser</h2>
+          <p class="grid-note" id="announce-status"></p>
+        </div>
         <div class="grid-actions">
+          <button type="button" class="ghost" id="ev-announce">Announce to Discord</button>
           <button type="button" class="ghost" id="ev-cancel-event">
             ${ev.status === 'cancelled' ? 'Reopen event' : 'Cancel event'}
           </button>
@@ -934,6 +938,42 @@ function renderDetail() {
 
   const cancelBtn = $('ev-cancel-event');
   if (cancelBtn) cancelBtn.addEventListener('click', toggleCancelled);
+  const announceBtn = $('ev-announce');
+  if (announceBtn) announceBtn.addEventListener('click', announce);
+}
+
+/* Posts the event to the FC's Discord channel.
+   The webhook URL is a bearer credential -- anyone holding it can post to the
+   channel forever -- so unlike the publishable key it cannot live in this file.
+   It is a Supabase secret, and the announce-event Edge Function is the only
+   thing that reads it. That function re-checks raid_can_manage_event() against
+   the caller's own JWT, so this button is a convenience and not the gate. */
+async function announce() {
+  const btn = $('ev-announce');
+  const status = $('announce-status');
+  btn.disabled = true;
+  status.textContent = 'Posting…';
+  try {
+    const { data, error } = await db.functions.invoke('announce-event', {
+      body: { event_id: state.openEvent.id },
+    });
+    /* A non-2xx comes back as a FunctionsHttpError whose body carries the
+       reason; surface that rather than "Edge Function returned a non-2xx
+       status code", which tells the organiser nothing. */
+    if (error) {
+      let detail = error.message;
+      try {
+        const body = await error.context?.json?.();
+        if (body?.message || body?.error) detail = body.message || body.error;
+      } catch { /* keep the generic message */ }
+      throw new Error(detail);
+    }
+    status.textContent = `Posted to Discord · ${data?.announced ?? 0} signed up`;
+  } catch (err) {
+    status.textContent = `Not posted: ${err.message || err}`;
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 /* ---------- roster ---------- */

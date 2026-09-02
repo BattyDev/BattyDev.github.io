@@ -238,6 +238,37 @@ function installStub(seed, members, types) {
           }
           return Promise.resolve({ data: null, error: { message: 'unknown rpc ' + name } });
         },
+        /* The announce-event Edge Function. The real one re-checks
+           raid_can_manage_event() against the caller's JWT; the stub answers
+           the same way so the page's error handling can be exercised. */
+        functions: {
+          invoke(name, opts) {
+            window.__stub.calls.push({ op: 'invoke', name, body: opts?.body });
+            const forced = window.__stub.invokeResult;
+            if (forced) {
+              return Promise.resolve({
+                data: null,
+                error: {
+                  message: 'Edge Function returned a non-2xx status code',
+                  context: { json: async () => forced },
+                },
+              });
+            }
+            if (!canManage(opts?.body?.event_id)) {
+              return Promise.resolve({
+                data: null,
+                error: { message: 'non-2xx', context: { json: async () => ({ error: 'forbidden' }) } },
+              });
+            }
+            return Promise.resolve({
+              data: {
+                ok: true,
+                announced: T.raid_event_signups.filter((x) => x.event_id === opts?.body?.event_id).length,
+              },
+              error: null,
+            });
+          },
+        },
         auth: {
           getSession: () => Promise.resolve({ data: { session } }),
           onAuthStateChange: (cb) => { listeners.push(cb); return { data: { subscription: {} } }; },
@@ -472,6 +503,40 @@ function check(label, actual, expected) {
   check('a leader sees every response on the poll',
     await page.evaluate(() => document.querySelectorAll('#poll-grid .cell:not(.h0)').length > 0), true);
   await page.screenshot({ path: `${SHOTS}/h-leader-event.png`, fullPage: true });
+
+  // ---- H2. announcing to Discord -----------------------------------------
+  console.log('\n=== H2. announce to Discord ===');
+  check('organiser sees the announce button', await page.locator('#ev-announce').count(), 1);
+
+  await page.locator('#ev-announce').click();
+  await page.waitForTimeout(300);
+  check('it invokes announce-event with this event id',
+    await page.evaluate(() => {
+      const c = window.__stub.calls.filter((x) => x.op === 'invoke').pop();
+      return c && c.name === 'announce-event' && c.body.event_id === window.__stub.T.raid_events[0].id;
+    }), true);
+  check('success is reported with the signup count',
+    (await page.locator('#announce-status').innerText()).startsWith('Posted to Discord'), true);
+
+  /* An unset webhook is configuration, not a bug -- the page must say which. */
+  await page.evaluate(() => {
+    window.__stub.invokeResult = {
+      error: 'not_configured',
+      message: 'DISCORD_WEBHOOK_URL is not set. Add it under Edge Functions \u2192 Secrets.',
+    };
+  });
+  await page.locator('#ev-announce').click();
+  await page.waitForTimeout(300);
+  check('a missing webhook surfaces the actionable message, not a generic one',
+    (await page.locator('#announce-status').innerText()).includes('DISCORD_WEBHOOK_URL is not set'), true);
+  await page.evaluate(() => { window.__stub.invokeResult = null; });
+  await page.screenshot({ path: `${SHOTS}/h2-announce.png`, fullPage: true });
+
+  await signIn(FOURTH);
+  await openEvents();
+  await page.locator('.ev-card').first().click();
+  await page.waitForSelector('#roster');
+  check('a plain member has no announce button', await page.locator('#ev-announce').count(), 0);
 
   // ---- I. sign out --------------------------------------------------------
   console.log('\n=== I. after signing out ===');

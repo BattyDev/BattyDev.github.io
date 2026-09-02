@@ -90,6 +90,7 @@ backup, in the same order.
 | `config.js` | Supabase URL + publishable key. Both public by design. |
 | `sql/001_schema.sql` | Members, availability, characters: RLS, triggers, aggregate functions |
 | `sql/002_events.sql` | Events, signups, responses, duty presets, the member directory |
+| `functions/announce-event/index.ts` | Edge Function that posts an event to Discord |
 | `sql/test/00_supabase_shim.sql` | Local-only: fakes Supabase's auth schema and roles |
 | `sql/test/01_rls_proof.sql` | Local-only: proves the availability split with role impersonation |
 | `sql/test/02_events_proof.sql` | Local-only: proves the event/consent split, and the escalation |
@@ -169,6 +170,34 @@ the last two would recurse inside the very policies that call them.
 What *would* be a real finding is a missing-RLS warning on any `raid_` table.
 There are none — all seven have RLS enabled and 24 policies between them.
 
+## Announcing to Discord
+
+The organiser panel on an event has an **Announce to Discord** button. It calls
+the `announce-event` Edge Function, which posts an embed to an incoming webhook.
+
+The webhook URL is a **bearer credential** — anyone holding it can post to the
+channel forever, with no way to tell who did — so unlike the publishable key it
+cannot live in `config.js`. It is a Supabase secret named `DISCORD_WEBHOOK_URL`,
+readable only inside the function.
+
+Authorisation is not re-implemented there. The function forwards the caller's
+own JWT to Postgres and asks `raid_can_manage_event()` — the same check the
+UPDATE policy on `raid_events` uses — so it cannot drift from the rest of the
+app, and a caller without a valid JWT is refused. The embed also sets
+`allowed_mentions: { parse: [] }`, so an event title can never be used to
+@everyone the server.
+
+It deliberately does **not** re-solve the seat assignment. That solver lives in
+`raid.js`; a second copy here would drift, and Discord would quietly disagree
+with the page about who is playing. The announcement carries what the database
+holds directly — who signed up, in order, with the roles they offered and any
+role the organiser pinned — and links to the page for the live roster.
+
+To set the secret: Discord → Server Settings → Integrations → Webhooks → copy
+the URL, then Supabase → Edge Functions → Secrets → add `DISCORD_WEBHOOK_URL`.
+Until it is set, the button reports *"DISCORD_WEBHOOK_URL is not set"* rather
+than failing silently.
+
 ## Running the checks
 
 The SQL proof, against any local Postgres:
@@ -190,18 +219,16 @@ cd sql/test && node ui-harness.js
 ## Status
 
 Done and live on `battydevsite`: the availability layer (schema, RLS, Discord
-login, weekly grid, heatmap vs. leader view) and the events layer (creation,
-duty presets, poll or fixed time, role signups, the roster solver, backups,
-organiser pinning, cancel/reopen).
+login, weekly grid, heatmap vs. leader view), the events layer (creation, duty
+presets, poll or fixed time, role signups, the roster solver, backups, organiser
+pinning, cancel/reopen), and the `announce-event` Edge Function that pushes an
+event to Discord.
 
 The page cannot sign anyone in until the Discord steps above are finished; until
 then the public heatmap renders and reads empty.
 
 Not built yet:
 
-- **Pushing scheduled events to Discord.** Needs a channel webhook URL stored as
-  a Supabase secret, then a small Edge Function to POST to it. Nothing in the
-  schema blocks it.
 - **Character linking and the adventurer-plate skin.** The `raid_characters`
   table and its policies are already in `001_schema.sql`, so this needs no
   further migration.
