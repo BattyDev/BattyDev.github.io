@@ -22,10 +22,10 @@ const path = require('path');
 const PAGE = 'file://' + path.resolve(__dirname, '../../index.html');
 const SHOTS = process.env.SHOT_DIR || '/tmp/raid-shots';
 
-const LEADER = { id: 'u-leader', display_name: 'Batty',       role: 'leader', avatar_url: null };
-const MEMBER = { id: 'u-cedho',  display_name: 'Cedho Nalen', role: 'member', avatar_url: null };
-const OTHER  = { id: 'u-tataru', display_name: 'Tataru',      role: 'member', avatar_url: null };
-const FOURTH = { id: 'u-ysh',    display_name: 'Yshtola',     role: 'member', avatar_url: null };
+const LEADER = { id: 'u-leader', display_name: 'Batty',       role: 'leader', avatar_url: null, timezone: null };
+const MEMBER = { id: 'u-cedho',  display_name: 'Cedho Nalen', role: 'member', avatar_url: null, timezone: null };
+const OTHER  = { id: 'u-tataru', display_name: 'Tataru',      role: 'member', avatar_url: null, timezone: null };
+const FOURTH = { id: 'u-ysh',    display_name: 'Yshtola',     role: 'member', avatar_url: null, timezone: null };
 
 /* Weekly slots are UTC hours-of-week. Fixed values so assertions are stable. */
 const SEED = [
@@ -36,6 +36,27 @@ const SEED = [
   { member_id: 'u-tataru', slot: 42 }, { member_id: 'u-tataru', slot: 90 },
 ];
 
+/* A stand-in for the published Lodestone roster. Shapes match ffxiv.json:
+   the job list is what rolesFromJobs() reads to suggest raid roles. */
+const FC_ROSTER = { roster: [
+  { id: '2299082', name: 'Cedho Nalen', world: 'Malboro', race: 'Hrothgar', title: 'Heliodrome Hero',
+    grand_company: 'Flames', avatar: null,
+    main_job: { job: 'Astrologian', level: 100 },
+    jobs: [{ job: 'Astrologian', level: 100, role: 'combat' }, { job: 'Warrior', level: 90, role: 'combat' }] },
+  { id: '27685561', name: 'Azathio Magnus', world: 'Malboro', race: 'Au Ra', title: 'The Unsevered',
+    grand_company: 'Flames', avatar: null,
+    main_job: { job: 'Dark Knight', level: 60 },
+    jobs: [{ job: 'Dark Knight', level: 60, role: 'combat' }] },
+  { id: '3000001', name: 'Lyse Hext', world: 'Malboro', race: 'Hyur', title: null,
+    grand_company: 'Maelstrom', avatar: null,
+    main_job: { job: 'Black Mage', level: 100 },
+    jobs: [{ job: 'Black Mage', level: 100, role: 'combat' }] },
+  { id: '3000002', name: 'Krile Baldesion', world: 'Malboro', race: 'Lalafell', title: null,
+    grand_company: null, avatar: null,
+    main_job: { job: 'Carpenter', level: 90 },
+    jobs: [{ job: 'Carpenter', level: 90, role: 'craft' }] },
+] };
+
 const TYPES = [
   { code: 'savage', label: 'Savage Raid (8)', tanks: 2, healers: 2, dps: 4, party_size: 8, sort_order: 20 },
   { code: 'light_party', label: 'Light Party (4)', tanks: 1, healers: 1, dps: 2, party_size: 4, sort_order: 60 },
@@ -44,23 +65,36 @@ const TYPES = [
 
 /* The stub, stringified into the page before any of its own scripts run. */
 function installStub(seed, members, types) {
-  const T = {
+  /* Tables and session live in sessionStorage so a page reload keeps them, the
+     way a real Supabase client keeps its session. Without that, "does reloading
+     keep me on the same tab" could not be tested at all -- the reload would
+     wipe the data out from under the assertion. */
+  const KEY = '__raid_stub__';
+  const fresh = () => ({
     raid_availability: seed.slice(),
     raid_members: members.slice(),
     raid_event_types: types.slice(),
     raid_events: [],
     raid_event_signups: [],
     raid_event_responses: [],
+    raid_characters: [],
+  });
+  let saved = null;
+  try { saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch { saved = null; }
+  const T = saved?.T || fresh();
+  let session = saved?.session ?? null;
+  let seq = saved?.seq ?? 0;
+  const persist = () => {
+    try { sessionStorage.setItem(KEY, JSON.stringify({ T, session, seq })); } catch { /* ignore */ }
   };
-  let session = null;
-  let seq = 0;
   const listeners = [];
 
   window.__stub = {
     T,
     calls: [],
-    signIn(user) { session = { user: { id: user.id } }; listeners.forEach((f) => f('SIGNED_IN', session)); },
-    signOut() { session = null; listeners.forEach((f) => f('SIGNED_OUT', null)); },
+    signIn(user) { session = { user: { id: user.id } }; persist(); listeners.forEach((f) => f('SIGNED_IN', session)); },
+    signOut() { session = null; persist(); listeners.forEach((f) => f('SIGNED_OUT', null)); },
+    reset() { try { sessionStorage.removeItem(KEY); } catch { /* ignore */ } },
     get session() { return session; },
   };
 
@@ -93,6 +127,8 @@ function installStub(seed, members, types) {
       case 'raid_event_types':
       case 'raid_events':
       case 'raid_event_signups':
+      /* Migration 003: a claim is an identity mapping, readable by all. */
+      case 'raid_characters':
         return T[table].slice();
       default:
         return T[table] ? T[table].slice() : [];
@@ -119,7 +155,15 @@ function installStub(seed, members, types) {
           /* WITH CHECK halves of the insert policies. */
           if (table === 'raid_events' && r.created_by !== uid()) return rlsViolation(table);
           if ((table === 'raid_event_signups' || table === 'raid_event_responses'
-               || table === 'raid_availability') && r.member_id !== uid()) return rlsViolation(table);
+               || table === 'raid_availability' || table === 'raid_characters')
+              && r.member_id !== uid()) return rlsViolation(table);
+          if (table === 'raid_characters') {
+            /* unique (lodestone_id): a character can be claimed only once. */
+            if (T.raid_characters.some((x) => String(x.lodestone_id) === String(r.lodestone_id))) {
+              return { data: null, error: { message: 'duplicate key value violates unique constraint' } };
+            }
+            r.id = r.id || 'ch-' + (++seq);
+          }
           if (table === 'raid_event_signups') {
             /* raid_guard_signup: assigned_role is the manager's alone. */
             if (!canManage(r.event_id)) r.assigned_role = null;
@@ -134,6 +178,7 @@ function installStub(seed, members, types) {
           T[table].push(r);
           rows.push(r);
         }
+        persist();
         return { data: q.single ? (rows[0] ?? null) : rows, error: null };
       }
 
@@ -152,6 +197,7 @@ function installStub(seed, members, types) {
           if (table === 'raid_events') { delete patch.id; delete patch.created_by; }
           Object.assign(r, patch);
         }
+        persist();
         return { data: targets, error: null };
       }
 
@@ -160,6 +206,8 @@ function installStub(seed, members, types) {
         if (!uid()) return { data: null, error: DENIED };
         const doomed = applyFilters(T[table]).filter((r) => {
           if (table === 'raid_event_signups') return r.member_id === uid() || canManage(r.event_id);
+          /* self, or a leader correcting a bad claim */
+          if (table === 'raid_characters') return r.member_id === uid() || isLeader();
           return r.member_id === uid();
         });
         for (const r of doomed) {
@@ -170,6 +218,7 @@ function installStub(seed, members, types) {
               .filter((x) => !(x.event_id === r.event_id && x.member_id === r.member_id));
           }
         }
+        persist();
         return { data: doomed, error: null };
       }
 
@@ -306,6 +355,17 @@ function check(label, actual, expected) {
     contentType: 'application/javascript',
     body: "window.RAID_CONFIG={url:'https://stub.supabase.co',key:'sb_publishable_stub'};",
   }));
+  /* The page fetches the published roster from raw.githubusercontent, with a
+     local file fallback. Serve the fixture for both, plus the job-icon map. */
+  await page.route('**/ffxiv.json*', (r) => r.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify(FC_ROSTER),
+  }));
+  await page.route('**/job-icons.json*', (r) => r.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ Astrologian: 'astrologian.png', 'Dark Knight': 'dark-knight.png',
+                           'Black Mage': 'black-mage.png', Warrior: 'warrior.png', Carpenter: 'carpenter.png' }),
+  }));
+
   await page.addInitScript({
     content: `(${installStub.toString()})(${JSON.stringify(SEED)},`
       + `${JSON.stringify([LEADER, MEMBER, OTHER, FOURTH])},${JSON.stringify(TYPES)});`,
@@ -325,6 +385,29 @@ function check(label, actual, expected) {
 
   // ---- A. signed out -----------------------------------------------------
   console.log('\n=== A. anonymous visitor ===');
+  check('lands on the welcome page, not the bare heatmap',
+    await page.evaluate(() => document.getElementById('view-welcome').classList.contains('is-active')), true);
+  check('with a Discord sign-in call to action',
+    (await page.locator('#welcome-signin').innerText()).toLowerCase().includes('sign in with discord'), true);
+  check('and a getting-started button',
+    await page.locator('#welcome-guide').isVisible(), true);
+  check('the guide opens for a signed-out visitor too',
+    await (async () => {
+      await page.locator('#welcome-guide').click();
+      await page.waitForTimeout(200);
+      return page.locator('#guide').isVisible();
+    })(), true);
+  check('and the guide explains the Discord state',
+    (await page.locator('#guide').innerText()).includes('not connected yet'), true);
+  await page.screenshot({ path: `${SHOTS}/a0-welcome.png`, fullPage: true });
+  await page.locator('#guide-close').click();
+
+  check('the public can still reach the overlap',
+    await (async () => {
+      await page.locator('#welcome-overlap').click();
+      await page.waitForTimeout(200);
+      return page.evaluate(() => document.getElementById('view-overlap').classList.contains('is-active'));
+    })(), true);
   check('overlap grid rendered (168 cells)', await page.locator('#overlap-grid .cell').count(), 168);
   check('"Events" tab hidden', await page.locator('[data-view-target="events"]').isHidden(), true);
   check('"My times" tab hidden', await page.locator('[data-needs="member"]').first().isHidden(), true);
@@ -338,6 +421,7 @@ function check(label, actual, expected) {
 
   // ---- B. member: weekly grid --------------------------------------------
   console.log('\n=== B. member, weekly availability ===');
+  await page.evaluate(() => history.replaceState(null, '', location.pathname));
   await signIn(MEMBER);
   check('"Events" and "My times" both revealed',
     [await page.locator('[data-view-target="events"]').isHidden(),
@@ -345,10 +429,57 @@ function check(label, actual, expected) {
   check('"Company" still hidden for a member',
     await page.locator('[data-needs="leader"]').isHidden(), true);
 
+  check('a signed-in member lands on Events, not the heatmap',
+    await page.evaluate(() => document.getElementById('view-events').classList.contains('is-active')), true);
+
   await page.locator('[data-view-target="mine"]').click();
   await page.waitForSelector('#mine-grid .cell');
   check('own grid shows exactly this member\'s 3 hours',
     await page.locator('#mine-grid .cell[aria-pressed="true"]').count(), 3);
+
+  // ---- B2. timezone ------------------------------------------------------
+  console.log('\n=== B2. timezone ===');
+  check('the detected zone was persisted on first sign-in',
+    await page.evaluate(() => window.__stub.T.raid_members.find((m) => m.id === 'u-cedho').timezone !== null), true);
+
+  const slotsBefore = await page.evaluate(() =>
+    [...document.querySelectorAll('#mine-grid .cell[aria-pressed="true"]')].map((c) => c.dataset.i).join(','));
+  await page.selectOption('#tz-pick', 'Asia/Tokyo');
+  await page.waitForTimeout(400);
+  check('choosing a zone saves it to the member',
+    await page.evaluate(() => window.__stub.T.raid_members.find((m) => m.id === 'u-cedho').timezone), 'Asia/Tokyo');
+  const slotsAfter = await page.evaluate(() =>
+    [...document.querySelectorAll('#mine-grid .cell[aria-pressed="true"]')].map((c) => c.dataset.i).join(','));
+  check('the same stored hours land on different grid cells in a different zone',
+    slotsBefore !== slotsAfter, true);
+  check('but the stored UTC slots are untouched',
+    await page.evaluate(() => window.__stub.T.raid_availability
+      .filter((r) => r.member_id === 'u-cedho').map((r) => r.slot).sort((a, b) => a - b)), [42, 43, 66]);
+  check('the zone label carries an abbreviation',
+    await page.evaluate(() => /\(.+\)/.test(document.getElementById('tz-status').textContent)), true);
+
+  await page.selectOption('#tz-pick', 'UTC');
+  await page.waitForTimeout(300);
+
+  // ---- B3. the view survives a reload ------------------------------------
+  console.log('\n=== B3. routing ===');
+  check('switching tabs writes the view to the URL',
+    await page.evaluate(() => location.hash), '#mine');
+
+  await page.locator('[data-view-target="chars"]').click();
+  await page.waitForTimeout(150);
+  check('and follows the tab', await page.evaluate(() => location.hash), '#chars');
+
+  await page.reload();
+  await page.waitForFunction(() => document.querySelectorAll('#overlap-grid .cell').length === 168);
+  await page.waitForTimeout(500);
+  check('reloading keeps you on the tab you were on',
+    await page.evaluate(() => document.getElementById('view-chars').classList.contains('is-active')), true);
+  check('and keeps the saved timezone',
+    await page.evaluate(() => document.getElementById('tz-pick').value), 'UTC');
+
+  await page.locator('[data-view-target="mine"]').click();
+  await page.waitForSelector('#mine-grid .cell');
 
   // ---- C. member creates a poll event ------------------------------------
   console.log('\n=== C. creating a poll event ===');
@@ -363,6 +494,28 @@ function check(label, actual, expected) {
     await page.evaluate(() => ['ev-tanks', 'ev-healers', 'ev-dps', 'ev-size']
       .map((i) => document.getElementById(i).value)), ['2', '2', '4', '8']);
 
+  await page.locator('#ev-level').fill('100');
+  await page.selectOption('#ev-level-rule', 'required');
+
+  /* The bug that started this: an author display:flex outranked the UA's
+     [hidden] rule, so the poll-length control stayed on screen after choosing
+     a fixed time. */
+  await page.locator('input[name="ev-mode"][value="fixed"]').check();
+  await page.waitForTimeout(150);
+  check('choosing a fixed time hides the poll-length control',
+    await page.locator('#ev-poll-fields').isHidden(), true);
+  check('and reveals the start-time control',
+    await page.locator('#ev-fixed-fields').isHidden(), false);
+  await page.locator('input[name="ev-mode"][value="poll"]').check();
+  await page.waitForTimeout(150);
+  check('and back again',
+    [await page.locator('#ev-poll-fields').isHidden(),
+     await page.locator('#ev-fixed-fields').isHidden()], [false, true]);
+
+  check('the organiser can sign themselves up while creating',
+    await page.locator('#ev-my-roles input').count(), 3);
+  await page.locator('#ev-my-roles input[value="healer"]').check();
+
   await page.locator('#ev-poll-start').fill('2026-09-07');
   await page.locator('#ev-save').click();
   await page.waitForSelector('#events-detail:not([hidden])');
@@ -374,12 +527,27 @@ function check(label, actual, expected) {
     await page.locator('#ev-schedule').count(), 1);
   await page.screenshot({ path: `${SHOTS}/c-event-created.png`, fullPage: true });
 
-  // creator signs up and marks hours
-  await page.locator('#role-picker input[value="healer"]').check();
-  await page.locator('#ev-signup').click();
-  await page.waitForTimeout(300);
-  check('creator appears on the roster as a healer',
+  check('opening an event puts it in the URL',
+    await page.evaluate(() => /^#\/event\/.+/.test(location.hash)), true);
+
+  /* Reload straight onto the event URL. Deliberately NOT via about:blank --
+     a file:// origin loses its sessionStorage across that hop, which would
+     sign the stub out and make this test fail for the wrong reason. */
+  const eventUrl = await page.evaluate(() => location.href);
+  await page.goto(eventUrl);
+  await page.waitForFunction(() => document.querySelectorAll('#overlap-grid .cell').length === 168);
+  await page.waitForSelector('#events-detail h1', { timeout: 15000 });
+  check('following an event link opens that event',
+    (await page.locator('#events-detail h1').innerText()).trim(), 'Savage reclear');
+
+  check('creating signed the organiser up in the same step',
+    await page.evaluate(() => window.__stub.T.raid_event_signups
+      .filter((x) => x.member_id === 'u-cedho').map((x) => x.roles)), [['healer']]);
+  check('creator appears on the roster already',
     (await page.locator('#roster').innerText()).includes('Cedho Nalen'), true);
+  check('the level is shown on the event',
+    (await page.locator('#events-detail .lvl-pill').first().innerText()).trim().toLowerCase(),
+    'lv 100 required');
 
   await page.evaluate(() => {
     /* Mark two hours directly through the stub, as the creator's own grid is
@@ -415,8 +583,15 @@ function check(label, actual, expected) {
   const targetCell = '#poll-grid .cell[data-key="2026-09-08T23:00:00.000Z"]';
   if (await page.locator(targetCell).count()) {
     await page.locator(targetCell).click();
-    await page.waitForTimeout(900);
-    check('marking an hour persists as this member\'s response',
+    await page.waitForTimeout(200);
+    check('marking an hour does not write until saved',
+      await page.evaluate(() => window.__stub.T.raid_event_responses
+        .filter((r) => r.member_id === 'u-tataru').length), 0);
+    check('the poll save button is armed',
+      await page.locator('#poll-save').isDisabled(), false);
+    await page.locator('#poll-save').click();
+    await page.waitForTimeout(400);
+    check('saving persists it as this member\'s response',
       await page.evaluate(() => window.__stub.T.raid_event_responses
         .filter((r) => r.member_id === 'u-tataru').length), 1);
   }
@@ -504,8 +679,121 @@ function check(label, actual, expected) {
     await page.evaluate(() => document.querySelectorAll('#poll-grid .cell:not(.h0)').length > 0), true);
   await page.screenshot({ path: `${SHOTS}/h-leader-event.png`, fullPage: true });
 
+  // ---- H1. characters ----------------------------------------------------
+  console.log('\n=== H1. character linking ===');
+  await signIn(MEMBER);
+  await page.locator('[data-view-target="chars"]').click();
+  await page.waitForSelector('#claim-list .adventurer');
+
+  check('the FC roster renders as claimable plates',
+    await page.locator('#claim-list button.adventurer').count(), 4);
+  check('nothing linked yet', (await page.locator('#chars-status').innerText()).trim(), 'None linked');
+  check('a plate carries the Grand Company accent class',
+    await page.evaluate(() => Boolean(document.querySelector('#claim-list .adventurer.gc-flames'))), true);
+  check('a plate shows the character title',
+    (await page.locator('#claim-list .char-title').first().innerText()).trim(), 'Heliodrome Hero');
+  check('roles are inferred from levelled combat jobs',
+    await page.evaluate(() => {
+      const p = [...document.querySelectorAll('#claim-list button.adventurer')]
+        .find((el) => el.innerText.includes('Cedho Nalen'));
+      return [...p.querySelectorAll('.role-hint span')].map((s) => s.textContent.trim());
+    }), ['Tank', 'Healer']);
+  check('a crafter suggests no raid role',
+    await page.evaluate(() => {
+      const p = [...document.querySelectorAll('#claim-list button.adventurer')]
+        .find((el) => el.innerText.includes('Krile'));
+      return p.querySelectorAll('.role-hint span').length;
+    }), 0);
+  await page.screenshot({ path: `${SHOTS}/h1-claim-list.png`, fullPage: true });
+
+  await page.locator('#claim-list button.adventurer').first().click();
+  await page.waitForTimeout(300);
+  check('claiming moves the character into "Yours"',
+    (await page.locator('#my-chars .char-name').allInnerTexts()).map((s) => s.trim()), ['Cedho Nalen']);
+  check('and takes it out of the claimable list',
+    await page.locator('#claim-list button.adventurer').count(), 3);
+  check('the claim was written as this member',
+    await page.evaluate(() => window.__stub.T.raid_characters.map((c) => [c.member_id, c.character_name])),
+    [['u-cedho', 'Cedho Nalen']]);
+
+  await page.locator('#char-search').fill('krile');
+  await page.waitForTimeout(150);
+  check('search filters the roster',
+    (await page.locator('#claim-list .char-name').allInnerTexts()).map((s) => s.trim()), ['Krile Baldesion']);
+  await page.locator('#char-search').fill('');
+
+  check('a plain member sees no leader claims panel',
+    await page.locator('#claims-admin').isHidden(), true);
+
+  /* Another member claims a different character, so the roster below has two. */
+  await signIn(OTHER);
+  await page.locator('[data-view-target="chars"]').click();
+  await page.waitForSelector('#claim-list .adventurer');
+  check('a member sees someone else\'s claim as already taken',
+    await page.locator('#claim-list button.adventurer').count(), 3);
+  await page.evaluate(() => {
+    const p = [...document.querySelectorAll('#claim-list button.adventurer')]
+      .find((el) => el.innerText.includes('Azathio'));
+    p.click();
+  });
+  await page.waitForTimeout(300);
+  check('second member linked their own character',
+    await page.evaluate(() => window.__stub.T.raid_characters.length), 2);
+
+  // ---- H1b. characters show up on shared rosters --------------------------
+  console.log('\n=== H1b. rosters lead with the character ===');
+  await openEvents();
+  await page.locator('.ev-card').first().click();
+  await page.waitForSelector('#roster');
+  check('the roster leads with the character, handle as a tag',
+    await page.evaluate(() => {
+      const li = [...document.querySelectorAll('#roster .slot-list li')]
+        .find((x) => x.innerText.includes('Azathio Magnus'));
+      return li ? li.querySelector('.char-tag')?.textContent.trim() : null;
+    }), 'Tataru');
+  check('a handle identical to the character name is not printed twice',
+    await page.evaluate(() => {
+      const li = [...document.querySelectorAll('#roster .slot-list li')]
+        .find((x) => x.innerText.includes('Cedho Nalen'));
+      return li ? li.querySelectorAll('.char-tag').length : -1;
+    }), 0);
+  check('someone with no linked character still shows their handle',
+    await page.evaluate(() => document.getElementById('roster').innerText.includes('Batty')), true);
+  await page.screenshot({ path: `${SHOTS}/h1b-roster-characters.png`, fullPage: true });
+
+  // ---- H1c. leaders correct a bad claim -----------------------------------
+  console.log('\n=== H1c. a leader corrects a bad claim ===');
+  await signIn(LEADER);
+  await page.locator('[data-view-target="chars"]').click();
+  await page.waitForSelector('#claim-list .adventurer');
+  check('a leader sees the all-claims panel', await page.locator('#claims-admin').isHidden(), false);
+  check('listing every claim', await page.locator('#all-claims .claim-row').count(), 2);
+
+  await page.locator('#all-claims .claim-row [data-unlink]').first().click();
+  await page.waitForTimeout(300);
+  check('a leader can remove someone else\'s claim',
+    await page.evaluate(() => window.__stub.T.raid_characters.length), 1);
+
+  await signIn(FOURTH);
+  await page.locator('[data-view-target="chars"]').click();
+  await page.waitForSelector('#claim-list .adventurer');
+  check('a plain member cannot remove another member\'s claim',
+    await page.evaluate(async () => {
+      const before = window.__stub.T.raid_characters.length;
+      const target = window.__stub.T.raid_characters[0];
+      const c = window.supabase.createClient();
+      await c.from('raid_characters').delete().eq('id', target.id);
+      return window.__stub.T.raid_characters.length === before;
+    }), true);
+
   // ---- H2. announcing to Discord -----------------------------------------
   console.log('\n=== H2. announce to Discord ===');
+  /* Back to the event as its creator: the previous block left the page on the
+     Characters view as a different member. */
+  await signIn(MEMBER);
+  await openEvents();
+  await page.locator('.ev-card').first().click();
+  await page.waitForSelector('#roster');
   check('organiser sees the announce button', await page.locator('#ev-announce').count(), 1);
 
   await page.locator('#ev-announce').click();
@@ -546,12 +834,15 @@ function check(label, actual, expected) {
     [await page.locator('[data-view-target="events"]').isHidden(),
      await page.locator('[data-view-target="mine"]').isHidden(),
      await page.locator('[data-needs="leader"]').isHidden()], [true, true, true]);
+  check('signing out returns to the welcome page',
+    await page.evaluate(() => document.getElementById('view-welcome').classList.contains('is-active')), true);
   check('no names left in the DOM',
     await page.evaluate(() => ['Batty', 'Cedho', 'Tataru', 'Yshtola']
       .filter((n) => document.body.innerText.includes(n))), []);
   check('and no event titles either',
     await page.evaluate(() => document.body.innerText.includes('Savage reclear')), false);
 
+  await page.evaluate(() => window.__stub.reset());
   await browser.close();
 
   const failed = results.filter((r) => !r.ok);

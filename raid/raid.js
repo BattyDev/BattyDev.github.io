@@ -49,40 +49,133 @@ const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-function weekStart() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - d.getDay());
-  return d;
+const BROWSER_TZ = (() => {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; }
+  catch { return 'UTC'; }
+})();
+
+/* The zone every time on this page is drawn in. Held in a module variable
+   rather than read from the browser at each call, so a member's saved choice
+   wins over whatever machine they happen to be sitting at -- and so that
+   changing it is one assignment plus a redraw. */
+let currentTz = BROWSER_TZ;
+const TZ = () => currentTz;
+
+const PART_FMT = new Map();
+function partFmt(tz) {
+  if (!PART_FMT.has(tz)) {
+    PART_FMT.set(tz, new Intl.DateTimeFormat('en-US', {
+      timeZone: tz, hourCycle: 'h23', weekday: 'short',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    }));
+  }
+  return PART_FMT.get(tz);
 }
 
-function cellDate(day, hour) {
-  const d = weekStart();
-  d.setDate(d.getDate() + day);
-  d.setHours(hour, 0, 0, 0);
-  return d;
+/* The wall-clock fields an instant reads as, in a given zone. Intl is the only
+   thing in the platform that knows the IANA rules, so all zone maths below goes
+   through it rather than through Date's own local-time methods -- those only
+   ever speak the browser's zone, which is precisely what we are replacing. */
+function zoned(instant, tz = TZ()) {
+  const p = {};
+  for (const part of partFmt(tz).formatToParts(instant)) p[part.type] = part.value;
+  return {
+    y: +p.year, mo: +p.month, d: +p.day,
+    h: +p.hour % 24, mi: +p.minute, s: +p.second,
+    dow: DAY_NAMES.indexOf(p.weekday),
+  };
 }
 
-/* local grid index (day * 24 + hour) -> UTC slot, and back */
+function offsetMs(instant, tz) {
+  const z = zoned(instant, tz);
+  return Date.UTC(z.y, z.mo - 1, z.d, z.h, z.mi, z.s)
+    - Math.floor(instant.getTime() / 1000) * 1000;
+}
+
+/* The instant at which a wall-clock time occurs in TZ(). Two passes: reading
+   the fields as if they were UTC gives an instant that is wrong by the offset,
+   and the offset in force AT that wrong instant can itself be wrong by an hour
+   across a daylight-saving boundary -- so the offset is re-read at the
+   corrected instant and applied. On the hour that does not exist in spring this
+   lands on the following hour, which is the same thing every calendar app does.
+*/
+function instantAt(y, mo, d, h, mi = 0) {
+  const guess = Date.UTC(y, mo - 1, d, h, mi);
+  const o1 = offsetMs(new Date(guess), TZ());
+  const o2 = offsetMs(new Date(guess - o1), TZ());
+  return guess - o2;
+}
+
+/* Calendar arithmetic is done at UTC noon so that adding days can never slip
+   across a DST boundary and land on the wrong date. */
+const ymdToNoon = (ymd) => Date.UTC(ymd.y, ymd.mo - 1, ymd.d, 12);
+function addDays(ymd, n) {
+  const t = new Date(ymdToNoon(ymd) + n * 86400000);
+  return { y: t.getUTCFullYear(), mo: t.getUTCMonth() + 1, d: t.getUTCDate() };
+}
+const ymdDow = (ymd) => new Date(ymdToNoon(ymd)).getUTCDay();
+const todayYmd = () => { const z = zoned(new Date()); return { y: z.y, mo: z.mo, d: z.d }; };
+const ymdISO = (ymd) => `${ymd.y}-${String(ymd.mo).padStart(2, '0')}-${String(ymd.d).padStart(2, '0')}`;
+
+/* The Sunday that starts the current week, in TZ(). */
+const weekStartYmd = () => addDays(todayYmd(), -zoned(new Date()).dow);
+
+function cellInstant(day, hour) {
+  const w = addDays(weekStartYmd(), day);
+  return instantAt(w.y, w.mo, w.d, hour);
+}
+
+/* ---------- the weekly slot map ----------
+   Slots are stored as an hour of the UTC week (utcDay * 24 + utcHour, day 0 =
+   Sunday). Storing UTC is what makes the aggregate mean anything: two members
+   in different zones who are free at the same real moment have to land on the
+   same slot, which they would not if each stored their own wall clock.
+
+   The grid is drawn in TZ(), so this maps each cell to its UTC slot. It is
+   rebuilt whenever the chosen zone changes -- and the mapping is computed
+   against the CURRENT week, so the offset used is the one actually in force,
+   correct on either side of a daylight-saving change. */
 const LOCAL_TO_SLOT = new Array(168);
-const SLOT_TO_LOCAL = new Map();
-for (let day = 0; day < 7; day++) {
-  for (let hour = 0; hour < 24; hour++) {
-    const d = cellDate(day, hour);
-    const slot = d.getUTCDay() * 24 + d.getUTCHours();
-    LOCAL_TO_SLOT[day * 24 + hour] = slot;
-    SLOT_TO_LOCAL.set(slot, day * 24 + hour);
+function rebuildSlots() {
+  for (let day = 0; day < 7; day++) {
+    for (let hour = 0; hour < 24; hour++) {
+      const t = new Date(cellInstant(day, hour));
+      LOCAL_TO_SLOT[day * 24 + hour] = t.getUTCDay() * 24 + t.getUTCHours();
+    }
   }
 }
+rebuildSlots();
 
-const HOUR_FMT = new Intl.DateTimeFormat(undefined, { hour: 'numeric' });
-const hourLabel = (h) => HOUR_FMT.format(cellDate(0, h));
+const HOUR_FMT = new Map();
+function hourLabel(h) {
+  const tz = TZ();
+  if (!HOUR_FMT.has(tz)) {
+    HOUR_FMT.set(tz, new Intl.DateTimeFormat(undefined, { timeZone: tz, hour: 'numeric' }));
+  }
+  return HOUR_FMT.get(tz).format(cellInstant(0, h));
+}
 const cellLabel = (day, hour) => `${DAY_NAMES[day]} ${hourLabel(hour)}`;
 
-const TZ_NAME = (() => {
-  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'local time'; }
-  catch { return 'local time'; }
-})();
+/* Zone name plus the abbreviation people actually say out loud, so a time is
+   never ambiguous: "America/New_York (EDT)". */
+function tzLabel() {
+  try {
+    const abbr = new Intl.DateTimeFormat('en-US', { timeZone: TZ(), timeZoneName: 'short' })
+      .formatToParts(new Date()).find((p) => p.type === 'timeZoneName')?.value;
+    /* "UTC (UTC)" tells nobody anything. */
+    return abbr && abbr !== TZ() ? `${TZ()} (${abbr})` : TZ();
+  } catch { return TZ(); }
+}
+
+/* Every absolute time on the page goes through this, and it always carries the
+   zone -- the whole complaint that started this was not knowing which one. */
+function fmtWhen(v) {
+  return new Intl.DateTimeFormat(undefined, {
+    timeZone: TZ(), weekday: 'short', month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+  }).format(new Date(v));
+}
 
 /* ---------- state ---------- */
 const state = {
@@ -110,6 +203,36 @@ function banner(msg, warn = false) {
 
 function stamp(text) { $('stamp').textContent = text; }
 
+/* ---------- routing ----------
+   The view lives in the URL hash, so a reload keeps you where you were and an
+   event can be linked to directly. Hash rather than a path because this is
+   GitHub Pages: there is no server to route /raid/event/<id> back to the page.
+
+   replaceState rather than pushState for plain view switches -- back should
+   leave the page, not walk the tab history. Opening an event does push, so
+   Back returns to the list, which is what the arrow means there. */
+const VIEWS = ['welcome', 'overlap', 'events', 'mine', 'chars', 'company'];
+
+function readRoute() {
+  const h = location.hash.replace(/^#\/?/, '');
+  if (h.startsWith('event/')) {
+    const id = h.slice('event/'.length);
+    return /^[0-9a-f-]{36}$/i.test(id) ? { view: 'events', event: id } : null;
+  }
+  return VIEWS.includes(h) ? { view: h } : null;
+}
+
+function writeRoute(view, eventId, push = false) {
+  const next = eventId ? `#/event/${eventId}` : `#${view}`;
+  if (location.hash === next) return;
+  routing = true;
+  if (push) history.pushState(null, '', next);
+  else history.replaceState(null, '', next);
+  routing = false;
+}
+
+let routing = false;
+
 function showView(name) {
   for (const s of document.querySelectorAll('.view')) {
     const on = s.id === `view-${name}`;
@@ -122,6 +245,7 @@ function showView(name) {
     if (on) b.setAttribute('aria-current', 'page');
     else b.removeAttribute('aria-current');
   }
+  if (!(name === 'events' && state.openEvent)) writeRoute(name);
 }
 
 for (const b of document.querySelectorAll('.system-icons button')) {
@@ -147,10 +271,69 @@ function syncChrome() {
   btn.hidden = !CONFIGURED;
   btn.textContent = signedIn ? 'Sign out' : 'Sign in with Discord';
 
-  if (!signedIn && !document.querySelector('#view-overlap').classList.contains('is-active')) {
-    showView('overlap');
+  /* Home is for signed-out visitors only; once you are in, Events is home. */
+  for (const b of document.querySelectorAll('[data-anon]')) b.hidden = signedIn;
+
+  if (!signedIn) {
+    const open = [...document.querySelectorAll('.view')].find((v) => v.classList.contains('is-active'));
+    if (!open || !['view-welcome', 'view-overlap'].includes(open.id)) showView('welcome');
   }
 }
+
+/* Where a member lands. Events, not the heatmap: the heatmap answers "when is
+   the company around", which is background, while Events is the thing there is
+   something to DO about -- sign up, or put one on. The signed-out public still
+   lands on the heatmap, because events are not theirs to see. */
+let landed = false;
+async function landOnDefaultView() {
+  if (landed || !state.session) return;
+  landed = true;
+  const route = readRoute();
+  /* 'welcome' is the signed-out landing, so it is not a place to leave a member
+     standing -- signing in from it must still take them to Events. Treat it as
+     no route at all. */
+  if (route && route.view !== 'welcome') {
+    showView(route.view);
+    if (route.event) {
+      try { await openEvent(route.event); }
+      catch { banner('That event link could not be opened — it may have been removed.', true); }
+    }
+    return;
+  }
+  showView('events');
+}
+
+/* A signed-out visitor gets the welcome page, and is told plainly if the link
+   they followed was to an event -- that is a dead end otherwise, since events
+   are not the public's to see. */
+function landSignedOut() {
+  const route = readRoute();
+  const note = $('welcome-note');
+  if (route?.event) {
+    note.textContent = 'That link points to an event. Sign in with Discord to open it.';
+    note.hidden = false;
+    showView('welcome');
+    return;
+  }
+  note.hidden = true;
+  showView(route && route.view !== 'welcome' && route.view === 'overlap' ? 'overlap' : 'welcome');
+}
+
+/* Back and forward, and a hash typed by hand. */
+window.addEventListener('hashchange', async () => {
+  if (routing || !state.session) return;
+  const route = readRoute();
+  if (!route) return;
+  if (route.event) {
+    if (state.openEvent?.id !== route.event) {
+      showView('events');
+      try { await openEvent(route.event); } catch { /* stale link */ }
+    }
+  } else {
+    if (state.openEvent) closeEvent();
+    showView(route.view);
+  }
+});
 
 /* ---------- grid construction ---------- */
 /* One builder for all three grids. `mode` is 'read' (heatmap), 'edit' (the
@@ -245,8 +428,8 @@ function renderOverlap() {
 
   const s = state.stats;
   $('overlap-stats').textContent = s
-    ? `${s.respondents} of ${s.members} members have logged hours · shown in ${TZ_NAME}`
-    : `shown in ${TZ_NAME}`;
+    ? `${s.respondents} of ${s.members} members have logged hours · shown in ${tzLabel()}`
+    : `shown in ${tzLabel()}`;
 
   /* Legend is drawn from the same scale the cells use, so it cannot drift. */
   $('overlap-legend').innerHTML = max
@@ -313,12 +496,19 @@ function renderBest(counts, max) {
 /* ---------- my times (member) ---------- */
 let mineCells = null;
 let painting = false, paintTo = false, suppressClick = false;
-let saveTimer = null;
 
 function setCell(i, on) {
   const slot = LOCAL_TO_SLOT[i];
   if (on) state.mine.add(slot); else state.mine.delete(slot);
   mineCells[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+}
+
+/* How far the grid has drifted from what the server holds. */
+function pendingCount(desired, saved) {
+  let n = 0;
+  for (const x of desired) if (!saved.has(x)) n++;
+  for (const x of saved) if (!desired.has(x)) n++;
+  return n;
 }
 
 function renderMine() {
@@ -330,8 +520,7 @@ function renderMine() {
   for (let i = 0; i < 168; i++) {
     mineCells[i].setAttribute('aria-pressed', state.mine.has(LOCAL_TO_SLOT[i]) ? 'true' : 'false');
   }
-  $('mine-count').textContent =
-    `${state.mine.size} hour${state.mine.size === 1 ? '' : 's'} marked · ${TZ_NAME}`;
+  markDirty();
 }
 
 function wirePainting() {
@@ -349,7 +538,7 @@ function wirePainting() {
     painting = true;
     suppressClick = true;
     setCell(i, paintTo);
-    queueSave();
+    markDirty();
   });
 
   el.addEventListener('mouseover', (e) => {
@@ -357,7 +546,7 @@ function wirePainting() {
     const cell = e.target.closest('.cell');
     if (!cell) return;
     setCell(Number(cell.dataset.i), paintTo);
-    queueSave();
+    markDirty();
   });
 
   window.addEventListener('mouseup', () => { painting = false; });
@@ -368,21 +557,31 @@ function wirePainting() {
     if (suppressClick) { suppressClick = false; return; }
     const i = Number(cell.dataset.i);
     setCell(i, cell.getAttribute('aria-pressed') !== 'true');
-    queueSave();
+    markDirty();
   });
 
   $('clear-all').addEventListener('click', () => {
     for (let i = 0; i < 168; i++) setCell(i, false);
-    queueSave();
+    markDirty();
   });
+
+  $('mine-save').addEventListener('click', saveMine);
 }
 
-function queueSave() {
+/* Formerly a debounced autosave. It dropped hours: saveMine() read
+   state.mine AFTER its awaits to decide what was now safely stored, so
+   anything painted during the round-trip was marked saved without ever having
+   been sent, and the next diff then found nothing to do. An explicit save
+   removes the overlap entirely; snapshotting the target below removes the bug
+   itself, so the two are independent fixes and neither relies on the other. */
+function markDirty() {
+  const pending = pendingCount(state.mine, state.saved);
   $('mine-count').textContent =
-    `${state.mine.size} hour${state.mine.size === 1 ? '' : 's'} marked · ${TZ_NAME}`;
-  $('mine-status').textContent = 'Saving…';
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(saveMine, 600);
+    `${state.mine.size} hour${state.mine.size === 1 ? '' : 's'} marked · ${tzLabel()}`;
+  $('mine-save').disabled = pending === 0;
+  $('mine-status').textContent = pending
+    ? `${pending} unsaved change${pending === 1 ? '' : 's'}`
+    : 'Saved';
 }
 
 /* Writes the difference, not the whole grid: an insert for newly marked hours
@@ -392,10 +591,18 @@ async function saveMine() {
   const uid = state.session?.user?.id;
   if (!uid) return;
 
-  const add = [...state.mine].filter((s) => !state.saved.has(s));
-  const del = [...state.saved].filter((s) => !state.mine.has(s));
-  if (!add.length && !del.length) { $('mine-status').textContent = 'Saved'; return; }
+  /* Snapshot what is being sent. Marking state.mine as saved after the awaits
+     would claim credit for anything painted meanwhile -- the bug this replaces.
+     Only the set actually written becomes the new baseline; anything added
+     during the round-trip stays pending and the button stays live. */
+  const target = new Set(state.mine);
+  const add = [...target].filter((s) => !state.saved.has(s));
+  const del = [...state.saved].filter((s) => !target.has(s));
+  if (!add.length && !del.length) { markDirty(); return; }
 
+  const btn = $('mine-save');
+  btn.disabled = true;
+  $('mine-status').textContent = 'Saving…';
   try {
     if (add.length) {
       const { error } = await db.from('raid_availability')
@@ -407,11 +614,15 @@ async function saveMine() {
         .delete().eq('member_id', uid).in('slot', del);
       if (error) throw error;
     }
-    state.saved = new Set(state.mine);
-    $('mine-status').textContent = `Saved ${new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
+    state.saved = target;
     await loadPublic();      // the member's own change moves the public heatmap
     if (isLeader()) await loadLeader();
+    markDirty();
+    if (pendingCount(state.mine, state.saved) === 0) {
+      $('mine-status').textContent = `Saved ${new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
+    }
   } catch (err) {
+    markDirty();
     $('mine-status').textContent = 'Not saved';
     banner(`Could not save your availability: ${esc(err.message || err)}`, true);
   }
@@ -440,7 +651,7 @@ function renderCompany() {
     pickSlot(state.picked);
   }
 
-  $('company-stats').textContent = `${state.members.length} members · shown in ${TZ_NAME}`;
+  $('company-stats').textContent = `${state.members.length} members · shown in ${tzLabel()}`;
   $('company-members').innerHTML = state.members.length
     ? state.members.map((m) => chip(m, m.role === 'leader')).join('')
     : '<p class="empty">No members yet.</p>';
@@ -463,12 +674,57 @@ function pickSlot(i) {
 }
 
 function chip(m, leader) {
-  const name = esc(m.display_name || 'Adventurer');
+  /* Prefer the linked character where there is one, for the same reason the
+     roster does. m may be a bare directory row, so guard on the id. */
+  const linked = m.id ? charsOf(m.id)[0] : null;
+  const name = esc(linked ? linked.character_name : (m.display_name || 'Adventurer'));
   const face = m.avatar_url
     ? `<img src="${esc(m.avatar_url)}" alt="" width="24" height="24" loading="lazy">`
     : `<span class="fallback">${esc((m.display_name || '?').trim().charAt(0).toUpperCase())}</span>`;
   return `<span class="chip${leader ? ' is-leader' : ''}">${face}<span class="name">${name}</span>${
     leader ? '<span class="tag">Leader</span>' : ''}</span>`;
+}
+
+/* ---------- timezone ----------
+   Stored on the member so the choice follows them between machines. It is a
+   rendering preference only: raid_availability.slot stays an hour of the UTC
+   week and raid_event_responses.starts_at stays an absolute instant, which is
+   what keeps two members in different zones agreeing on the same moment. */
+function wireTimezone() {
+  const sel = $('tz-pick');
+  let zones = [];
+  try { zones = Intl.supportedValuesOf('timeZone'); } catch { zones = []; }
+  /* Older engines have no supportedValuesOf. Offer at least the browser's own
+     zone and UTC so the control is never empty. */
+  if (!zones.length) zones = [...new Set([BROWSER_TZ, 'UTC'])];
+  if (!zones.includes(BROWSER_TZ)) zones.unshift(BROWSER_TZ);
+
+  sel.innerHTML = zones.map((z) => `<option value="${esc(z)}">${esc(z)}</option>`).join('');
+  sel.value = TZ();
+
+  sel.addEventListener('change', async () => {
+    applyTimezone(sel.value);
+    $('tz-status').textContent = 'Saving…';
+    const { error } = await db.from('raid_members')
+      .update({ timezone: currentTz }).eq('id', state.session.user.id);
+    $('tz-status').textContent = error ? `Not saved: ${error.message}` : `Saved · ${tzLabel()}`;
+  });
+}
+
+/* Point every renderer at a new zone. The slot map has to be rebuilt before
+   anything redraws, because it is what maps a grid cell to the UTC hour that
+   was actually stored. */
+function applyTimezone(tz) {
+  currentTz = tz || BROWSER_TZ;
+  rebuildSlots();
+  const sel = $('tz-pick');
+  if (sel) { sel.value = currentTz; }
+  $('tz-status').textContent = tzLabel();
+  renderOverlap();
+  if (mineCells) renderMine();
+  if (state.openEvent) renderDetail();
+  if (state.events.length) renderEvents();
+  if (isLeader() && companyCells) renderCompany();
 }
 
 /* ---------- loading ---------- */
@@ -491,7 +747,6 @@ async function loadMine() {
   state.saved = new Set((data || []).map((r) => r.slot));
   state.mine = new Set(state.saved);
   renderMine();
-  $('mine-status').textContent = 'Saved';
 }
 
 async function loadLeader() {
@@ -521,9 +776,20 @@ async function loadMember() {
   const uid = state.session?.user?.id;
   if (!uid) { state.member = null; return; }
   const { data, error } = await db.from('raid_members')
-    .select('id, discord_id, display_name, avatar_url, role').eq('id', uid).maybeSingle();
+    .select('id, discord_id, display_name, avatar_url, role, timezone').eq('id', uid).maybeSingle();
   if (error) throw error;
   state.member = data;
+  if (data) {
+    if (data.timezone) {
+      applyTimezone(data.timezone);
+    } else {
+      /* First sign-in: adopt what the browser reports and write it down, so the
+         zone every time is drawn in stops being implicit. */
+      applyTimezone(BROWSER_TZ);
+      await db.from('raid_members').update({ timezone: BROWSER_TZ }).eq('id', uid);
+      state.member.timezone = BROWSER_TZ;
+    }
+  }
   if (!data) {
     banner('Your Discord login worked, but no member record exists for it yet. ' +
            'A leader may need to run the provisioning trigger for your account.', true);
@@ -540,8 +806,15 @@ async function onSession(session) {
     if (session) {
       await loadMine();
       await loadEventContext();
+      await loadFcRoster();
+      await loadCharacters();
       await loadEvents();
       if (isLeader()) await loadLeader();
+      maybeOpenGuide();
+      await landOnDefaultView();
+    } else {
+      landed = false;
+      landSignedOut();
     }
   } catch (err) {
     banner(`Could not load your account: ${esc(err.message || err)}`, true);
@@ -561,10 +834,13 @@ function wireAuth() {
       state.openEvent = null;
       state.evSignups = [];
       state.evResponses = [];
+      state.characters = [];
+      state.charFilter = '';
       $('events-detail').hidden = true;
       $('events-index').hidden = false;
       $('events-list').innerHTML = '';
-      showView('overlap');
+      if ($('guide').open) $('guide').close();
+      showView('welcome');
       return;
     }
     const { error } = await db.auth.signInWithOAuth({
@@ -587,6 +863,7 @@ async function main() {
            'Fill in <code>raid/config.js</code> with the project URL and publishable key.', true);
     stamp('Not configured');
     syncChrome();
+    showView('welcome');
     return;
   }
 
@@ -601,6 +878,9 @@ async function main() {
 
   wireAuth();
   wireEventForm();
+  wireChars();
+  wireTimezone();
+  wireGuide();
   const { data } = await db.auth.getSession();
   await onSession(data?.session ?? null);
 }
@@ -644,42 +924,28 @@ Object.assign(state, {
   evSavedMarks: new Set(),
 });
 
-/* ---------- dates ---------- */
-/* 'YYYY-MM-DD' through the Date constructor is parsed as UTC midnight, which
-   renders as the previous day for anyone west of Greenwich. Build it locally. */
-function parseISODate(s) {
-  if (!s) return null;
-  const [y, m, d] = String(s).slice(0, 10).split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
+/* ---------- dates ----------
+   An event happens on a date, so its poll runs over absolute days rather than
+   the recurring 0..167 week the availability grid uses. Everything here is
+   expressed as {y, mo, d} calendar fields plus TZ(), never as a Date read
+   through the browser's own zone. */
 
-const localISODate = (d) => {
-  const p = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-};
-
+/* The poll window as calendar days in the viewer's chosen zone. */
 function pollWindow(ev) {
-  const start = parseISODate(ev.poll_start) || new Date(new Date().setHours(0, 0, 0, 0));
-  return Array.from({ length: ev.poll_days || 14 }, (_, i) => {
-    const d = new Date(start);
-    d.setDate(d.getDate() + i);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  });
+  let start;
+  if (ev.poll_start) {
+    const [y, mo, d] = String(ev.poll_start).slice(0, 10).split('-').map(Number);
+    start = { y, mo, d };
+  } else {
+    start = todayYmd();
+  }
+  return Array.from({ length: ev.poll_days || 14 }, (_, i) => addDays(start, i));
 }
 
 /* Canonical key for an hour, so a value written by this page and one read back
    from Postgres ('...+00:00') compare equal. */
 const hourKey = (v) => new Date(v).toISOString();
-const cellKey = (day, hour) => {
-  const d = new Date(day);
-  d.setHours(hour, 0, 0, 0);
-  return d.toISOString();
-};
-
-const fmtWhen = (v) => new Date(v).toLocaleString(undefined, {
-  weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-});
+const cellKey = (ymd, hour) => new Date(instantAt(ymd.y, ymd.mo, ymd.d, hour)).toISOString();
 
 /* ---------- composition ---------- */
 const compOf = (ev) => ({ tank: ev.tanks_needed, healer: ev.healers_needed, dps: ev.dps_needed });
@@ -691,6 +957,31 @@ function compText(ev) {
   }
   const c = compOf(ev);
   return ROLES.filter((r) => c[r] != null).map((r) => `${c[r]} ${ROLE_LABEL[r]}`).join(' · ');
+}
+
+/* The level, where one is stated. 'required' and 'recommended' are different
+   claims and the pill says which -- both are advisory, since the database
+   deliberately does not refuse a signup over a level (see 005). */
+function levelPill(ev) {
+  if (ev.min_level == null) return '';
+  const req = ev.level_rule === 'required';
+  return `<span class="lvl-pill${req ? ' is-required' : ''}">Lv ${Number(ev.min_level)} ${
+    req ? 'required' : 'rec.'}</span>`;
+}
+
+/* The highest level this member has on a job that can fill one of the roles
+   they are offering, across their linked characters. Used only to warn. */
+function levelFor(memberId, roles) {
+  let best = null;
+  for (const claim of charsOf(memberId)) {
+    const c = byLodestone(claim.lodestone_id);
+    for (const j of (c?.jobs || [])) {
+      const r = JOB_ROLE[j.job];
+      if (!r || (roles && roles.length && !roles.includes(r))) continue;
+      if (best == null || (j.level || 0) > best) best = j.level || 0;
+    }
+  }
+  return best;
 }
 
 /* ---------- the roster solver ----------
@@ -807,6 +1098,7 @@ function renderEvents() {
         ${mine ? '<span class="pill is-mine">Yours</span>' : ''}
         <span>${esc(when)}</span>
         <span>${esc(compText(ev))}</span>
+        ${levelPill(ev)}
         <span class="who">by ${esc(who(ev.created_by).display_name)}</span>
       </div>
     </button>`;
@@ -836,6 +1128,7 @@ async function openEvent(id) {
 
   $('events-index').hidden = true;
   $('events-detail').hidden = false;
+  writeRoute(null, id, true);
   renderDetail();
 }
 
@@ -843,11 +1136,38 @@ function closeEvent() {
   state.openEvent = null;
   $('events-detail').hidden = true;
   $('events-index').hidden = false;
+  writeRoute('events');
   renderEvents();
 }
 
 const canManage = (ev) => ev && (ev.created_by === state.session?.user?.id || isLeader());
+
+/* An existing signup is the member's own answer and is shown back verbatim.
+   With no signup yet, seed the boxes from what their linked characters could
+   actually fill -- a suggestion to save three clicks, never a constraint. The
+   member still submits, and the database only ever receives what they ticked. */
+function roleChecked(signup, role) {
+  if (signup) return Boolean(signup.roles?.includes(role));
+  const uid = state.session?.user?.id;
+  return charsOf(uid).some((claim) =>
+    rolesFromJobs(byLodestone(claim.lodestone_id) || {}).includes(role));
+}
 const mySignup = () => state.evSignups.find((s) => s.member_id === state.session?.user?.id) || null;
+
+/* Advisory only. The database does not refuse a signup over a level, because
+   doing so would need a character claim and a job level from a JSON file
+   republished on a schedule -- it would bar people for being briefly stale and
+   leave a leader unable to wave in somebody they know is ready. */
+function levelWarning(ev, signup) {
+  if (ev.min_level == null) return '';
+  const uid = state.session?.user?.id;
+  if (!charsOf(uid).length) return '';
+  const lv = levelFor(uid, signup?.roles);
+  if (lv == null || lv >= ev.min_level) return '';
+  return `<p class="lvl-warn">Your linked characters top out at level ${lv} for these roles;
+    this is ${ev.level_rule === 'required' ? 'listed as required at' : 'tuned for'}
+    level ${Number(ev.min_level)}.</p>`;
+}
 
 function renderDetail() {
   const ev = state.openEvent;
@@ -860,10 +1180,14 @@ function renderDetail() {
     : `<span class="ev-when">${ev.mode === 'poll' ? 'Time not picked yet' : 'No time set'}</span>`;
 
   $('events-detail').innerHTML = `
-    <button type="button" class="back-link" id="ev-back">&larr; All events</button>
+    <div class="detail-top">
+      <button type="button" class="back-link" id="ev-back">&larr; All events</button>
+      <button type="button" class="ghost" id="ev-copy">Copy link</button>
+    </div>
 
     <div class="section-head">
       <p class="eyebrow">${esc(compText(ev))} · by ${esc(who(ev.created_by).display_name)}</p>
+      ${ev.min_level != null ? `<p class="lede" style="margin-top:0">${levelPill(ev)}</p>` : ''}
       <h1>${esc(ev.title)}</h1>
       <p class="lede">${when}
         <span class="pill is-${esc(ev.status)}">${esc(ev.status)}</span></p>
@@ -876,11 +1200,12 @@ function renderDetail() {
           <h2>${mine ? 'You are signed up' : 'Sign up'}</h2>
           <p class="grid-note" id="signup-status"></p>
         </div>
+        ${levelWarning(ev, mine)}
         <p class="hint" style="margin-bottom:10px">Pick every role you can fill — more roles means
            more chance of a seat when the party is short one.</p>
         <div class="roles" id="role-picker">
           ${ROLES.map((r) => `<label class="r-${r}">
-            <input type="checkbox" value="${r}"${mine?.roles?.includes(r) ? ' checked' : ''}>
+            <input type="checkbox" value="${r}"${roleChecked(mine, r) ? ' checked' : ''}>
             <i class="bi ${ROLE_ICON[r]}"></i> ${ROLE_LABEL[r]}
           </label>`).join('')}
         </div>
@@ -894,13 +1219,14 @@ function renderDetail() {
       <div class="panel">
         <div class="grid-head">
           <h2>${manage ? 'Who can make it' : 'Your hours'}</h2>
-          <p class="grid-note" id="poll-status">${esc(TZ_NAME)}</p>
+          <p class="grid-note" id="poll-status">${esc(tzLabel())}</p>
         </div>
         <p class="hint" style="margin-bottom:10px">${manage
           ? 'Darker means more people. Click an hour to see who, then lock it in.'
           : 'Drag to mark the hours you could make. Only the organiser and FC leaders see these.'}</p>
         <div class="grid-scroll"><div class="dayg" id="poll-grid"></div></div>
         <div class="grid-actions">
+          ${!manage ? '<button type="button" class="primary" id="poll-save" disabled>Save my hours</button>' : ''}
           ${!manage ? '<button type="button" class="ghost" id="ev-prefill">Use my weekly times</button>' : ''}
           <span class="grid-note" id="poll-picked"></span>
           ${manage ? '<button type="button" class="primary" id="ev-schedule" disabled>Schedule this hour</button>' : ''}
@@ -932,6 +1258,7 @@ function renderDetail() {
   `;
 
   $('ev-back').addEventListener('click', closeEvent);
+  $('ev-copy').addEventListener('click', copyEventLink);
   wireSignup();
   if (ev.mode === 'poll' && ev.status !== 'cancelled') renderPoll();
   renderRoster();
@@ -976,6 +1303,28 @@ async function announce() {
   }
 }
 
+/* A link straight to this event. Anyone following it lands on the event once
+   signed in; signed out they get the public heatmap, because events are not
+   the public's to see. */
+function eventLink(ev) {
+  return `${location.origin}${location.pathname}#/event/${ev.id}`;
+}
+
+async function copyEventLink() {
+  const url = eventLink(state.openEvent);
+  const btn = $('ev-copy');
+  try {
+    await navigator.clipboard.writeText(url);
+    btn.textContent = 'Copied';
+  } catch {
+    /* Clipboard access can be refused (permissions, insecure context). Put the
+       link on screen so it can still be copied by hand rather than failing. */
+    btn.textContent = 'Copy failed';
+    banner(`Event link: <code>${esc(url)}</code>`);
+  }
+  setTimeout(() => { btn.textContent = 'Copy link'; }, 2000);
+}
+
 /* ---------- roster ---------- */
 function renderRoster() {
   const ev = state.openEvent;
@@ -994,9 +1343,11 @@ function renderRoster() {
 
   const line = (s, i, pinnable) => {
     const m = who(s.member_id);
+    const d = displayFor(s.member_id);
     return `<li class="${s.member_id === uid ? 'is-you' : ''}">
       <span class="pos">${i + 1}</span>${face(m)}
-      <span>${esc(m.display_name)}</span>
+      <span>${esc(d.character || d.name)}</span>
+      ${d.showTag ? `<span class="char-tag">${esc(d.name)}</span>` : ''}
       <span class="can">${(s.roles || []).map((r) => ROLE_LABEL[r]).join('/')}</span>
       ${manage && pinnable ? `<button type="button" class="pin${s.assigned_role ? ' is-pinned' : ''}"
         data-pin="${esc(s.id)}">${s.assigned_role ? 'pinned' : 'pin'}</button>` : ''}
@@ -1091,7 +1442,7 @@ function wireSignup() {
 
 /* ---------- poll grid ---------- */
 let pollCells = null, pollDaysCache = null, pollPicked = null;
-let pollPainting = false, pollPaintTo = false, pollSuppress = false, pollTimer = null;
+let pollPainting = false, pollPaintTo = false, pollSuppress = false;
 
 function renderPoll() {
   const ev = state.openEvent;
@@ -1108,7 +1459,7 @@ function renderPoll() {
   for (const d of days) {
     const h = document.createElement('div');
     h.className = 'dh';
-    h.innerHTML = `${DAY_NAMES[d.getDay()]}<small>${d.getDate()}/${d.getMonth() + 1}</small>`;
+    h.innerHTML = `${DAY_NAMES[ymdDow(d)]}<small>${d.d}/${d.mo}</small>`;
     el.appendChild(h);
   }
 
@@ -1138,7 +1489,7 @@ function renderPoll() {
         + (hour % 6 === 0 ? ' is-daybreak' : '');
       if (!manage) c.setAttribute('aria-pressed', state.evMarks.has(key) ? 'true' : 'false');
       c.setAttribute('aria-label',
-        `${DAY_NAMES[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1} ${hourLabel(hour)}`
+        `${DAY_NAMES[ymdDow(d)]} ${d.d}/${d.mo} ${hourLabel(hour)}`
         + (manage ? ` — ${n} free` : ''));
       el.appendChild(c);
       pollCells.set(key, c);
@@ -1152,9 +1503,16 @@ function renderPoll() {
 function updatePollStatus() {
   const s = $('poll-status');
   if (!s) return;
-  s.textContent = canManage(state.openEvent)
-    ? `${new Set(state.evResponses.map((r) => r.member_id)).size} responded · ${TZ_NAME}`
-    : `${state.evMarks.size} hour${state.evMarks.size === 1 ? '' : 's'} marked · ${TZ_NAME}`;
+  if (canManage(state.openEvent)) {
+    s.textContent = `${new Set(state.evResponses.map((r) => r.member_id)).size} responded · ${tzLabel()}`;
+    return;
+  }
+  const pending = pendingCount(state.evMarks, state.evSavedMarks);
+  const btn = $('poll-save');
+  if (btn) btn.disabled = pending === 0;
+  s.textContent = pending
+    ? `${pending} unsaved change${pending === 1 ? '' : 's'} · ${tzLabel()}`
+    : `${state.evMarks.size} hour${state.evMarks.size === 1 ? '' : 's'} marked · ${tzLabel()}`;
 }
 
 /* Participant: paint your own hours. Same mousedown/click dance as the weekly
@@ -1174,18 +1532,18 @@ function wirePollPaint() {
     e.preventDefault();
     pollPaintTo = c.getAttribute('aria-pressed') !== 'true';
     pollPainting = true; pollSuppress = true;
-    apply(c, pollPaintTo); queuePollSave();
+    apply(c, pollPaintTo); updatePollStatus();
   });
   el.addEventListener('mouseover', (e) => {
     if (!pollPainting) return;
     const c = e.target.closest('.cell'); if (!c) return;
-    apply(c, pollPaintTo); queuePollSave();
+    apply(c, pollPaintTo); updatePollStatus();
   });
   window.addEventListener('mouseup', () => { pollPainting = false; });
   el.addEventListener('click', (e) => {
     const c = e.target.closest('.cell'); if (!c) return;
     if (pollSuppress) { pollSuppress = false; return; }
-    apply(c, c.getAttribute('aria-pressed') !== 'true'); queuePollSave();
+    apply(c, c.getAttribute('aria-pressed') !== 'true'); updatePollStatus();
   });
 
   const pre = $('ev-prefill');
@@ -1196,14 +1554,11 @@ function wirePollPaint() {
       const d = new Date(key);
       if (state.saved.has(d.getUTCDay() * 24 + d.getUTCHours())) apply(cell, true);
     }
-    queuePollSave();
+    updatePollStatus();
   });
-}
 
-function queuePollSave() {
-  updatePollStatus();
-  clearTimeout(pollTimer);
-  pollTimer = setTimeout(savePoll, 600);
+  const save = $('poll-save');
+  if (save) save.addEventListener('click', savePoll);
 }
 
 async function savePoll() {
@@ -1218,9 +1573,9 @@ async function savePoll() {
   if (!mySignup()) {
     const roles = [...document.querySelectorAll('#role-picker input:checked')].map((i) => i.value);
     if (!roles.length) {
-      $('poll-status').textContent = 'Pick your roles above first.';
-      state.evMarks = new Set(state.evSavedMarks);
-      renderPoll();
+      /* Do NOT roll the grid back here -- that threw away what they had just
+         painted. Leave it pending; the save button stays live. */
+      $('poll-status').textContent = 'Pick your roles above, then save.';
       return;
     }
     const { error } = await db.from('raid_event_signups')
@@ -1230,8 +1585,15 @@ async function savePoll() {
     state.evSignups = data || [];
   }
 
-  const add = [...state.evMarks].filter((k) => !state.evSavedMarks.has(k));
-  const del = [...state.evSavedMarks].filter((k) => !state.evMarks.has(k));
+  /* Snapshot, for the same reason saveMine() does -- see the note there. */
+  const target = new Set(state.evMarks);
+  const add = [...target].filter((k) => !state.evSavedMarks.has(k));
+  const del = [...state.evSavedMarks].filter((k) => !target.has(k));
+  if (!add.length && !del.length) { updatePollStatus(); return; }
+
+  const btn = $('poll-save');
+  if (btn) btn.disabled = true;
+  $('poll-status').textContent = 'Saving…';
   try {
     if (add.length) {
       const { error } = await db.from('raid_event_responses')
@@ -1243,9 +1605,13 @@ async function savePoll() {
         .delete().eq('event_id', ev.id).eq('member_id', uid).in('starts_at', del);
       if (error) throw error;
     }
-    state.evSavedMarks = new Set(state.evMarks);
-    $('poll-status').textContent = `Saved · ${state.evMarks.size} hours`;
+    state.evSavedMarks = target;
+    updatePollStatus();
+    if (pendingCount(state.evMarks, state.evSavedMarks) === 0) {
+      $('poll-status').textContent = `Saved · ${state.evMarks.size} hours · ${tzLabel()}`;
+    }
   } catch (err) {
+    updatePollStatus();
     banner(`Could not save your hours: ${esc(err.message || err)}`, true);
   }
 }
@@ -1300,7 +1666,12 @@ function wireEventForm() {
   $('new-event').addEventListener('click', () => {
     form.hidden = !form.hidden;
     if (!form.hidden) {
-      $('ev-poll-start').value = localISODate(new Date());
+      $('ev-poll-start').value = ymdISO(todayYmd());
+      /* Same suggestion the signup picker makes: what the member's linked
+         characters could actually fill. */
+      for (const box of document.querySelectorAll('#ev-my-roles input')) {
+        box.checked = roleChecked(null, box.value);
+      }
       $('ev-title').focus();
     }
   });
@@ -1346,13 +1717,24 @@ function wireEventForm() {
       party_size: numOrNull('ev-size'),
       mode,
     };
+    const lvl = $('ev-level').value.trim();
+    row.min_level = lvl === '' ? null : Number(lvl);
+    row.level_rule = $('ev-level-rule').value;
+
     if (mode === 'poll') {
-      row.poll_start = $('ev-poll-start').value || localISODate(new Date());
+      row.poll_start = $('ev-poll-start').value || ymdISO(todayYmd());
       row.poll_days = Number($('ev-poll-days').value);
       row.status = 'open';
     } else {
-      if (!$('ev-when').value) { err.textContent = 'Pick a start time.'; err.hidden = false; return; }
-      row.scheduled_at = new Date($('ev-when').value).toISOString();
+      const raw = $('ev-when').value;
+      if (!raw) { err.textContent = 'Pick a start time.'; err.hidden = false; return; }
+      /* datetime-local hands back wall-clock text with no zone. new Date() would
+         read it in the BROWSER's zone, which is wrong for anyone whose chosen
+         zone differs -- so parse the fields and place them in TZ(). */
+      const [dPart, tPart] = raw.split('T');
+      const [wy, wmo, wd] = dPart.split('-').map(Number);
+      const [wh, wmi] = tPart.split(':').map(Number);
+      row.scheduled_at = new Date(instantAt(wy, wmo, wd, wh, wmi)).toISOString();
       row.status = 'scheduled';
     }
 
@@ -1360,6 +1742,19 @@ function wireEventForm() {
     try {
       const { data, error } = await db.from('raid_events').insert(row).select('id').single();
       if (error) throw error;
+
+      /* Sign the organiser up in the same breath, if they ticked anything.
+         Creating and joining were two separate steps before, which read as an
+         oversight -- most people putting an event on are playing in it. A
+         failure here is not fatal: the event exists, and they can sign up on
+         the page it opens. */
+      const myRoles = [...document.querySelectorAll('#ev-my-roles input:checked')].map((i) => i.value);
+      if (myRoles.length) {
+        const { error: joinErr } = await db.from('raid_event_signups')
+          .insert({ event_id: data.id, member_id: state.session.user.id, roles: myRoles });
+        if (joinErr) banner(`Event created, but signing you up failed: ${esc(joinErr.message)}`, true);
+      }
+
       form.reset();
       form.hidden = true;
       await loadEvents();
@@ -1377,6 +1772,44 @@ function wireEventForm() {
     if (card) openEvent(card.dataset.event).catch((x) =>
       banner(`Could not open that event: ${esc(x.message || x)}`, true));
   });
+}
+
+/* ---------- getting started ----------
+   Opens itself once for somebody who has not linked a character or marked any
+   hours -- that is exactly the person it is for -- and never again after they
+   close it. localStorage, because it is a per-browser convenience and not worth
+   a column; if it is unavailable the guide simply opens each time. */
+const GUIDE_SEEN = 'raid.guide.seen';
+
+function openGuide() {
+  const d = $('guide');
+  if (!d.open) d.showModal();
+}
+
+function wireGuide() {
+  const d = $('guide');
+  $('guide-open').addEventListener('click', openGuide);
+  $('welcome-guide').addEventListener('click', openGuide);
+  $('welcome-signin').addEventListener('click', () => $('auth-btn').click());
+  $('welcome-overlap').addEventListener('click', () => showView('overlap'));
+  $('guide-close').addEventListener('click', () => d.close());
+  /* Fires for the close button, for Esc, and for the backdrop click below --
+     one place to record that it has been read. */
+  d.addEventListener('close', () => {
+    try { localStorage.setItem(GUIDE_SEEN, '1'); } catch { /* private mode */ }
+  });
+  d.addEventListener('click', (e) => {
+    /* A dialog's own box covers the viewport, so a click landing on it rather
+       than on the panel inside is a click on the backdrop. */
+    if (e.target === d) d.close();
+  });
+}
+
+function maybeOpenGuide() {
+  let seen = false;
+  try { seen = localStorage.getItem(GUIDE_SEEN) === '1'; } catch { seen = false; }
+  const fresh = !charsOf(state.session?.user?.id).length && state.saved.size === 0;
+  if (!seen && fresh) openGuide();
 }
 
 /* ---------- loading ---------- */
@@ -1404,4 +1837,256 @@ async function loadEvents() {
   if (error) throw error;
   state.events = data || [];
   renderEvents();
+}
+
+/* =========================================================================
+   CHARACTERS
+   =========================================================================
+   A member claims one or more FFXIV characters off the existing FC roster.
+   Self-asserted on purpose -- there is no verification step and none is wanted
+   -- but the unique constraint on lodestone_id means a character can be claimed
+   only once, so a wrong claim blocks rather than duplicates, and a leader can
+   reassign or remove it.
+
+   Claims are readable by every member (migration 003), because the whole point
+   of linking is for the company to know who is who. What a claim never carries
+   is availability: raid_availability and raid_event_responses are untouched by
+   any of this.
+
+   Nothing about the character is stored beyond the Lodestone id, name and
+   world. Portraits, titles, Grand Company and jobs are read from the roster
+   JSON at render time, so a plate stays current as that file is republished
+   rather than freezing whatever was true on the day someone clicked claim. */
+
+const ROSTER_URL = 'https://raw.githubusercontent.com/BattyDev/batty-ffxiv-status/data/ffxiv.json';
+const ROSTER_FALLBACK = '../ffxiv/ffxiv.json';
+const JOB_ICONS = '../ffxiv/assets/job-icons/';
+
+/* Duty Finder's role split. The roster JSON's own `role` field says
+   combat/craft/gather, which is a different question, so this map is the one
+   that can answer "what could this character actually be in a party". */
+const JOB_ROLE = (() => {
+  const m = {};
+  for (const j of ['Paladin', 'Warrior', 'Dark Knight', 'Gunbreaker', 'Gladiator', 'Marauder']) m[j] = 'tank';
+  for (const j of ['White Mage', 'Scholar', 'Astrologian', 'Sage', 'Conjurer']) m[j] = 'healer';
+  for (const j of ['Monk', 'Dragoon', 'Ninja', 'Samurai', 'Reaper', 'Viper', 'Bard', 'Machinist',
+                   'Dancer', 'Black Mage', 'Summoner', 'Red Mage', 'Pictomancer', 'Blue Mage',
+                   'Pugilist', 'Lancer', 'Rogue', 'Archer', 'Thaumaturge', 'Arcanist']) m[j] = 'dps';
+  return m;
+})();
+
+Object.assign(state, {
+  fcRoster: [],           // the Lodestone roster, from the published JSON
+  jobIcons: {},
+  characters: [],         // every claim this viewer can read (all of them)
+  charFilter: '',
+});
+
+const slug = (s) => String(s ?? '').toLowerCase();
+const byLodestone = (id) => state.fcRoster.find((c) => String(c.id) === String(id)) || null;
+const gcClass = (c) => `gc-${slug(c?.grand_company || 'none').replace(/[^a-z]/g, '') || 'none'}`;
+
+/* Which raid roles this character's levelled combat jobs could cover. Used to
+   preselect the role checkboxes on signup -- a suggestion, never a constraint:
+   the member still chooses, and the database only ever sees what they picked. */
+function rolesFromJobs(c, minLevel = 50) {
+  const found = new Set();
+  for (const j of (c?.jobs || [])) {
+    const r = JOB_ROLE[j.job];
+    if (r && (j.level || 0) >= minLevel) found.add(r);
+  }
+  return ROLES.filter((r) => found.has(r));
+}
+
+/* Every claim held by one member, newest first. */
+const charsOf = (memberId) => state.characters.filter((c) => c.member_id === memberId);
+
+/* The name to show for somebody on a shared roster: their character if they
+   have linked one, else their Discord display name. */
+function displayFor(memberId) {
+  const m = who(memberId);
+  const character = charsOf(memberId)[0]?.character_name ?? null;
+  return {
+    name: m.display_name,
+    character,
+    /* Plenty of people use their character name as their Discord name. Showing
+       it twice reads as a rendering bug rather than as extra information. */
+    showTag: Boolean(character) && slug(character) !== slug(m.display_name),
+    avatar_url: m.avatar_url,
+  };
+}
+
+/* ---------- rendering a plate ---------- */
+function jobChip(j, main) {
+  const icon = state.jobIcons[j.job];
+  return `<span class="job${main ? ' is-main' : ''}">${
+    icon ? `<img src="${esc(JOB_ICONS + icon)}" alt="" width="20" height="20" loading="lazy">` : ''
+  }${esc(j.job)} <span class="lv">${Number(j.level) || 0}</span></span>`;
+}
+
+function plate(c, { tag = 'div', body = '', attrs = '' } = {}) {
+  const main = c.main_job;
+  const roles = rolesFromJobs(c);
+  return `<${tag} class="adventurer ${gcClass(c)}" ${attrs}>
+    <div class="char-head">
+      ${c.avatar
+        ? `<img class="portrait" src="${esc(c.avatar)}" alt="" width="56" height="56" loading="lazy">`
+        : '<span class="portrait"></span>'}
+      <div class="char-id">
+        <h3 class="char-name">${esc(c.name)}</h3>
+        ${c.title ? `<span class="char-title">${esc(c.title)}</span>` : ''}
+        <div class="char-meta">${esc(c.race || '')}${c.world ? ` · ${esc(c.world)}` : ''}</div>
+        ${c.grand_company
+          ? `<span class="gc-badge">${esc(c.grand_company)}</span>` : ''}
+      </div>
+    </div>
+    ${main ? `<div class="job-list">${jobChip(main, true)}</div>` : ''}
+    ${roles.length
+      ? `<div class="role-hint">${roles.map((r) => `<span class="r-${r}">${ROLE_LABEL[r]}</span>`).join('')}</div>`
+      : ''}
+    ${body}
+  </${tag}>`;
+}
+
+/* ---------- views ---------- */
+function renderChars() {
+  const uid = state.session?.user?.id;
+  const mine = charsOf(uid);
+  const claimedIds = new Set(state.characters.map((c) => String(c.lodestone_id)));
+
+  /* Yours */
+  const my = $('my-chars');
+  if (!state.fcRoster.length) {
+    my.innerHTML = '<p class="empty">Could not load the Free Company roster.</p>';
+  } else if (!mine.length) {
+    my.innerHTML = '<p class="empty">No characters linked yet. Claim one below.</p>';
+  } else {
+    my.innerHTML = mine.map((claim) => {
+      const c = byLodestone(claim.lodestone_id)
+        /* The roster JSON is the source of truth for everything cosmetic, but
+           a character who has left the FC drops out of it. Fall back to what
+           the claim itself stored so the plate degrades instead of vanishing. */
+        || { id: claim.lodestone_id, name: claim.character_name, world: claim.world, jobs: [] };
+      return plate(c, {
+        body: `<div class="plate-foot">
+          <span class="grid-note">${byLodestone(claim.lodestone_id) ? 'Linked' : 'Linked · no longer on the FC roster'}</span>
+          <button type="button" class="ghost" data-unlink="${esc(claim.id)}">Unlink</button>
+        </div>`,
+      });
+    }).join('');
+  }
+  $('chars-status').textContent = mine.length
+    ? `${mine.length} linked` : 'None linked';
+
+  /* Claim a character */
+  const q = slug(state.charFilter).trim();
+  const available = state.fcRoster
+    .filter((c) => !claimedIds.has(String(c.id)))
+    .filter((c) => !q || slug(c.name).includes(q) || slug(c.main_job?.job).includes(q));
+  const shown = available.slice(0, 24);
+
+  $('claim-list').innerHTML = shown.length
+    ? shown.map((c) => plate(c, {
+        tag: 'button',
+        attrs: `type="button" data-claim="${esc(c.id)}"`,
+        body: '<div class="plate-foot"><span class="grid-note">Claim this character</span></div>',
+      })).join('')
+    : '<p class="empty">No unclaimed characters match.</p>';
+  $('claim-note').textContent = state.fcRoster.length
+    ? `${available.length} unclaimed${shown.length < available.length ? ` · showing ${shown.length}` : ''}`
+    : '';
+
+  /* Leaders: every claim, correctable */
+  $('claims-admin').hidden = !isLeader();
+  if (isLeader()) {
+    $('all-claims').innerHTML = state.characters.length
+      ? `<div class="claims-table">${state.characters.map((claim) => `
+          <div class="claim-row">
+            <span>${esc(claim.character_name)}</span>
+            <span class="arrow">&rarr;</span>
+            <span>${esc(who(claim.member_id).display_name)}</span>
+            <span class="spacer"></span>
+            <button type="button" class="ghost" data-unlink="${esc(claim.id)}">Remove</button>
+          </div>`).join('')}</div>`
+      : '<p class="empty">Nobody has linked a character yet.</p>';
+  }
+}
+
+function wireChars() {
+  $('char-search').addEventListener('input', (e) => {
+    state.charFilter = e.target.value;
+    renderChars();
+  });
+
+  /* One delegated handler for both lists -- claim buttons live in the roster
+     grid, unlink buttons in the member's own plates and the leader table. */
+  document.getElementById('view-chars').addEventListener('click', async (e) => {
+    const claimBtn = e.target.closest('[data-claim]');
+    if (claimBtn) return claimCharacter(claimBtn.dataset.claim);
+    const unlinkBtn = e.target.closest('[data-unlink]');
+    if (unlinkBtn) return unlinkCharacter(unlinkBtn.dataset.unlink);
+  });
+}
+
+async function claimCharacter(lodestoneId) {
+  const c = byLodestone(lodestoneId);
+  if (!c) return;
+  try {
+    const { error } = await db.from('raid_characters').insert({
+      member_id: state.session.user.id,
+      lodestone_id: String(c.id),
+      character_name: c.name,
+      world: c.world || null,
+    });
+    if (error) throw error;
+    await loadCharacters();
+    banner('');
+  } catch (err) {
+    /* The unique constraint is the race-condition guard: two people claiming
+       the same character at once, or a stale page. Say which it was. */
+    banner(/duplicate|unique/i.test(err.message || '')
+      ? `${esc(c.name)} has already been claimed by someone else. Reload to see who.`
+      : `Could not claim that character: ${esc(err.message || err)}`, true);
+  }
+}
+
+async function unlinkCharacter(id) {
+  const { error } = await db.from('raid_characters').delete().eq('id', id);
+  if (error) { banner(`Could not unlink: ${esc(error.message)}`, true); return; }
+  await loadCharacters();
+}
+
+/* ---------- loading ---------- */
+async function loadCharacters() {
+  const { data, error } = await db.from('raid_characters')
+    .select('id, member_id, lodestone_id, character_name, world')
+    .order('created_at');
+  if (error) throw error;
+  state.characters = data || [];
+  renderChars();
+  /* An event roster may now have a character name to show where it previously
+     had a Discord handle. */
+  if (state.openEvent) renderRoster();
+}
+
+/* The published roster, with the same URL and local fallback /ffxiv uses. */
+async function loadFcRoster() {
+  const grab = async (url) => {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`${res.status}`);
+    return res.json();
+  };
+  let data = null;
+  try {
+    data = await grab(ROSTER_URL);
+  } catch {
+    try { data = await grab(ROSTER_FALLBACK); } catch { data = null; }
+  }
+  state.fcRoster = (data?.roster || []).filter((c) => c && c.id && c.name);
+
+  try {
+    state.jobIcons = await grab(`${JOB_ICONS}job-icons.json`);
+  } catch {
+    state.jobIcons = {};   // chips fall back to a bare label
+  }
 }
