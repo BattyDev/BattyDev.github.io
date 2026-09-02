@@ -247,6 +247,24 @@ levelled combat jobs then preselect the role checkboxes on signup. It is a
 suggestion that saves three clicks, never a constraint — the member still
 submits, and the database only ever receives what they ticked.
 
+## The two landings
+
+A **signed-out** visitor gets `#welcome`: what the site is, a Discord sign-in,
+and a Getting started button, with the public overlap one click away. It exists
+because the heatmap alone — the only thing the public may see — is a wall of
+squares that explains neither what this is nor what to do about it.
+
+A **signed-in** member lands on Events, because that is the view with something
+to act on. `welcome` is deliberately *not* honoured as a route for a signed-in
+member: otherwise signing in from the welcome page would leave them standing on
+the signed-out landing.
+
+Getting started is a `<dialog>`, opened from either landing. As an in-flow panel
+it rendered above whichever hero or list you pressed the button on; a modal also
+brings focus trapping and Esc-to-close for free. It opens itself once for
+somebody with no character and no hours logged, and not again after they close
+it (`localStorage`, per browser — not worth a column).
+
 ## Linking an event
 
 Every view lives in the URL hash, so a reload keeps you where you were, and an

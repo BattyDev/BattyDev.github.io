@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
-<link href="raid.css?v=5" rel="stylesheet">
+<link href="raid.css?v=6" rel="stylesheet">
 </head>
 <body>
 
@@ -34,6 +34,7 @@
     <span><b>Raid Nights</b><small>Wild Hearts · Malboro</small></span>
   </a>
   <nav class="system-icons" aria-label="Views">
+    <button type="button" data-view-target="welcome" data-anon aria-label="Welcome"><i class="bi bi-house-door-fill"></i></button>
     <button type="button" class="is-active" data-view-target="overlap" aria-current="page" aria-label="Overlap"><i class="bi bi-grid-3x3-gap-fill"></i></button>
     <button type="button" data-view-target="events" data-needs="member" aria-label="Events" hidden><i class="bi bi-calendar-event-fill"></i></button>
     <button type="button" data-view-target="mine" data-needs="member" aria-label="My times" hidden><i class="bi bi-calendar2-check-fill"></i></button>
@@ -51,6 +52,133 @@
 
 <main>
   <div id="banner" class="notice" hidden></div>
+
+<!-- A modal rather than a panel in the flow: it is opened from two different
+       landings, and in the flow it appeared ABOVE whichever hero or list you
+       pressed the button on. showModal() also brings focus trapping and
+       Esc-to-close without writing either. -->
+  <dialog id="guide">
+    <div class="panel">
+      <div class="grid-head">
+        <h2>Getting started</h2>
+        <button type="button" class="ghost" id="guide-close">Close</button>
+      </div>
+      <ol class="guide">
+        <li>
+          <h3>Set your timezone</h3>
+          <p>Under <b>My times</b>. Every time on the site is then drawn in it, with the
+             zone spelled out — so <i>7:00 PM EDT</i>, never a bare 7:00. Availability is
+             stored in UTC either way, which is what lets people in different zones agree
+             on the same moment.</p>
+        </li>
+        <li>
+          <h3>Link your character</h3>
+          <p>Under <b>Characters</b>, pick yourself off the Free Company roster. Rosters
+             then show your character rather than your Discord handle, and the roles you
+             can fill are suggested from the jobs you have actually levelled. Nobody
+             verifies the claim — but one character can only be claimed once, and a leader
+             can correct a wrong one.</p>
+        </li>
+        <li>
+          <h3>Mark when you can raid</h3>
+          <p>Under <b>My times</b>, drag across the grid for the hours you are usually
+             free, then press <b>Save times</b>. This feeds the public <b>Overlap</b>
+             heatmap, which shows counts only — never who.</p>
+        </li>
+        <li>
+          <h3>Join an event</h3>
+          <p>Open one, tick every role you could fill, and sign up. More roles means more
+             chance of a seat: when the party is short a tank, somebody who can tank
+             <i>or</i> DPS gets moved into the gap.</p>
+        </li>
+        <li>
+          <h3>Or put one on</h3>
+          <p><b>New event</b>. Pick the duty to prefill the party composition, then either
+             <b>poll for a time</b> — everyone marks the hours they can make and you lock
+             one in — or <b>set the time now</b> and let people sign up. You can sign
+             yourself up in the same step.</p>
+        </li>
+        <li>
+          <h3>Roster and backups</h3>
+          <p>Seats fill by signup order, with anyone who committed to the chosen hour
+             ranked first. Everyone past the last seat becomes a backup, in order, so if
+             somebody drops it is clear who is next. As the organiser you can pin a person
+             to a specific role to override that.</p>
+        </li>
+        <li>
+          <h3>Who sees what</h3>
+          <p>The public sees the overlap heatmap and nothing else — no names, ever. Other
+             members see events, rosters and character links. <i>When you are free</i> is
+             shown only to FC leaders, and, for an event you responded to, its organiser.
+             Responding is what shares it; not responding shares nothing.</p>
+        </li>
+        <li class="is-pending">
+          <h3>Discord — not connected yet</h3>
+          <p>Signing in with Discord already works. What is still switched off is the
+             company Discord <i>server</i> integration, because it needs the Manage Server
+             permission that nobody has granted yet.</p>
+          <p>When it is switched on: an organiser presses <b>Announce to Discord</b> and
+             the event is posted to the channel as a card — title, time in each reader's
+             own timezone, party composition and who has signed up so far — linking back
+             here. After that, a <code>/raid</code> slash command so people can log
+             availability and sign up without leaving Discord.</p>
+          <p>Until then the button is there and reports that the webhook is unset. Nothing
+             else on the site depends on it.</p>
+        </li>
+      </ol>
+    </div>
+  </dialog>
+
+
+  <!-- ------------------------------------------------------------------
+       Welcome — what a signed-out visitor lands on. Deliberately not the
+       heatmap: the heatmap is the one thing the public may see, but it is a
+       wall of squares with no explanation of what the site is or what to do.
+       This says both, and gives the two things there are to do.
+       ------------------------------------------------------------------ -->
+  <section id="view-welcome" class="view" aria-labelledby="welcome-heading" hidden>
+    <div class="hero">
+      <p class="eyebrow">Wild Hearts · Malboro · Crystal</p>
+      <h1 id="welcome-heading">Raid Nights</h1>
+      <p class="hero-lede">Log when you can raid. Find the overlap. Fill the party.</p>
+
+      <div class="hero-cta">
+        <button type="button" class="primary big" id="welcome-signin">
+          <i class="bi bi-discord"></i> Sign in with Discord
+        </button>
+        <button type="button" class="ghost big" id="welcome-guide">Getting started</button>
+      </div>
+      <p class="hero-note" id="welcome-note" hidden></p>
+    </div>
+
+    <div class="sells">
+      <div class="sell">
+        <h2><i class="bi bi-calendar2-check-fill"></i> Say when you are free</h2>
+        <p>Drag across a week grid once. The company sees where everyone's hours
+           overlap — as counts, never as a list of who.</p>
+      </div>
+      <div class="sell">
+        <h2><i class="bi bi-people-fill"></i> Sign up for a raid</h2>
+        <p>Pick the roles you can fill. Seats fill in signup order and everyone past
+           the last one becomes a backup, so it is always clear who is next.</p>
+      </div>
+      <div class="sell">
+        <h2><i class="bi bi-globe2"></i> No timezone maths</h2>
+        <p>Pick your zone once and every time on the site is drawn in it, spelled
+           out. Hours are stored in UTC, so everyone means the same moment.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="grid-head">
+        <h2>What you can see right now</h2>
+        <button type="button" class="ghost" id="welcome-overlap">View the overlap</button>
+      </div>
+      <p class="hint">Signed out, you get the overlap heatmap and nothing else — how many
+         people are free in each hour, never which people. Names, events and rosters need a
+         Free Company sign-in.</p>
+    </div>
+  </section>
 
   <!-- ------------------------------------------------------------------
        Overlap — the public view. Everything it draws comes from the
@@ -100,76 +228,6 @@
         <p class="eyebrow">What is being run</p>
         <h1 id="events-heading">Events</h1>
         <p class="lede">Anyone can put one up. Sign up for the ones you want in on.</p>
-      </div>
-
-      <div class="panel" id="guide" hidden>
-        <div class="grid-head">
-          <h2>Getting started</h2>
-          <button type="button" class="ghost" id="guide-close">Close</button>
-        </div>
-        <ol class="guide">
-          <li>
-            <h3>Set your timezone</h3>
-            <p>Under <b>My times</b>. Every time on the site is then drawn in it, with the
-               zone spelled out — so <i>7:00 PM EDT</i>, never a bare 7:00. Availability is
-               stored in UTC either way, which is what lets people in different zones agree
-               on the same moment.</p>
-          </li>
-          <li>
-            <h3>Link your character</h3>
-            <p>Under <b>Characters</b>, pick yourself off the Free Company roster. Rosters
-               then show your character rather than your Discord handle, and the roles you
-               can fill are suggested from the jobs you have actually levelled. Nobody
-               verifies the claim — but one character can only be claimed once, and a leader
-               can correct a wrong one.</p>
-          </li>
-          <li>
-            <h3>Mark when you can raid</h3>
-            <p>Under <b>My times</b>, drag across the grid for the hours you are usually
-               free, then press <b>Save times</b>. This feeds the public <b>Overlap</b>
-               heatmap, which shows counts only — never who.</p>
-          </li>
-          <li>
-            <h3>Join an event</h3>
-            <p>Open one, tick every role you could fill, and sign up. More roles means more
-               chance of a seat: when the party is short a tank, somebody who can tank
-               <i>or</i> DPS gets moved into the gap.</p>
-          </li>
-          <li>
-            <h3>Or put one on</h3>
-            <p><b>New event</b>. Pick the duty to prefill the party composition, then either
-               <b>poll for a time</b> — everyone marks the hours they can make and you lock
-               one in — or <b>set the time now</b> and let people sign up. You can sign
-               yourself up in the same step.</p>
-          </li>
-          <li>
-            <h3>Roster and backups</h3>
-            <p>Seats fill by signup order, with anyone who committed to the chosen hour
-               ranked first. Everyone past the last seat becomes a backup, in order, so if
-               somebody drops it is clear who is next. As the organiser you can pin a person
-               to a specific role to override that.</p>
-          </li>
-          <li>
-            <h3>Who sees what</h3>
-            <p>The public sees the overlap heatmap and nothing else — no names, ever. Other
-               members see events, rosters and character links. <i>When you are free</i> is
-               shown only to FC leaders, and, for an event you responded to, its organiser.
-               Responding is what shares it; not responding shares nothing.</p>
-          </li>
-          <li class="is-pending">
-            <h3>Discord — not connected yet</h3>
-            <p>Signing in with Discord already works. What is still switched off is the
-               company Discord <i>server</i> integration, because it needs the Manage Server
-               permission that nobody has granted yet.</p>
-            <p>When it is switched on: an organiser presses <b>Announce to Discord</b> and
-               the event is posted to the channel as a card — title, time in each reader's
-               own timezone, party composition and who has signed up so far — linking back
-               here. After that, a <code>/raid</code> slash command so people can log
-               availability and sign up without leaving Discord.</p>
-            <p>Until then the button is there and reports that the webhook is unset. Nothing
-               else on the site depends on it.</p>
-          </li>
-        </ol>
       </div>
 
       <div class="panel">
@@ -406,7 +464,7 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="config.js?v=5"></script>
-<script src="raid.js?v=5"></script>
+<script src="config.js?v=6"></script>
+<script src="raid.js?v=6"></script>
 </body>
 </html>

@@ -211,7 +211,7 @@ function stamp(text) { $('stamp').textContent = text; }
    replaceState rather than pushState for plain view switches -- back should
    leave the page, not walk the tab history. Opening an event does push, so
    Back returns to the list, which is what the arrow means there. */
-const VIEWS = ['overlap', 'events', 'mine', 'chars', 'company'];
+const VIEWS = ['welcome', 'overlap', 'events', 'mine', 'chars', 'company'];
 
 function readRoute() {
   const h = location.hash.replace(/^#\/?/, '');
@@ -271,8 +271,12 @@ function syncChrome() {
   btn.hidden = !CONFIGURED;
   btn.textContent = signedIn ? 'Sign out' : 'Sign in with Discord';
 
-  if (!signedIn && !document.querySelector('#view-overlap').classList.contains('is-active')) {
-    showView('overlap');
+  /* Home is for signed-out visitors only; once you are in, Events is home. */
+  for (const b of document.querySelectorAll('[data-anon]')) b.hidden = signedIn;
+
+  if (!signedIn) {
+    const open = [...document.querySelectorAll('.view')].find((v) => v.classList.contains('is-active'));
+    if (!open || !['view-welcome', 'view-overlap'].includes(open.id)) showView('welcome');
   }
 }
 
@@ -285,7 +289,10 @@ async function landOnDefaultView() {
   if (landed || !state.session) return;
   landed = true;
   const route = readRoute();
-  if (route) {
+  /* 'welcome' is the signed-out landing, so it is not a place to leave a member
+     standing -- signing in from it must still take them to Events. Treat it as
+     no route at all. */
+  if (route && route.view !== 'welcome') {
     showView(route.view);
     if (route.event) {
       try { await openEvent(route.event); }
@@ -294,6 +301,22 @@ async function landOnDefaultView() {
     return;
   }
   showView('events');
+}
+
+/* A signed-out visitor gets the welcome page, and is told plainly if the link
+   they followed was to an event -- that is a dead end otherwise, since events
+   are not the public's to see. */
+function landSignedOut() {
+  const route = readRoute();
+  const note = $('welcome-note');
+  if (route?.event) {
+    note.textContent = 'That link points to an event. Sign in with Discord to open it.';
+    note.hidden = false;
+    showView('welcome');
+    return;
+  }
+  note.hidden = true;
+  showView(route && route.view !== 'welcome' && route.view === 'overlap' ? 'overlap' : 'welcome');
 }
 
 /* Back and forward, and a hash typed by hand. */
@@ -791,6 +814,7 @@ async function onSession(session) {
       await landOnDefaultView();
     } else {
       landed = false;
+      landSignedOut();
     }
   } catch (err) {
     banner(`Could not load your account: ${esc(err.message || err)}`, true);
@@ -815,7 +839,8 @@ function wireAuth() {
       $('events-detail').hidden = true;
       $('events-index').hidden = false;
       $('events-list').innerHTML = '';
-      showView('overlap');
+      if ($('guide').open) $('guide').close();
+      showView('welcome');
       return;
     }
     const { error } = await db.auth.signInWithOAuth({
@@ -838,6 +863,7 @@ async function main() {
            'Fill in <code>raid/config.js</code> with the project URL and publishable key.', true);
     stamp('Not configured');
     syncChrome();
+    showView('welcome');
     return;
   }
 
@@ -1755,11 +1781,27 @@ function wireEventForm() {
    a column; if it is unavailable the guide simply opens each time. */
 const GUIDE_SEEN = 'raid.guide.seen';
 
+function openGuide() {
+  const d = $('guide');
+  if (!d.open) d.showModal();
+}
+
 function wireGuide() {
-  $('guide-open').addEventListener('click', () => { $('guide').hidden = false; });
-  $('guide-close').addEventListener('click', () => {
-    $('guide').hidden = true;
+  const d = $('guide');
+  $('guide-open').addEventListener('click', openGuide);
+  $('welcome-guide').addEventListener('click', openGuide);
+  $('welcome-signin').addEventListener('click', () => $('auth-btn').click());
+  $('welcome-overlap').addEventListener('click', () => showView('overlap'));
+  $('guide-close').addEventListener('click', () => d.close());
+  /* Fires for the close button, for Esc, and for the backdrop click below --
+     one place to record that it has been read. */
+  d.addEventListener('close', () => {
     try { localStorage.setItem(GUIDE_SEEN, '1'); } catch { /* private mode */ }
+  });
+  d.addEventListener('click', (e) => {
+    /* A dialog's own box covers the viewport, so a click landing on it rather
+       than on the panel inside is a click on the backdrop. */
+    if (e.target === d) d.close();
   });
 }
 
@@ -1767,7 +1809,7 @@ function maybeOpenGuide() {
   let seen = false;
   try { seen = localStorage.getItem(GUIDE_SEEN) === '1'; } catch { seen = false; }
   const fresh = !charsOf(state.session?.user?.id).length && state.saved.size === 0;
-  if (!seen && fresh) $('guide').hidden = false;
+  if (!seen && fresh) openGuide();
 }
 
 /* ---------- loading ---------- */

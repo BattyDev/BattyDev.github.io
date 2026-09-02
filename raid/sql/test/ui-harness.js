@@ -385,6 +385,29 @@ function check(label, actual, expected) {
 
   // ---- A. signed out -----------------------------------------------------
   console.log('\n=== A. anonymous visitor ===');
+  check('lands on the welcome page, not the bare heatmap',
+    await page.evaluate(() => document.getElementById('view-welcome').classList.contains('is-active')), true);
+  check('with a Discord sign-in call to action',
+    (await page.locator('#welcome-signin').innerText()).toLowerCase().includes('sign in with discord'), true);
+  check('and a getting-started button',
+    await page.locator('#welcome-guide').isVisible(), true);
+  check('the guide opens for a signed-out visitor too',
+    await (async () => {
+      await page.locator('#welcome-guide').click();
+      await page.waitForTimeout(200);
+      return page.locator('#guide').isVisible();
+    })(), true);
+  check('and the guide explains the Discord state',
+    (await page.locator('#guide').innerText()).includes('not connected yet'), true);
+  await page.screenshot({ path: `${SHOTS}/a0-welcome.png`, fullPage: true });
+  await page.locator('#guide-close').click();
+
+  check('the public can still reach the overlap',
+    await (async () => {
+      await page.locator('#welcome-overlap').click();
+      await page.waitForTimeout(200);
+      return page.evaluate(() => document.getElementById('view-overlap').classList.contains('is-active'));
+    })(), true);
   check('overlap grid rendered (168 cells)', await page.locator('#overlap-grid .cell').count(), 168);
   check('"Events" tab hidden', await page.locator('[data-view-target="events"]').isHidden(), true);
   check('"My times" tab hidden', await page.locator('[data-needs="member"]').first().isHidden(), true);
@@ -398,6 +421,7 @@ function check(label, actual, expected) {
 
   // ---- B. member: weekly grid --------------------------------------------
   console.log('\n=== B. member, weekly availability ===');
+  await page.evaluate(() => history.replaceState(null, '', location.pathname));
   await signIn(MEMBER);
   check('"Events" and "My times" both revealed',
     [await page.locator('[data-view-target="events"]').isHidden(),
@@ -810,6 +834,8 @@ function check(label, actual, expected) {
     [await page.locator('[data-view-target="events"]').isHidden(),
      await page.locator('[data-view-target="mine"]').isHidden(),
      await page.locator('[data-needs="leader"]').isHidden()], [true, true, true]);
+  check('signing out returns to the welcome page',
+    await page.evaluate(() => document.getElementById('view-welcome').classList.contains('is-active')), true);
   check('no names left in the DOM',
     await page.evaluate(() => ['Batty', 'Cedho', 'Tataru', 'Yshtola']
       .filter((n) => document.body.innerText.includes(n))), []);

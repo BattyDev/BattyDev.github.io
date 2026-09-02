@@ -958,3 +958,80 @@ button.adventurer:disabled:hover { transform: none; box-shadow: none; }
   list-style: none;
 }
 .guide li.is-pending h3 { color: var(--warn); }
+
+/* ---- welcome ----------------------------------------------------------
+   The signed-out landing. The heatmap is the only thing the public may see,
+   but on its own it is a wall of squares that explains neither what the site
+   is nor what to do about it -- this says both before offering the grid. */
+.hero {
+  padding: 26px 0 30px;
+  border-bottom: 1px solid rgba(198,166,100,0.18);
+  margin-bottom: 26px;
+}
+.hero h1 { font-size: clamp(34px, 7vw, 56px); }
+.hero-lede {
+  margin: 10px 0 0;
+  font-size: clamp(16px, 2.4vw, 20px);
+  font-weight: 300;
+  color: var(--ink-dim);
+  max-width: 46ch;
+}
+.hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+.hero-note { margin: 14px 0 0; font-size: 14px; color: var(--gold); }
+
+.primary.big, .ghost.big {
+  font-size: 14px;
+  padding: 12px 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+/* Discord's own blurple, so the sign-in reads as the thing it is rather than
+   as one more gold button among the gold buttons. */
+#welcome-signin {
+  background: linear-gradient(160deg, #5865f2 0%, #4650c8 100%);
+  border-color: #7983f5;
+  color: #fff;
+}
+#welcome-signin:hover { filter: brightness(1.08); }
+#welcome-signin:focus-visible { outline: 2px solid #7983f5; outline-offset: 2px; }
+
+.sells {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.sell {
+  border: 1px solid var(--rule);
+  border-top: 2px solid var(--gold);
+  border-radius: var(--radius);
+  background: var(--panel);
+  padding: 16px;
+  backdrop-filter: blur(3px);
+}
+.sell h2 {
+  margin: 0 0 6px;
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--gold-bright);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sell p { margin: 0; font-size: 14px; color: var(--ink-dim); line-height: 1.6; }
+
+/* ---- the getting-started dialog ---- */
+#guide {
+  border: 0;
+  background: transparent;
+  padding: 20px;
+  max-width: min(820px, 100%);
+  width: 100%;
+  max-height: 100dvh;
+  color: var(--ink);
+}
+#guide::backdrop { background: rgba(4, 12, 17, 0.78); backdrop-filter: blur(2px); }
+#guide .panel { margin: 0; max-height: calc(100dvh - 40px); overflow-y: auto; }
