@@ -79,18 +79,18 @@ function installStub(seed, members) {
   function builder(table) {
     const q = { _eq: {}, _in: null, _single: false };
     const run = () => {
-      let data = table === 'members' ? visiblePeople() : visibleRows();
+      let data = table === 'raid_members' ? visiblePeople() : visibleRows();
       if (data === null) return { data: null, error: DENIED };
       for (const [k, v] of Object.entries(q._eq)) data = data.filter((r) => r[k] === v);
       if (q._in) data = data.filter((r) => q._in.vals.includes(r[q._in.col]));
-      if (table === 'availability' && q._embed) {
-        data = data.map((r) => ({ ...r, members: people.find((p) => p.id === r.member_id) || null }));
+      if (table === 'raid_availability' && q._embed) {
+        data = data.map((r) => ({ ...r, raid_members: people.find((p) => p.id === r.member_id) || null }));
       }
       return { data: q._single ? (data[0] ?? null) : data, error: null };
     };
 
     const api = {
-      select(cols) { q._embed = String(cols || '').includes('members('); return api; },
+      select(cols) { q._embed = String(cols || '').includes('raid_members('); return api; },
       eq(col, val) { q._eq[col] = val; return api; },
       in(col, vals) { q._in = { col, vals }; return api; },
       order() { return api; },
@@ -104,7 +104,7 @@ function installStub(seed, members) {
         if (bad) {
           return Promise.resolve({
             data: null,
-            error: { message: 'new row violates row-level security policy for table "availability"' },
+            error: { message: 'new row violates row-level security policy for table "raid_availability"' },
           });
         }
         for (const r of payload) {
@@ -143,7 +143,7 @@ function installStub(seed, members) {
         /* SECURITY DEFINER: answers for everyone, aggregates only. */
         rpc(name) {
           window.__stub.calls.push({ op: 'rpc', name });
-          if (name === 'availability_heatmap') {
+          if (name === 'raid_heatmap') {
             const by = new Map();
             for (const r of rows) by.set(r.slot, (by.get(r.slot) || 0) + 1);
             return Promise.resolve({
@@ -152,7 +152,7 @@ function installStub(seed, members) {
               error: null,
             });
           }
-          if (name === 'availability_stats') {
+          if (name === 'raid_stats') {
             return Promise.resolve({
               data: [{ members: people.length, respondents: new Set(rows.map((r) => r.member_id)).size }],
               error: null,

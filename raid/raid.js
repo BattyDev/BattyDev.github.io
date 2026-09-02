@@ -11,7 +11,7 @@
        unhides it gets an empty grid, because the SELECT behind it returns them
        only their own row.
      * the public heatmap is not "the same rows with the names stripped in JS".
-       It is a separate RPC, availability_heatmap(), that returns {slot, count}
+       It is a separate RPC, raid_heatmap(), that returns {slot, count}
        and never carries an identity across the wire in the first place.
 
    If you are changing this file, the rule is: you cannot make it leak by
@@ -87,7 +87,7 @@ const TZ_NAME = (() => {
 /* ---------- state ---------- */
 const state = {
   session: null,
-  member: null,          // this viewer's public.members row, or null
+  member: null,          // this viewer's raid_members row, or null
   saved: new Set(),      // slots as last confirmed by the server
   mine: new Set(),       // slots as currently shown in the grid
   heat: new Map(),       // slot -> count, from the public RPC
@@ -391,12 +391,12 @@ async function saveMine() {
 
   try {
     if (add.length) {
-      const { error } = await db.from('availability')
+      const { error } = await db.from('raid_availability')
         .insert(add.map((slot) => ({ member_id: uid, slot })));
       if (error) throw error;
     }
     if (del.length) {
-      const { error } = await db.from('availability')
+      const { error } = await db.from('raid_availability')
         .delete().eq('member_id', uid).in('slot', del);
       if (error) throw error;
     }
@@ -467,8 +467,8 @@ function chip(m, leader) {
 /* ---------- loading ---------- */
 async function loadPublic() {
   const [heat, stats] = await Promise.all([
-    db.rpc('availability_heatmap'),
-    db.rpc('availability_stats'),
+    db.rpc('raid_heatmap'),
+    db.rpc('raid_stats'),
   ]);
   if (heat.error) throw heat.error;
 
@@ -479,7 +479,7 @@ async function loadPublic() {
 }
 
 async function loadMine() {
-  const { data, error } = await db.from('availability').select('slot');
+  const { data, error } = await db.from('raid_availability').select('slot');
   if (error) throw error;
   state.saved = new Set((data || []).map((r) => r.slot));
   state.mine = new Set(state.saved);
@@ -491,16 +491,16 @@ async function loadLeader() {
   /* Both of these return everything only because the caller is a leader --
      the same two queries run by a member come back scoped to their own row. */
   const [rows, members] = await Promise.all([
-    db.from('availability').select('slot, members(id, display_name, avatar_url, role)'),
-    db.from('members').select('id, display_name, avatar_url, role').order('display_name'),
+    db.from('raid_availability').select('slot, raid_members(id, display_name, avatar_url, role)'),
+    db.from('raid_members').select('id, display_name, avatar_url, role').order('display_name'),
   ]);
   if (rows.error) throw rows.error;
 
   const bySlot = new Map();
   for (const r of rows.data || []) {
-    if (!r.members) continue;
+    if (!r.raid_members) continue;
     if (!bySlot.has(r.slot)) bySlot.set(r.slot, []);
-    bySlot.get(r.slot).push(r.members);
+    bySlot.get(r.slot).push(r.raid_members);
   }
   for (const list of bySlot.values()) {
     list.sort((a, b) => (a.display_name || '').localeCompare(b.display_name || ''));
@@ -513,7 +513,7 @@ async function loadLeader() {
 async function loadMember() {
   const uid = state.session?.user?.id;
   if (!uid) { state.member = null; return; }
-  const { data, error } = await db.from('members')
+  const { data, error } = await db.from('raid_members')
     .select('id, discord_id, display_name, avatar_url, role').eq('id', uid).maybeSingle();
   if (error) throw error;
   state.member = data;

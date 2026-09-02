@@ -44,6 +44,7 @@ alter default privileges in schema public
 create table if not exists auth.users (
   id                 uuid primary key default gen_random_uuid(),
   email              text,
+  raw_app_meta_data  jsonb not null default '{}'::jsonb,
   raw_user_meta_data jsonb not null default '{}'::jsonb,
   created_at         timestamptz not null default now()
 );
