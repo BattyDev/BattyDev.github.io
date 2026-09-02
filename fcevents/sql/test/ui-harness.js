@@ -353,7 +353,7 @@ function check(label, actual, expected) {
   await page.route('**/config.js*', (r) => r.fulfill({
     status: 200,
     contentType: 'application/javascript',
-    body: "window.RAID_CONFIG={url:'https://stub.supabase.co',key:'sb_publishable_stub'};",
+    body: "window.FC_CONFIG={url:'https://stub.supabase.co',key:'sb_publishable_stub'};",
   }));
   /* The page fetches the published roster from raw.githubusercontent, with a
      local file fallback. Serve the fixture for both, plus the job-icon map. */
@@ -856,7 +856,7 @@ function check(label, actual, expected) {
   await phone.route('**/supabase-js@2/**', (r) => r.fulfill({ status: 200, contentType: 'application/javascript', body: '' }));
   await phone.route('**/config.js*', (r) => r.fulfill({
     status: 200, contentType: 'application/javascript',
-    body: "window.RAID_CONFIG={url:'https://stub.supabase.co',key:'sb_publishable_stub'};",
+    body: "window.FC_CONFIG={url:'https://stub.supabase.co',key:'sb_publishable_stub'};",
   }));
   await phone.route('**/ffxiv.json*', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(FC_ROSTER) }));
   await phone.route('**/job-icons.json*', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));

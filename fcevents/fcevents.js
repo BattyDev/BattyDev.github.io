@@ -21,7 +21,7 @@
 
 'use strict';
 
-const CFG = window.RAID_CONFIG || {};
+const CFG = window.FC_CONFIG || {};
 const CONFIGURED = Boolean(CFG.url && CFG.key);
 const db = CONFIGURED ? supabase.createClient(CFG.url, CFG.key) : null;
 
@@ -207,7 +207,7 @@ function stamp(text) { $('stamp').textContent = text; }
 /* ---------- routing ----------
    The view lives in the URL hash, so a reload keeps you where you were and an
    event can be linked to directly. Hash rather than a path because this is
-   GitHub Pages: there is no server to route /raid/event/<id> back to the page.
+   GitHub Pages: there is no server to route /fcevents/event/<id> back to the page.
 
    replaceState rather than pushState for plain view switches -- back should
    leave the page, not walk the tab history. Opening an event does push, so
