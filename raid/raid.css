@@ -1035,3 +1035,58 @@ button.adventurer:disabled:hover { transform: none; box-shadow: none; }
 }
 #guide::backdrop { background: rgba(4, 12, 17, 0.78); backdrop-filter: blur(2px); }
 #guide .panel { margin: 0; max-height: calc(100dvh - 40px); overflow-y: auto; }
+
+/* ---- phones --------------------------------------------------------------
+   The header was one nowrap flex row: brand, six icons and Sign out. At 390px
+   that came to 509px, so Sign out sat 119px off the right edge and the whole
+   DOCUMENT scrolled sideways -- which is what made the rest of the page feel
+   like it would not scroll properly. Letting the bar wrap and giving the icons
+   a row of their own fixes the button and the page scroll together, since the
+   header was the only thing overflowing. */
+@media (max-width: 720px) {
+  main { padding: 20px 12px 60px; }
+  .panel { padding: 13px; }
+
+  .home-bar {
+    flex-wrap: wrap;
+    gap: 10px;
+    row-gap: 8px;
+    padding: 8px 12px;
+    padding-top: calc(8px + env(safe-area-inset-top));
+  }
+  /* min-width:0 lets the brand shrink instead of forcing the row wider than
+     the screen; nowrap stops "Wild Hearts · Malboro" stacking three deep. */
+  .account { min-width: 0; flex: 1 1 auto; }
+  .account b { font-size: 14px; }
+  .account small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .system-status { order: 2; margin-left: auto; }
+  .system-icons {
+    order: 3;
+    flex: 1 0 100%;
+    margin-left: 0;
+    justify-content: space-between;
+    gap: 2px;
+  }
+  .system-icons button,
+  .system-icons a { flex: 1 1 auto; max-width: 64px; }
+
+  /* The whole week, on screen at once. The 460px floor and the 52px per-day
+     minimum together meant only five days fitted and the rest were behind a
+     sideways scroll -- on the one view whose entire point is comparing days.
+     Cells get taller as they get narrower, so they stay tappable. */
+  .wk {
+    grid-template-columns: 38px repeat(7, minmax(0, 1fr));
+    min-width: 0;
+    gap: 1px;
+  }
+  .cell { height: 26px; }
+  .hh { font-size: 10px; padding-right: 4px; white-space: nowrap; }
+  .dh { font-size: 10px; letter-spacing: 0.04em; }
+
+  /* The event poll can be 28 days wide, so it still scrolls -- but narrower
+     columns mean rather more of it lands on screen per swipe. */
+  .dayg { grid-template-columns: 38px repeat(var(--cols, 14), minmax(34px, 1fr)); }
+
+  .hero-cta > button { flex: 1 1 100%; justify-content: center; }
+  .lvl-pill, .pill { white-space: nowrap; }
+}
