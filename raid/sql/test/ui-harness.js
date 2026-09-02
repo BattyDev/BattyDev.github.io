@@ -472,7 +472,10 @@ function check(label, actual, expected) {
 
   await page.reload();
   await page.waitForFunction(() => document.querySelectorAll('#overlap-grid .cell').length === 168);
-  await page.waitForTimeout(500);
+  /* Wait for the session to be restored and the chrome resynced, rather than
+     guessing with a fixed delay -- that raced on a slow load and left the nav
+     still hidden when the next click came. */
+  await page.waitForFunction(() => !document.querySelector('[data-view-target="mine"]').hidden);
   check('reloading keeps you on the tab you were on',
     await page.evaluate(() => document.getElementById('view-chars').classList.contains('is-active')), true);
   check('and keeps the saved timezone',

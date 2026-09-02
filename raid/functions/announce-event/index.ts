@@ -124,6 +124,14 @@ Deno.serve(async (req: Request) => {
     { name: 'Composition', value: comp, inline: true },
     { name: 'Signed up', value: String(roster.length), inline: true },
   ];
+  /* Added with migration 005; this function predated the column. */
+  if (ev.min_level != null) {
+    fields.push({
+      name: 'Level',
+      value: `${ev.min_level} ${ev.level_rule === 'required' ? 'required' : 'recommended'}`,
+      inline: true,
+    });
+  }
   if (roster.length) {
     /* Discord caps an embed field at 1024 characters. Truncate on a whole line
        rather than letting the whole POST be rejected. */
@@ -146,10 +154,12 @@ Deno.serve(async (req: Request) => {
     : 'Time not picked yet — add your hours on the page.';
 
   const payload = {
-    username: 'Raid Nights',
+    username: 'FC Events',
     embeds: [{
       title: String(ev.title).slice(0, 256),
-      url: PAGE_URL,
+      /* Straight to the event, now that events have their own links, rather
+         than dropping the reader on the index to find it again. */
+      url: `${PAGE_URL}#/event/${ev.id}`,
       description: [when, ev.description ? `\n${String(ev.description).slice(0, 1500)}` : '']
         .filter(Boolean).join('\n'),
       color: 0xc6a664,

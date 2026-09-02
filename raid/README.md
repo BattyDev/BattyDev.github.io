@@ -1,7 +1,12 @@
-# Raid Nights — battydev.com/raid
+# FC Events — battydev.com/raid
 
-Raid availability scheduler for the Wild Hearts FC. Members log the hours they
-can raid; the company finds the overlap.
+Event scheduler for the Wild Hearts FC. Members log the hours they are free, the
+company finds the overlap, and anyone can put an event on — raids, dungeons,
+maps, Frontline, whatever is being run.
+
+The path stays `/raid` for now; the name does not. Internal identifiers keep the
+`raid_` prefix too (tables, functions, `raid.js`), because renaming them would
+churn every migration and policy to no user-visible end.
 
 Static page on GitHub Pages + Supabase as the backend, same shape as `/health`.
 No build step, no server.
@@ -293,7 +298,7 @@ Pages — there is no server to route `/raid/event/<id>` back to the page.
 **On unfurling in Discord, one honest limitation.** The page carries Open Graph
 tags, so any link to it unfurls as a card — but those tags are *page-level*, not
 per-event. Discord's crawler does not run JavaScript, and static hosting cannot
-render per-event tags, so an event link previews as "Raid Nights · Wild Hearts"
+render per-event tags, so an event link previews as "FC Events · Wild Hearts"
 rather than as that event's title, time and roster.
 
 Two ways to get a per-event card, when it is wanted:
@@ -322,6 +327,10 @@ UPDATE policy on `raid_events` uses — so it cannot drift from the rest of the
 app, and a caller without a valid JWT is refused. The embed also sets
 `allowed_mentions: { parse: [] }`, so an event title can never be used to
 @everyone the server.
+
+The embed links to the event itself (`#/event/<id>`), carries the level where
+one is stated, and renders the time as `<t:unix:F>` so every reader sees it in
+their own zone.
 
 It deliberately does **not** re-solve the seat assignment. That solver lives in
 `raid.js`; a second copy here would drift, and Discord would quietly disagree
