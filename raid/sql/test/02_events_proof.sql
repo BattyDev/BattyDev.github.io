@@ -328,3 +328,47 @@ union all select 'and a claim still reveals no availability',
          $q$ select count(*)::text || ' availability rows'
              from public.raid_characters c
              join public.raid_availability a on a.member_id = c.member_id $q$);
+
+
+\echo ''
+\echo '=== M. the last leader cannot step down from inside the app (004) ==='
+-- Each step is its own statement. An earlier draft ran these as one UNION ALL,
+-- where the plain subqueries all read the snapshot taken at statement start and
+-- so reported stale "before"/"after" values either side of a write that had
+-- really happened. Separate statements, separate snapshots.
+
+\echo '--- leaders before ---'
+select string_agg(display_name, ', ') as leaders
+  from public.raid_members where role = 'leader';
+
+\echo '--- the only leader tries to step down ---'
+select test.as_role('authenticated', '11111111-1111-1111-1111-111111111111',
+  $q$ with u as (update public.raid_members set role = 'member'
+      where id = '11111111-1111-1111-1111-111111111111' returning role)
+      select 'role is now ' || role from u $q$) as result;
+
+\echo '--- still a leader ---'
+select string_agg(display_name, ', ') as leaders
+  from public.raid_members where role = 'leader';
+
+\echo '--- promote a second leader ---'
+select test.as_role('authenticated', '11111111-1111-1111-1111-111111111111',
+  $q$ with u as (update public.raid_members set role = 'leader'
+      where id = '55555555-5555-5555-5555-555555555555' returning display_name)
+      select display_name || ' is now a leader' from u $q$) as result;
+
+\echo '--- now the handover is allowed ---'
+select test.as_role('authenticated', '11111111-1111-1111-1111-111111111111',
+  $q$ with u as (update public.raid_members set role = 'member'
+      where id = '11111111-1111-1111-1111-111111111111' returning role)
+      select 'role is now ' || role from u $q$) as result;
+
+\echo '--- leaders after the handover ---'
+select string_agg(display_name, ', ' order by display_name) as leaders
+  from public.raid_members where role = 'leader';
+
+\echo '--- and the owner, with no JWT, may still demote the last one ---'
+update public.raid_members set role = 'member'
+  where id = '55555555-5555-5555-5555-555555555555';
+select coalesce(string_agg(display_name, ', '), '(none -- owner override worked)') as leaders
+  from public.raid_members where role = 'leader';

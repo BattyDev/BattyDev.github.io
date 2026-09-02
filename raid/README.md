@@ -91,6 +91,7 @@ backup, in the same order.
 | `sql/001_schema.sql` | Members, availability, characters: RLS, triggers, aggregate functions |
 | `sql/002_events.sql` | Events, signups, responses, duty presets, the member directory |
 | `sql/003_character_visibility.sql` | Opens character claims to members (SELECT only) |
+| `sql/004_last_leader_guard.sql` | Refuses to remove the last leader from inside the app |
 | `functions/announce-event/index.ts` | Edge Function that posts an event to Discord |
 | `sql/test/00_supabase_shim.sql` | Local-only: fakes Supabase's auth schema and roles |
 | `sql/test/01_rls_proof.sql` | Local-only: proves the availability split with role impersonation |
@@ -145,6 +146,13 @@ leaders.
    Run this from the SQL editor — `auth.uid()` is NULL there, which the
    `raid_guard_member_role` trigger treats as a privileged context. A member
    cannot promote themselves; a leader can promote others.
+
+   A leader **can** step down, but not if they are the last one: migration 004
+   raises *"cannot remove the last leader — promote somebody else first"*. That
+   is not a security rule — a member still cannot promote themselves — it stops
+   a one-click lockout, since with no leaders left nobody can promote anybody
+   and the only way back is the SQL editor. From the SQL editor itself
+   (`auth.uid()` NULL) the demotion still goes through.
 
 ## About the security advisor findings
 
@@ -244,6 +252,7 @@ psql -f sql/test/00_supabase_shim.sql \
      -f sql/001_schema.sql \
      -f sql/002_events.sql \
      -f sql/003_character_visibility.sql \
+     -f sql/004_last_leader_guard.sql \
      -f sql/test/01_rls_proof.sql \
      -f sql/test/02_events_proof.sql
 ```
