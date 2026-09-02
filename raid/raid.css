@@ -32,6 +32,13 @@
 
 * { box-sizing: border-box; }
 
+/* The hidden attribute is display:none in the UA sheet, which any author
+   display rule outranks -- which is exactly what happened to #ev-poll-fields
+   (display:flex), leaving the poll-length control on screen after the author
+   had chosen a fixed time. Make hidden win everywhere instead of remembering
+   to check it against every new layout rule. */
+[hidden] { display: none !important; }
+
 html, body { margin: 0; padding: 0; }
 
 body {
@@ -880,3 +887,33 @@ button.adventurer:disabled:hover { transform: none; box-shadow: none; }
 }
 .claim-row .arrow { color: var(--ink-faint); }
 .claim-row .spacer { margin-left: auto; }
+
+/* Level + rule sit on one line: the number is meaningless without the strength
+   of the claim next to it. */
+.field.lvl { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.field.lvl label { width: 100%; }
+.field.lvl input { width: 90px; }
+.field.lvl select { width: auto; }
+.field.lvl .hint { width: 100%; margin-top: 0; }
+
+#tz-pick { max-width: 460px; }
+
+/* An event's level, shown wherever the event is. */
+.lvl-pill {
+  display: inline-block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 1px 9px;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+.lvl-pill.is-required { color: var(--warn); border-color: var(--warn); }
+
+.lvl-warn {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--warn);
+}

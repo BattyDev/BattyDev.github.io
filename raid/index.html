@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
-<link href="raid.css?v=3" rel="stylesheet">
+<link href="raid.css?v=4" rel="stylesheet">
 </head>
 <body>
 
@@ -123,6 +123,17 @@
              empty for unlimited.</p>
         </fieldset>
 
+        <div class="field lvl">
+          <label for="ev-level">Level</label>
+          <input type="number" id="ev-level" min="1" max="100" inputmode="numeric" placeholder="any">
+          <select id="ev-level-rule">
+            <option value="recommended" selected>recommended</option>
+            <option value="required">required</option>
+          </select>
+          <p class="hint">Leave the level blank if it does not matter. Item level and prog point
+             belong in the notes below.</p>
+        </div>
+
         <fieldset class="field">
           <legend>How the time gets picked</legend>
           <label class="radio">
@@ -158,6 +169,17 @@
                     placeholder="Prog point, loot rules, voice channel…"></textarea>
         </div>
 
+        <fieldset class="field">
+          <legend>Sign yourself up</legend>
+          <div class="roles" id="ev-my-roles">
+            <label class="r-tank"><input type="checkbox" value="tank"><i class="bi bi-shield-shaded"></i> Tank</label>
+            <label class="r-healer"><input type="checkbox" value="healer"><i class="bi bi-heart-pulse-fill"></i> Healer</label>
+            <label class="r-dps"><input type="checkbox" value="dps"><i class="bi bi-crosshair"></i> DPS</label>
+          </div>
+          <p class="hint">Ticked from your linked characters' levelled jobs. Untick everything if
+             you are organising but not playing.</p>
+        </fieldset>
+
         <p class="err" id="event-form-error" role="alert" hidden></p>
         <div class="grid-actions">
           <button type="submit" class="primary" id="ev-save">Create event</button>
@@ -179,6 +201,19 @@
       <p class="eyebrow">Your hours</p>
       <h1 id="mine-heading">My times</h1>
       <p class="lede">Drag across the grid to mark when you can raid. Saved automatically.</p>
+    </div>
+
+    <div class="panel">
+      <div class="grid-head">
+        <h2>Your timezone</h2>
+        <p class="grid-note" id="tz-status"></p>
+      </div>
+      <div class="field">
+        <label for="tz-pick">Show every time on this site in</label>
+        <select id="tz-pick"></select>
+        <p class="hint">Availability is stored in UTC either way — this only changes how it
+           is drawn for you, so everyone still agrees on the same real moment.</p>
+      </div>
     </div>
 
     <div class="panel grid-panel">
@@ -285,7 +320,7 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="config.js?v=3"></script>
-<script src="raid.js?v=3"></script>
+<script src="config.js?v=4"></script>
+<script src="raid.js?v=4"></script>
 </body>
 </html>

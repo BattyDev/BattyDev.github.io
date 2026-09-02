@@ -92,11 +92,36 @@ backup, in the same order.
 | `sql/002_events.sql` | Events, signups, responses, duty presets, the member directory |
 | `sql/003_character_visibility.sql` | Opens character claims to members (SELECT only) |
 | `sql/004_last_leader_guard.sql` | Refuses to remove the last leader from inside the app |
+| `sql/005_timezone_and_level.sql` | A member's timezone; an event's required/recommended level |
 | `functions/announce-event/index.ts` | Edge Function that posts an event to Discord |
 | `sql/test/00_supabase_shim.sql` | Local-only: fakes Supabase's auth schema and roles |
 | `sql/test/01_rls_proof.sql` | Local-only: proves the availability split with role impersonation |
 | `sql/test/02_events_proof.sql` | Local-only: proves the event/consent split, the escalation, and claims |
 | `sql/test/ui-harness.js` | Local-only: drives the page in Chromium with a stubbed client |
+
+## Timezones
+
+Every time on the page is drawn in the member's chosen zone, saved on their
+`raid_members` row so it follows them between machines. On first sign-in the
+browser's zone is detected and written down, so the value is never implicit.
+
+It is a **rendering preference only**. `raid_availability.slot` stays an hour of
+the UTC week and `raid_event_responses.starts_at` stays an absolute instant —
+which is exactly what keeps two members in different zones agreeing on the same
+real moment. Changing your zone moves which grid cells light up; it does not
+touch a single stored row, and the harness asserts both halves of that.
+
+All zone maths goes through `Intl.DateTimeFormat.formatToParts`, because it is
+the only thing in the platform that knows the IANA rules — `Date`'s own local
+methods only ever speak the browser's zone, which is the thing being replaced.
+Converting a wall-clock time to an instant takes two passes: reading the fields
+as UTC is wrong by the offset, and the offset *at that wrong instant* can itself
+be off by an hour across a DST boundary, so it is re-read at the corrected
+instant. Calendar arithmetic is done at UTC noon so adding days cannot slip
+across a boundary and change the date.
+
+Absolute times are formatted with `timeZoneName: 'short'`, so an event reads
+`Tue, Sep 8, 7:00 PM EDT` rather than leaving the reader to guess.
 
 ## How a slot is stored
 
@@ -253,6 +278,7 @@ psql -f sql/test/00_supabase_shim.sql \
      -f sql/002_events.sql \
      -f sql/003_character_visibility.sql \
      -f sql/004_last_leader_guard.sql \
+     -f sql/005_timezone_and_level.sql \
      -f sql/test/01_rls_proof.sql \
      -f sql/test/02_events_proof.sql
 ```

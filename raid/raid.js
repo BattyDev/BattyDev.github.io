@@ -49,40 +49,133 @@ const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-function weekStart() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - d.getDay());
-  return d;
+const BROWSER_TZ = (() => {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; }
+  catch { return 'UTC'; }
+})();
+
+/* The zone every time on this page is drawn in. Held in a module variable
+   rather than read from the browser at each call, so a member's saved choice
+   wins over whatever machine they happen to be sitting at -- and so that
+   changing it is one assignment plus a redraw. */
+let currentTz = BROWSER_TZ;
+const TZ = () => currentTz;
+
+const PART_FMT = new Map();
+function partFmt(tz) {
+  if (!PART_FMT.has(tz)) {
+    PART_FMT.set(tz, new Intl.DateTimeFormat('en-US', {
+      timeZone: tz, hourCycle: 'h23', weekday: 'short',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    }));
+  }
+  return PART_FMT.get(tz);
 }
 
-function cellDate(day, hour) {
-  const d = weekStart();
-  d.setDate(d.getDate() + day);
-  d.setHours(hour, 0, 0, 0);
-  return d;
+/* The wall-clock fields an instant reads as, in a given zone. Intl is the only
+   thing in the platform that knows the IANA rules, so all zone maths below goes
+   through it rather than through Date's own local-time methods -- those only
+   ever speak the browser's zone, which is precisely what we are replacing. */
+function zoned(instant, tz = TZ()) {
+  const p = {};
+  for (const part of partFmt(tz).formatToParts(instant)) p[part.type] = part.value;
+  return {
+    y: +p.year, mo: +p.month, d: +p.day,
+    h: +p.hour % 24, mi: +p.minute, s: +p.second,
+    dow: DAY_NAMES.indexOf(p.weekday),
+  };
 }
 
-/* local grid index (day * 24 + hour) -> UTC slot, and back */
+function offsetMs(instant, tz) {
+  const z = zoned(instant, tz);
+  return Date.UTC(z.y, z.mo - 1, z.d, z.h, z.mi, z.s)
+    - Math.floor(instant.getTime() / 1000) * 1000;
+}
+
+/* The instant at which a wall-clock time occurs in TZ(). Two passes: reading
+   the fields as if they were UTC gives an instant that is wrong by the offset,
+   and the offset in force AT that wrong instant can itself be wrong by an hour
+   across a daylight-saving boundary -- so the offset is re-read at the
+   corrected instant and applied. On the hour that does not exist in spring this
+   lands on the following hour, which is the same thing every calendar app does.
+*/
+function instantAt(y, mo, d, h, mi = 0) {
+  const guess = Date.UTC(y, mo - 1, d, h, mi);
+  const o1 = offsetMs(new Date(guess), TZ());
+  const o2 = offsetMs(new Date(guess - o1), TZ());
+  return guess - o2;
+}
+
+/* Calendar arithmetic is done at UTC noon so that adding days can never slip
+   across a DST boundary and land on the wrong date. */
+const ymdToNoon = (ymd) => Date.UTC(ymd.y, ymd.mo - 1, ymd.d, 12);
+function addDays(ymd, n) {
+  const t = new Date(ymdToNoon(ymd) + n * 86400000);
+  return { y: t.getUTCFullYear(), mo: t.getUTCMonth() + 1, d: t.getUTCDate() };
+}
+const ymdDow = (ymd) => new Date(ymdToNoon(ymd)).getUTCDay();
+const todayYmd = () => { const z = zoned(new Date()); return { y: z.y, mo: z.mo, d: z.d }; };
+const ymdISO = (ymd) => `${ymd.y}-${String(ymd.mo).padStart(2, '0')}-${String(ymd.d).padStart(2, '0')}`;
+
+/* The Sunday that starts the current week, in TZ(). */
+const weekStartYmd = () => addDays(todayYmd(), -zoned(new Date()).dow);
+
+function cellInstant(day, hour) {
+  const w = addDays(weekStartYmd(), day);
+  return instantAt(w.y, w.mo, w.d, hour);
+}
+
+/* ---------- the weekly slot map ----------
+   Slots are stored as an hour of the UTC week (utcDay * 24 + utcHour, day 0 =
+   Sunday). Storing UTC is what makes the aggregate mean anything: two members
+   in different zones who are free at the same real moment have to land on the
+   same slot, which they would not if each stored their own wall clock.
+
+   The grid is drawn in TZ(), so this maps each cell to its UTC slot. It is
+   rebuilt whenever the chosen zone changes -- and the mapping is computed
+   against the CURRENT week, so the offset used is the one actually in force,
+   correct on either side of a daylight-saving change. */
 const LOCAL_TO_SLOT = new Array(168);
-const SLOT_TO_LOCAL = new Map();
-for (let day = 0; day < 7; day++) {
-  for (let hour = 0; hour < 24; hour++) {
-    const d = cellDate(day, hour);
-    const slot = d.getUTCDay() * 24 + d.getUTCHours();
-    LOCAL_TO_SLOT[day * 24 + hour] = slot;
-    SLOT_TO_LOCAL.set(slot, day * 24 + hour);
+function rebuildSlots() {
+  for (let day = 0; day < 7; day++) {
+    for (let hour = 0; hour < 24; hour++) {
+      const t = new Date(cellInstant(day, hour));
+      LOCAL_TO_SLOT[day * 24 + hour] = t.getUTCDay() * 24 + t.getUTCHours();
+    }
   }
 }
+rebuildSlots();
 
-const HOUR_FMT = new Intl.DateTimeFormat(undefined, { hour: 'numeric' });
-const hourLabel = (h) => HOUR_FMT.format(cellDate(0, h));
+const HOUR_FMT = new Map();
+function hourLabel(h) {
+  const tz = TZ();
+  if (!HOUR_FMT.has(tz)) {
+    HOUR_FMT.set(tz, new Intl.DateTimeFormat(undefined, { timeZone: tz, hour: 'numeric' }));
+  }
+  return HOUR_FMT.get(tz).format(cellInstant(0, h));
+}
 const cellLabel = (day, hour) => `${DAY_NAMES[day]} ${hourLabel(hour)}`;
 
-const TZ_NAME = (() => {
-  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'local time'; }
-  catch { return 'local time'; }
-})();
+/* Zone name plus the abbreviation people actually say out loud, so a time is
+   never ambiguous: "America/New_York (EDT)". */
+function tzLabel() {
+  try {
+    const abbr = new Intl.DateTimeFormat('en-US', { timeZone: TZ(), timeZoneName: 'short' })
+      .formatToParts(new Date()).find((p) => p.type === 'timeZoneName')?.value;
+    /* "UTC (UTC)" tells nobody anything. */
+    return abbr && abbr !== TZ() ? `${TZ()} (${abbr})` : TZ();
+  } catch { return TZ(); }
+}
+
+/* Every absolute time on the page goes through this, and it always carries the
+   zone -- the whole complaint that started this was not knowing which one. */
+function fmtWhen(v) {
+  return new Intl.DateTimeFormat(undefined, {
+    timeZone: TZ(), weekday: 'short', month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+  }).format(new Date(v));
+}
 
 /* ---------- state ---------- */
 const state = {
@@ -150,6 +243,17 @@ function syncChrome() {
   if (!signedIn && !document.querySelector('#view-overlap').classList.contains('is-active')) {
     showView('overlap');
   }
+}
+
+/* Where a member lands. Events, not the heatmap: the heatmap answers "when is
+   the company around", which is background, while Events is the thing there is
+   something to DO about -- sign up, or put one on. The signed-out public still
+   lands on the heatmap, because events are not theirs to see. */
+let landed = false;
+function landOnDefaultView() {
+  if (landed || !state.session) return;
+  landed = true;
+  showView('events');
 }
 
 /* ---------- grid construction ---------- */
@@ -245,8 +349,8 @@ function renderOverlap() {
 
   const s = state.stats;
   $('overlap-stats').textContent = s
-    ? `${s.respondents} of ${s.members} members have logged hours · shown in ${TZ_NAME}`
-    : `shown in ${TZ_NAME}`;
+    ? `${s.respondents} of ${s.members} members have logged hours · shown in ${tzLabel()}`
+    : `shown in ${tzLabel()}`;
 
   /* Legend is drawn from the same scale the cells use, so it cannot drift. */
   $('overlap-legend').innerHTML = max
@@ -331,7 +435,7 @@ function renderMine() {
     mineCells[i].setAttribute('aria-pressed', state.mine.has(LOCAL_TO_SLOT[i]) ? 'true' : 'false');
   }
   $('mine-count').textContent =
-    `${state.mine.size} hour${state.mine.size === 1 ? '' : 's'} marked · ${TZ_NAME}`;
+    `${state.mine.size} hour${state.mine.size === 1 ? '' : 's'} marked · ${tzLabel()}`;
 }
 
 function wirePainting() {
@@ -379,7 +483,7 @@ function wirePainting() {
 
 function queueSave() {
   $('mine-count').textContent =
-    `${state.mine.size} hour${state.mine.size === 1 ? '' : 's'} marked · ${TZ_NAME}`;
+    `${state.mine.size} hour${state.mine.size === 1 ? '' : 's'} marked · ${tzLabel()}`;
   $('mine-status').textContent = 'Saving…';
   clearTimeout(saveTimer);
   saveTimer = setTimeout(saveMine, 600);
@@ -440,7 +544,7 @@ function renderCompany() {
     pickSlot(state.picked);
   }
 
-  $('company-stats').textContent = `${state.members.length} members · shown in ${TZ_NAME}`;
+  $('company-stats').textContent = `${state.members.length} members · shown in ${tzLabel()}`;
   $('company-members').innerHTML = state.members.length
     ? state.members.map((m) => chip(m, m.role === 'leader')).join('')
     : '<p class="empty">No members yet.</p>';
@@ -472,6 +576,48 @@ function chip(m, leader) {
     : `<span class="fallback">${esc((m.display_name || '?').trim().charAt(0).toUpperCase())}</span>`;
   return `<span class="chip${leader ? ' is-leader' : ''}">${face}<span class="name">${name}</span>${
     leader ? '<span class="tag">Leader</span>' : ''}</span>`;
+}
+
+/* ---------- timezone ----------
+   Stored on the member so the choice follows them between machines. It is a
+   rendering preference only: raid_availability.slot stays an hour of the UTC
+   week and raid_event_responses.starts_at stays an absolute instant, which is
+   what keeps two members in different zones agreeing on the same moment. */
+function wireTimezone() {
+  const sel = $('tz-pick');
+  let zones = [];
+  try { zones = Intl.supportedValuesOf('timeZone'); } catch { zones = []; }
+  /* Older engines have no supportedValuesOf. Offer at least the browser's own
+     zone and UTC so the control is never empty. */
+  if (!zones.length) zones = [...new Set([BROWSER_TZ, 'UTC'])];
+  if (!zones.includes(BROWSER_TZ)) zones.unshift(BROWSER_TZ);
+
+  sel.innerHTML = zones.map((z) => `<option value="${esc(z)}">${esc(z)}</option>`).join('');
+  sel.value = TZ();
+
+  sel.addEventListener('change', async () => {
+    applyTimezone(sel.value);
+    $('tz-status').textContent = 'Saving…';
+    const { error } = await db.from('raid_members')
+      .update({ timezone: currentTz }).eq('id', state.session.user.id);
+    $('tz-status').textContent = error ? `Not saved: ${error.message}` : `Saved · ${tzLabel()}`;
+  });
+}
+
+/* Point every renderer at a new zone. The slot map has to be rebuilt before
+   anything redraws, because it is what maps a grid cell to the UTC hour that
+   was actually stored. */
+function applyTimezone(tz) {
+  currentTz = tz || BROWSER_TZ;
+  rebuildSlots();
+  const sel = $('tz-pick');
+  if (sel) { sel.value = currentTz; }
+  $('tz-status').textContent = tzLabel();
+  renderOverlap();
+  if (mineCells) renderMine();
+  if (state.openEvent) renderDetail();
+  if (state.events.length) renderEvents();
+  if (isLeader() && companyCells) renderCompany();
 }
 
 /* ---------- loading ---------- */
@@ -524,9 +670,20 @@ async function loadMember() {
   const uid = state.session?.user?.id;
   if (!uid) { state.member = null; return; }
   const { data, error } = await db.from('raid_members')
-    .select('id, discord_id, display_name, avatar_url, role').eq('id', uid).maybeSingle();
+    .select('id, discord_id, display_name, avatar_url, role, timezone').eq('id', uid).maybeSingle();
   if (error) throw error;
   state.member = data;
+  if (data) {
+    if (data.timezone) {
+      applyTimezone(data.timezone);
+    } else {
+      /* First sign-in: adopt what the browser reports and write it down, so the
+         zone every time is drawn in stops being implicit. */
+      applyTimezone(BROWSER_TZ);
+      await db.from('raid_members').update({ timezone: BROWSER_TZ }).eq('id', uid);
+      state.member.timezone = BROWSER_TZ;
+    }
+  }
   if (!data) {
     banner('Your Discord login worked, but no member record exists for it yet. ' +
            'A leader may need to run the provisioning trigger for your account.', true);
@@ -547,6 +704,9 @@ async function onSession(session) {
       await loadCharacters();
       await loadEvents();
       if (isLeader()) await loadLeader();
+      landOnDefaultView();
+    } else {
+      landed = false;
     }
   } catch (err) {
     banner(`Could not load your account: ${esc(err.message || err)}`, true);
@@ -609,6 +769,7 @@ async function main() {
   wireAuth();
   wireEventForm();
   wireChars();
+  wireTimezone();
   const { data } = await db.auth.getSession();
   await onSession(data?.session ?? null);
 }
@@ -652,42 +813,28 @@ Object.assign(state, {
   evSavedMarks: new Set(),
 });
 
-/* ---------- dates ---------- */
-/* 'YYYY-MM-DD' through the Date constructor is parsed as UTC midnight, which
-   renders as the previous day for anyone west of Greenwich. Build it locally. */
-function parseISODate(s) {
-  if (!s) return null;
-  const [y, m, d] = String(s).slice(0, 10).split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
+/* ---------- dates ----------
+   An event happens on a date, so its poll runs over absolute days rather than
+   the recurring 0..167 week the availability grid uses. Everything here is
+   expressed as {y, mo, d} calendar fields plus TZ(), never as a Date read
+   through the browser's own zone. */
 
-const localISODate = (d) => {
-  const p = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-};
-
+/* The poll window as calendar days in the viewer's chosen zone. */
 function pollWindow(ev) {
-  const start = parseISODate(ev.poll_start) || new Date(new Date().setHours(0, 0, 0, 0));
-  return Array.from({ length: ev.poll_days || 14 }, (_, i) => {
-    const d = new Date(start);
-    d.setDate(d.getDate() + i);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  });
+  let start;
+  if (ev.poll_start) {
+    const [y, mo, d] = String(ev.poll_start).slice(0, 10).split('-').map(Number);
+    start = { y, mo, d };
+  } else {
+    start = todayYmd();
+  }
+  return Array.from({ length: ev.poll_days || 14 }, (_, i) => addDays(start, i));
 }
 
 /* Canonical key for an hour, so a value written by this page and one read back
    from Postgres ('...+00:00') compare equal. */
 const hourKey = (v) => new Date(v).toISOString();
-const cellKey = (day, hour) => {
-  const d = new Date(day);
-  d.setHours(hour, 0, 0, 0);
-  return d.toISOString();
-};
-
-const fmtWhen = (v) => new Date(v).toLocaleString(undefined, {
-  weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-});
+const cellKey = (ymd, hour) => new Date(instantAt(ymd.y, ymd.mo, ymd.d, hour)).toISOString();
 
 /* ---------- composition ---------- */
 const compOf = (ev) => ({ tank: ev.tanks_needed, healer: ev.healers_needed, dps: ev.dps_needed });
@@ -699,6 +846,31 @@ function compText(ev) {
   }
   const c = compOf(ev);
   return ROLES.filter((r) => c[r] != null).map((r) => `${c[r]} ${ROLE_LABEL[r]}`).join(' · ');
+}
+
+/* The level, where one is stated. 'required' and 'recommended' are different
+   claims and the pill says which -- both are advisory, since the database
+   deliberately does not refuse a signup over a level (see 005). */
+function levelPill(ev) {
+  if (ev.min_level == null) return '';
+  const req = ev.level_rule === 'required';
+  return `<span class="lvl-pill${req ? ' is-required' : ''}">Lv ${Number(ev.min_level)} ${
+    req ? 'required' : 'rec.'}</span>`;
+}
+
+/* The highest level this member has on a job that can fill one of the roles
+   they are offering, across their linked characters. Used only to warn. */
+function levelFor(memberId, roles) {
+  let best = null;
+  for (const claim of charsOf(memberId)) {
+    const c = byLodestone(claim.lodestone_id);
+    for (const j of (c?.jobs || [])) {
+      const r = JOB_ROLE[j.job];
+      if (!r || (roles && roles.length && !roles.includes(r))) continue;
+      if (best == null || (j.level || 0) > best) best = j.level || 0;
+    }
+  }
+  return best;
 }
 
 /* ---------- the roster solver ----------
@@ -815,6 +987,7 @@ function renderEvents() {
         ${mine ? '<span class="pill is-mine">Yours</span>' : ''}
         <span>${esc(when)}</span>
         <span>${esc(compText(ev))}</span>
+        ${levelPill(ev)}
         <span class="who">by ${esc(who(ev.created_by).display_name)}</span>
       </div>
     </button>`;
@@ -868,6 +1041,21 @@ function roleChecked(signup, role) {
 }
 const mySignup = () => state.evSignups.find((s) => s.member_id === state.session?.user?.id) || null;
 
+/* Advisory only. The database does not refuse a signup over a level, because
+   doing so would need a character claim and a job level from a JSON file
+   republished on a schedule -- it would bar people for being briefly stale and
+   leave a leader unable to wave in somebody they know is ready. */
+function levelWarning(ev, signup) {
+  if (ev.min_level == null) return '';
+  const uid = state.session?.user?.id;
+  if (!charsOf(uid).length) return '';
+  const lv = levelFor(uid, signup?.roles);
+  if (lv == null || lv >= ev.min_level) return '';
+  return `<p class="lvl-warn">Your linked characters top out at level ${lv} for these roles;
+    this is ${ev.level_rule === 'required' ? 'listed as required at' : 'tuned for'}
+    level ${Number(ev.min_level)}.</p>`;
+}
+
 function renderDetail() {
   const ev = state.openEvent;
   if (!ev) return;
@@ -883,6 +1071,7 @@ function renderDetail() {
 
     <div class="section-head">
       <p class="eyebrow">${esc(compText(ev))} · by ${esc(who(ev.created_by).display_name)}</p>
+      ${ev.min_level != null ? `<p class="lede" style="margin-top:0">${levelPill(ev)}</p>` : ''}
       <h1>${esc(ev.title)}</h1>
       <p class="lede">${when}
         <span class="pill is-${esc(ev.status)}">${esc(ev.status)}</span></p>
@@ -895,6 +1084,7 @@ function renderDetail() {
           <h2>${mine ? 'You are signed up' : 'Sign up'}</h2>
           <p class="grid-note" id="signup-status"></p>
         </div>
+        ${levelWarning(ev, mine)}
         <p class="hint" style="margin-bottom:10px">Pick every role you can fill — more roles means
            more chance of a seat when the party is short one.</p>
         <div class="roles" id="role-picker">
@@ -913,7 +1103,7 @@ function renderDetail() {
       <div class="panel">
         <div class="grid-head">
           <h2>${manage ? 'Who can make it' : 'Your hours'}</h2>
-          <p class="grid-note" id="poll-status">${esc(TZ_NAME)}</p>
+          <p class="grid-note" id="poll-status">${esc(tzLabel())}</p>
         </div>
         <p class="hint" style="margin-bottom:10px">${manage
           ? 'Darker means more people. Click an hour to see who, then lock it in.'
@@ -1129,7 +1319,7 @@ function renderPoll() {
   for (const d of days) {
     const h = document.createElement('div');
     h.className = 'dh';
-    h.innerHTML = `${DAY_NAMES[d.getDay()]}<small>${d.getDate()}/${d.getMonth() + 1}</small>`;
+    h.innerHTML = `${DAY_NAMES[ymdDow(d)]}<small>${d.d}/${d.mo}</small>`;
     el.appendChild(h);
   }
 
@@ -1159,7 +1349,7 @@ function renderPoll() {
         + (hour % 6 === 0 ? ' is-daybreak' : '');
       if (!manage) c.setAttribute('aria-pressed', state.evMarks.has(key) ? 'true' : 'false');
       c.setAttribute('aria-label',
-        `${DAY_NAMES[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1} ${hourLabel(hour)}`
+        `${DAY_NAMES[ymdDow(d)]} ${d.d}/${d.mo} ${hourLabel(hour)}`
         + (manage ? ` — ${n} free` : ''));
       el.appendChild(c);
       pollCells.set(key, c);
@@ -1174,8 +1364,8 @@ function updatePollStatus() {
   const s = $('poll-status');
   if (!s) return;
   s.textContent = canManage(state.openEvent)
-    ? `${new Set(state.evResponses.map((r) => r.member_id)).size} responded · ${TZ_NAME}`
-    : `${state.evMarks.size} hour${state.evMarks.size === 1 ? '' : 's'} marked · ${TZ_NAME}`;
+    ? `${new Set(state.evResponses.map((r) => r.member_id)).size} responded · ${tzLabel()}`
+    : `${state.evMarks.size} hour${state.evMarks.size === 1 ? '' : 's'} marked · ${tzLabel()}`;
 }
 
 /* Participant: paint your own hours. Same mousedown/click dance as the weekly
@@ -1321,7 +1511,12 @@ function wireEventForm() {
   $('new-event').addEventListener('click', () => {
     form.hidden = !form.hidden;
     if (!form.hidden) {
-      $('ev-poll-start').value = localISODate(new Date());
+      $('ev-poll-start').value = ymdISO(todayYmd());
+      /* Same suggestion the signup picker makes: what the member's linked
+         characters could actually fill. */
+      for (const box of document.querySelectorAll('#ev-my-roles input')) {
+        box.checked = roleChecked(null, box.value);
+      }
       $('ev-title').focus();
     }
   });
@@ -1367,13 +1562,24 @@ function wireEventForm() {
       party_size: numOrNull('ev-size'),
       mode,
     };
+    const lvl = $('ev-level').value.trim();
+    row.min_level = lvl === '' ? null : Number(lvl);
+    row.level_rule = $('ev-level-rule').value;
+
     if (mode === 'poll') {
-      row.poll_start = $('ev-poll-start').value || localISODate(new Date());
+      row.poll_start = $('ev-poll-start').value || ymdISO(todayYmd());
       row.poll_days = Number($('ev-poll-days').value);
       row.status = 'open';
     } else {
-      if (!$('ev-when').value) { err.textContent = 'Pick a start time.'; err.hidden = false; return; }
-      row.scheduled_at = new Date($('ev-when').value).toISOString();
+      const raw = $('ev-when').value;
+      if (!raw) { err.textContent = 'Pick a start time.'; err.hidden = false; return; }
+      /* datetime-local hands back wall-clock text with no zone. new Date() would
+         read it in the BROWSER's zone, which is wrong for anyone whose chosen
+         zone differs -- so parse the fields and place them in TZ(). */
+      const [dPart, tPart] = raw.split('T');
+      const [wy, wmo, wd] = dPart.split('-').map(Number);
+      const [wh, wmi] = tPart.split(':').map(Number);
+      row.scheduled_at = new Date(instantAt(wy, wmo, wd, wh, wmi)).toISOString();
       row.status = 'scheduled';
     }
 
@@ -1381,6 +1587,19 @@ function wireEventForm() {
     try {
       const { data, error } = await db.from('raid_events').insert(row).select('id').single();
       if (error) throw error;
+
+      /* Sign the organiser up in the same breath, if they ticked anything.
+         Creating and joining were two separate steps before, which read as an
+         oversight -- most people putting an event on are playing in it. A
+         failure here is not fatal: the event exists, and they can sign up on
+         the page it opens. */
+      const myRoles = [...document.querySelectorAll('#ev-my-roles input:checked')].map((i) => i.value);
+      if (myRoles.length) {
+        const { error: joinErr } = await db.from('raid_event_signups')
+          .insert({ event_id: data.id, member_id: state.session.user.id, roles: myRoles });
+        if (joinErr) banner(`Event created, but signing you up failed: ${esc(joinErr.message)}`, true);
+      }
+
       form.reset();
       form.hidden = true;
       await loadEvents();

@@ -22,10 +22,10 @@ const path = require('path');
 const PAGE = 'file://' + path.resolve(__dirname, '../../index.html');
 const SHOTS = process.env.SHOT_DIR || '/tmp/raid-shots';
 
-const LEADER = { id: 'u-leader', display_name: 'Batty',       role: 'leader', avatar_url: null };
-const MEMBER = { id: 'u-cedho',  display_name: 'Cedho Nalen', role: 'member', avatar_url: null };
-const OTHER  = { id: 'u-tataru', display_name: 'Tataru',      role: 'member', avatar_url: null };
-const FOURTH = { id: 'u-ysh',    display_name: 'Yshtola',     role: 'member', avatar_url: null };
+const LEADER = { id: 'u-leader', display_name: 'Batty',       role: 'leader', avatar_url: null, timezone: null };
+const MEMBER = { id: 'u-cedho',  display_name: 'Cedho Nalen', role: 'member', avatar_url: null, timezone: null };
+const OTHER  = { id: 'u-tataru', display_name: 'Tataru',      role: 'member', avatar_url: null, timezone: null };
+const FOURTH = { id: 'u-ysh',    display_name: 'Yshtola',     role: 'member', avatar_url: null, timezone: null };
 
 /* Weekly slots are UTC hours-of-week. Fixed values so assertions are stable. */
 const SEED = [
@@ -390,10 +390,37 @@ function check(label, actual, expected) {
   check('"Company" still hidden for a member',
     await page.locator('[data-needs="leader"]').isHidden(), true);
 
+  check('a signed-in member lands on Events, not the heatmap',
+    await page.evaluate(() => document.getElementById('view-events').classList.contains('is-active')), true);
+
   await page.locator('[data-view-target="mine"]').click();
   await page.waitForSelector('#mine-grid .cell');
   check('own grid shows exactly this member\'s 3 hours',
     await page.locator('#mine-grid .cell[aria-pressed="true"]').count(), 3);
+
+  // ---- B2. timezone ------------------------------------------------------
+  console.log('\n=== B2. timezone ===');
+  check('the detected zone was persisted on first sign-in',
+    await page.evaluate(() => window.__stub.T.raid_members.find((m) => m.id === 'u-cedho').timezone !== null), true);
+
+  const slotsBefore = await page.evaluate(() =>
+    [...document.querySelectorAll('#mine-grid .cell[aria-pressed="true"]')].map((c) => c.dataset.i).join(','));
+  await page.selectOption('#tz-pick', 'Asia/Tokyo');
+  await page.waitForTimeout(400);
+  check('choosing a zone saves it to the member',
+    await page.evaluate(() => window.__stub.T.raid_members.find((m) => m.id === 'u-cedho').timezone), 'Asia/Tokyo');
+  const slotsAfter = await page.evaluate(() =>
+    [...document.querySelectorAll('#mine-grid .cell[aria-pressed="true"]')].map((c) => c.dataset.i).join(','));
+  check('the same stored hours land on different grid cells in a different zone',
+    slotsBefore !== slotsAfter, true);
+  check('but the stored UTC slots are untouched',
+    await page.evaluate(() => window.__stub.T.raid_availability
+      .filter((r) => r.member_id === 'u-cedho').map((r) => r.slot).sort((a, b) => a - b)), [42, 43, 66]);
+  check('the zone label carries an abbreviation',
+    await page.evaluate(() => /\(.+\)/.test(document.getElementById('tz-status').textContent)), true);
+
+  await page.selectOption('#tz-pick', 'UTC');
+  await page.waitForTimeout(300);
 
   // ---- C. member creates a poll event ------------------------------------
   console.log('\n=== C. creating a poll event ===');
@@ -408,6 +435,28 @@ function check(label, actual, expected) {
     await page.evaluate(() => ['ev-tanks', 'ev-healers', 'ev-dps', 'ev-size']
       .map((i) => document.getElementById(i).value)), ['2', '2', '4', '8']);
 
+  await page.locator('#ev-level').fill('100');
+  await page.selectOption('#ev-level-rule', 'required');
+
+  /* The bug that started this: an author display:flex outranked the UA's
+     [hidden] rule, so the poll-length control stayed on screen after choosing
+     a fixed time. */
+  await page.locator('input[name="ev-mode"][value="fixed"]').check();
+  await page.waitForTimeout(150);
+  check('choosing a fixed time hides the poll-length control',
+    await page.locator('#ev-poll-fields').isHidden(), true);
+  check('and reveals the start-time control',
+    await page.locator('#ev-fixed-fields').isHidden(), false);
+  await page.locator('input[name="ev-mode"][value="poll"]').check();
+  await page.waitForTimeout(150);
+  check('and back again',
+    [await page.locator('#ev-poll-fields').isHidden(),
+     await page.locator('#ev-fixed-fields').isHidden()], [false, true]);
+
+  check('the organiser can sign themselves up while creating',
+    await page.locator('#ev-my-roles input').count(), 3);
+  await page.locator('#ev-my-roles input[value="healer"]').check();
+
   await page.locator('#ev-poll-start').fill('2026-09-07');
   await page.locator('#ev-save').click();
   await page.waitForSelector('#events-detail:not([hidden])');
@@ -419,12 +468,14 @@ function check(label, actual, expected) {
     await page.locator('#ev-schedule').count(), 1);
   await page.screenshot({ path: `${SHOTS}/c-event-created.png`, fullPage: true });
 
-  // creator signs up and marks hours
-  await page.locator('#role-picker input[value="healer"]').check();
-  await page.locator('#ev-signup').click();
-  await page.waitForTimeout(300);
-  check('creator appears on the roster as a healer',
+  check('creating signed the organiser up in the same step',
+    await page.evaluate(() => window.__stub.T.raid_event_signups
+      .filter((x) => x.member_id === 'u-cedho').map((x) => x.roles)), [['healer']]);
+  check('creator appears on the roster already',
     (await page.locator('#roster').innerText()).includes('Cedho Nalen'), true);
+  check('the level is shown on the event',
+    (await page.locator('#events-detail .lvl-pill').first().innerText()).trim().toLowerCase(),
+    'lv 100 required');
 
   await page.evaluate(() => {
     /* Mark two hours directly through the stub, as the creator's own grid is
