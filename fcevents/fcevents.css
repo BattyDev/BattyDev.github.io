@@ -1101,3 +1101,63 @@ button.adventurer:disabled:hover { transform: none; box-shadow: none; }
   .hero-cta > button { flex: 1 1 100%; justify-content: center; }
   .lvl-pill, .pill { white-space: nowrap; }
 }
+
+/* ---- job preference order ----------------------------------------------
+   Up/down buttons are the primary mechanism, not a fallback: they work with a
+   keyboard, with a screen reader and on a phone, none of which native HTML5
+   drag-and-drop does. Dragging is layered on top for people with a mouse, who
+   will reach for it first. */
+.job-order { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.job-order li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: rgba(11, 29, 40, 0.62);
+  padding: 7px 10px;
+  font-size: 14px;
+}
+.job-order li.is-dragging { opacity: 0.4; }
+.job-order li.is-over { border-color: var(--gold-bright); }
+.job-order .rank {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+  font-size: 12px;
+  min-width: 20px;
+}
+.job-order img { width: 22px; height: 22px; display: block; }
+.job-order .jname { font-weight: 700; }
+.job-order .jlv { color: var(--gold-bright); font-variant-numeric: tabular-nums; }
+.job-order .jrole {
+  margin-left: auto;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.job-order .grip {
+  color: var(--ink-faint);
+  cursor: grab;
+  font-size: 14px;
+  line-height: 1;
+}
+.job-order li:active .grip { cursor: grabbing; }
+
+.nudge {
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink-dim);
+  border-radius: var(--radius);
+  width: 30px;
+  height: 28px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+}
+.nudge:hover:not(:disabled) { color: var(--gold-bright); background: rgba(198,166,100,0.1); }
+.nudge:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.nudge:disabled { opacity: 0.3; cursor: default; }
+
+.custom-char { margin-bottom: 20px; }
+.custom-char .grid-head h2 { text-transform: none; letter-spacing: 0.06em; font-size: 16px; }

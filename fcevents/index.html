@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
-<link href="fcevents.css?v=1" rel="stylesheet">
+<link href="fcevents.css?v=2" rel="stylesheet">
 </head>
 <body>
 
@@ -39,6 +39,7 @@
     <button type="button" data-view-target="events" data-needs="member" aria-label="Events" hidden><i class="bi bi-calendar-event-fill"></i></button>
     <button type="button" data-view-target="mine" data-needs="member" aria-label="My times" hidden><i class="bi bi-calendar2-check-fill"></i></button>
     <button type="button" data-view-target="chars" data-needs="member" aria-label="Characters" hidden><i class="bi bi-person-badge-fill"></i></button>
+    <button type="button" data-view-target="custom" data-needs="member" aria-label="Customisation" hidden><i class="bi bi-sliders"></i></button>
     <button type="button" data-view-target="company" data-needs="leader" aria-label="Company" hidden><i class="bi bi-people-fill"></i></button>
     <!-- Leaves the page rather than switching a view, so it is an anchor. The
          view switcher binds ".system-icons button", which skips it by design. -->
@@ -424,6 +425,23 @@
   </section>
 
   <!-- ------------------------------------------------------------------
+       Customisation. Job preference order, per linked character.
+
+       The Lodestone lists every job a character has ever levelled, in the
+       game's own order, which says nothing about what somebody actually wants
+       to be asked to play. This is where they say so.
+       ------------------------------------------------------------------ -->
+  <section id="view-custom" class="view" aria-labelledby="custom-heading" hidden>
+    <div class="section-head">
+      <p class="eyebrow">Your preferences</p>
+      <h1 id="custom-heading">Customisation</h1>
+      <p class="lede">Put your jobs in the order you would rather play them.</p>
+    </div>
+
+    <div id="custom-body"></div>
+  </section>
+
+  <!-- ------------------------------------------------------------------
        Company — the leader view, with names. It is not gated by this markup
        being hidden: a non-leader who unhides it gets an empty grid, because
        the underlying SELECT returns them only their own row.
@@ -465,6 +483,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="config.js?v=1"></script>
-<script src="fcevents.js?v=1"></script>
+<script src="fcevents.js?v=2"></script>
 </body>
 </html>

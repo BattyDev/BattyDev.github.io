@@ -212,7 +212,7 @@ function stamp(text) { $('stamp').textContent = text; }
    replaceState rather than pushState for plain view switches -- back should
    leave the page, not walk the tab history. Opening an event does push, so
    Back returns to the list, which is what the arrow means there. */
-const VIEWS = ['welcome', 'overlap', 'events', 'mine', 'chars', 'company'];
+const VIEWS = ['welcome', 'overlap', 'events', 'mine', 'chars', 'custom', 'company'];
 
 function readRoute() {
   const h = location.hash.replace(/^#\/?/, '');
@@ -837,6 +837,8 @@ function wireAuth() {
       state.evResponses = [];
       state.characters = [];
       state.charFilter = '';
+      jobOrderDraft.clear();
+      $('custom-body').innerHTML = '';
       $('events-detail').hidden = true;
       $('events-index').hidden = false;
       $('events-list').innerHTML = '';
@@ -882,6 +884,7 @@ async function main() {
   wireChars();
   wireTimezone();
   wireGuide();
+  wireCustom();
   const { data } = await db.auth.getSession();
   await onSession(data?.session ?? null);
 }
@@ -1890,13 +1893,17 @@ const gcClass = (c) => `gc-${slug(c?.grand_company || 'none').replace(/[^a-z]/g,
 /* Which raid roles this character's levelled combat jobs could cover. Used to
    preselect the role checkboxes on signup -- a suggestion, never a constraint:
    the member still chooses, and the database only ever sees what they picked. */
-function rolesFromJobs(c, minLevel = 50) {
-  const found = new Set();
-  for (const j of (c?.jobs || [])) {
+function rolesFromJobs(c, minLevel = 50, claim = null) {
+  /* Walked in the member's preferred job order where there is one, so the roles
+     come out most-wanted first rather than in the fixed tank/healer/DPS order.
+     Which roles are offered does not change -- only which reads first. */
+  const jobs = claim ? mergeJobOrder(c, claim.job_order) : (c?.jobs || []);
+  const found = [];
+  for (const j of jobs) {
     const r = JOB_ROLE[j.job];
-    if (r && (j.level || 0) >= minLevel) found.add(r);
+    if (r && (j.level || 0) >= minLevel && !found.includes(r)) found.push(r);
   }
-  return ROLES.filter((r) => found.has(r));
+  return claim ? found : ROLES.filter((r) => found.includes(r));
 }
 
 /* Every claim held by one member, newest first. */
@@ -1926,8 +1933,11 @@ function jobChip(j, main) {
 }
 
 function plate(c, { tag = 'div', body = '', attrs = '' } = {}) {
-  const main = c.main_job;
-  const roles = rolesFromJobs(c);
+  /* Whatever this member said they would rather play, where they have said it.
+     Falls back to the Lodestone's own main job otherwise. */
+  const claim = state.characters.find((x) => String(x.lodestone_id) === String(c.id));
+  const main = preferredJob(c, claim) || c.main_job;
+  const roles = rolesFromJobs(c, 50, claim);
   return `<${tag} class="adventurer ${gcClass(c)}" ${attrs}>
     <div class="char-head">
       ${c.avatar
@@ -2060,11 +2070,12 @@ async function unlinkCharacter(id) {
 /* ---------- loading ---------- */
 async function loadCharacters() {
   const { data, error } = await db.from('raid_characters')
-    .select('id, member_id, lodestone_id, character_name, world')
+    .select('id, member_id, lodestone_id, character_name, world, job_order')
     .order('created_at');
   if (error) throw error;
   state.characters = data || [];
   renderChars();
+  renderCustom();
   /* An event roster may now have a character name to show where it previously
      had a Discord handle. */
   if (state.openEvent) renderRoster();
@@ -2089,5 +2100,235 @@ async function loadFcRoster() {
     state.jobIcons = await grab(`${JOB_ICONS}job-icons.json`);
   } catch {
     state.jobIcons = {};   // chips fall back to a bare label
+  }
+}
+
+/* =========================================================================
+   CUSTOMISATION -- preferred job order
+   =========================================================================
+   The Lodestone carries every job a character has ever levelled, in the game's
+   own order. That says nothing about what somebody wants to be asked to play:
+   a capped Warrior they are bored of outranks the level 90 Sage they are
+   enjoying, and the site would read them as a tank forever. So a member orders
+   their own jobs, and everything that guesses at a job -- the plate, the role
+   hints -- reads the top of that list instead of the level column.
+
+   The stored array is deliberately a hint rather than the truth. It is written
+   once and the character keeps levelling, so it goes stale in both directions:
+   jobs appear that are not in it, and jobs leave the character that still are.
+   mergeJobOrder() reconciles both at render time rather than trying to keep the
+   column exhaustive. */
+
+const ROLE_OF_JOB = (j) => JOB_ROLE[j?.job] || null;
+
+/* Default order when nobody has said otherwise: combat first (that is what
+   events ask for), then crafters, then gatherers, each by level. */
+function defaultJobOrder(c) {
+  const rank = { combat: 0, craft: 1, gather: 2, field: 3 };
+  return [...(c?.jobs || [])].sort((a, b) => {
+    const ar = rank[a.role] ?? 9;
+    const br = rank[b.role] ?? 9;
+    return (ar - br) || ((b.level || 0) - (a.level || 0)) || a.job.localeCompare(b.job);
+  });
+}
+
+/* The saved order reconciled against the jobs the character actually has now:
+   stored names that still exist, in the stored order, then everything new in
+   default order. A job that left the character simply drops out. */
+function mergeJobOrder(c, stored) {
+  const have = new Map((c?.jobs || []).map((j) => [j.job, j]));
+  const out = [];
+  for (const name of (stored || [])) {
+    const j = have.get(name);
+    if (j) { out.push(j); have.delete(name); }
+  }
+  for (const j of defaultJobOrder({ jobs: [...have.values()] })) out.push(j);
+  return out;
+}
+
+/* The job this member would rather be playing on that character. The plate
+   reads this, so it shows a chosen job rather than whichever one is highest. */
+function preferredJob(c, claim) {
+  const ordered = mergeJobOrder(c, claim?.job_order);
+  return ordered.find((j) => ROLE_OF_JOB(j)) || ordered[0] || c?.main_job || null;
+}
+
+const jobOrderDraft = new Map();   // lodestone_id -> [job name] being edited
+
+function renderCustom() {
+  const el = $('custom-body');
+  const uid = state.session?.user?.id;
+  const mine = charsOf(uid);
+
+  if (!mine.length) {
+    el.innerHTML = '<div class="panel"><p class="empty">Link a character first &mdash; the jobs '
+      + 'to order come from it. Use the <b>Characters</b> tab.</p></div>';
+    return;
+  }
+
+  el.innerHTML = mine.map((claim) => {
+    const c = byLodestone(claim.lodestone_id);
+    if (!c) {
+      return `<div class="panel custom-char">
+        <div class="grid-head"><h2>${esc(claim.character_name)}</h2></div>
+        <p class="empty">This character is no longer on the Free Company roster, so its
+           job list cannot be read.</p></div>`;
+    }
+    const order = jobOrderDraft.get(String(claim.lodestone_id))
+      || mergeJobOrder(c, claim.job_order).map((j) => j.job);
+    const byName = new Map((c.jobs || []).map((j) => [j.job, j]));
+
+    return `<div class="panel custom-char" data-char="${esc(claim.lodestone_id)}">
+      <div class="grid-head">
+        <h2>${esc(c.name)}</h2>
+        <p class="grid-note" id="jo-status-${esc(claim.lodestone_id)}"></p>
+      </div>
+      <p class="hint" style="margin-bottom:12px">Top of the list is what you would rather be
+         asked to play. Drag a row, or use the arrows.</p>
+      <ol class="job-order" data-list="${esc(claim.lodestone_id)}">
+        ${order.map((name, i) => {
+          const j = byName.get(name);
+          if (!j) return '';
+          const role = ROLE_OF_JOB(j);
+          const icon = state.jobIcons[j.job];
+          return `<li draggable="true" data-job="${esc(name)}" data-i="${i}">
+            <span class="grip" aria-hidden="true">&#9776;</span>
+            <span class="rank">${i + 1}</span>
+            ${icon ? `<img src="${esc(JOB_ICONS + icon)}" alt="" width="22" height="22" loading="lazy">` : ''}
+            <span class="jname">${esc(j.job)}</span>
+            <span class="jlv">${Number(j.level) || 0}</span>
+            ${role ? `<span class="jrole r-${role}">${ROLE_LABEL[role]}</span>`
+                   : '<span class="jrole">&mdash;</span>'}
+            <button type="button" class="nudge" data-move="up" data-i="${i}"
+              aria-label="Move ${esc(j.job)} up"${i === 0 ? ' disabled' : ''}>&uarr;</button>
+            <button type="button" class="nudge" data-move="down" data-i="${i}"
+              aria-label="Move ${esc(j.job)} down"${i === order.length - 1 ? ' disabled' : ''}>&darr;</button>
+          </li>`;
+        }).join('')}
+      </ol>
+      <div class="grid-actions">
+        <button type="button" class="primary" data-save="${esc(claim.lodestone_id)}" disabled>Save order</button>
+        <button type="button" class="ghost" data-reset="${esc(claim.lodestone_id)}">Reset to default</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  for (const [id] of jobOrderDraft) markJobOrderDirty(id);
+}
+
+function currentOrder(lodestoneId) {
+  const list = document.querySelector(`[data-list="${CSS.escape(String(lodestoneId))}"]`);
+  return list ? [...list.querySelectorAll('li')].map((li) => li.dataset.job) : [];
+}
+
+function markJobOrderDirty(lodestoneId) {
+  const claim = state.characters.find((c) => String(c.lodestone_id) === String(lodestoneId));
+  const c = byLodestone(lodestoneId);
+  if (!claim || !c) return;
+  const saved = mergeJobOrder(c, claim.job_order).map((j) => j.job).join(' ');
+  const now = currentOrder(lodestoneId).join(' ');
+  const btn = document.querySelector(`[data-save="${CSS.escape(String(lodestoneId))}"]`);
+  const status = $(`jo-status-${lodestoneId}`);
+  if (btn) btn.disabled = saved === now;
+  if (status) status.textContent = saved === now ? 'Saved' : 'Unsaved changes';
+}
+
+/* Reorder the draft and redraw. The list is short, and redrawing keeps the rank
+   numbers, the disabled end-stops and the drag handles consistent without
+   hand-patching each of them. */
+function moveJob(lodestoneId, from, to) {
+  const order = currentOrder(lodestoneId);
+  if (to < 0 || to >= order.length) return;
+  const [moved] = order.splice(from, 1);
+  order.splice(to, 0, moved);
+  jobOrderDraft.set(String(lodestoneId), order);
+  renderCustom();
+  /* Keep the moved row's button under the pointer, so a second nudge does not
+     make the mouse chase it down the list. */
+  const dir = to > from ? 'down' : 'up';
+  const btn = document.querySelector(
+    `[data-list="${CSS.escape(String(lodestoneId))}"] li[data-i="${to}"] [data-move="${dir}"]`);
+  if (btn && !btn.disabled) btn.focus();
+}
+
+function wireCustom() {
+  const root = $('view-custom');
+  let dragFrom = null;
+
+  root.addEventListener('click', (e) => {
+    const move = e.target.closest('[data-move]');
+    if (move) {
+      const id = move.closest('[data-char]').dataset.char;
+      const i = Number(move.dataset.i);
+      return moveJob(id, i, move.dataset.move === 'up' ? i - 1 : i + 1);
+    }
+    const save = e.target.closest('[data-save]');
+    if (save) return saveJobOrder(save.dataset.save);
+    const reset = e.target.closest('[data-reset]');
+    if (reset) {
+      const c = byLodestone(reset.dataset.reset);
+      jobOrderDraft.set(String(reset.dataset.reset), defaultJobOrder(c).map((j) => j.job));
+      renderCustom();
+    }
+  });
+
+  /* Native drag-and-drop, for a mouse. It does nothing on touch, which is why
+     the arrows are the primary control rather than a courtesy. */
+  root.addEventListener('dragstart', (e) => {
+    const li = e.target.closest('li[data-job]');
+    if (!li) return;
+    dragFrom = { id: li.closest('[data-char]').dataset.char, i: Number(li.dataset.i) };
+    li.classList.add('is-dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    /* Firefox refuses to start a drag unless data is set on the transfer. */
+    e.dataTransfer.setData('text/plain', li.dataset.job);
+  });
+  root.addEventListener('dragover', (e) => {
+    const li = e.target.closest('li[data-job]');
+    if (!li || !dragFrom) return;
+    e.preventDefault();
+    li.classList.add('is-over');
+  });
+  root.addEventListener('dragleave', (e) => {
+    const li = e.target.closest('li[data-job]');
+    if (li) li.classList.remove('is-over');
+  });
+  root.addEventListener('drop', (e) => {
+    const li = e.target.closest('li[data-job]');
+    if (!li || !dragFrom) return;
+    e.preventDefault();
+    const id = li.closest('[data-char]').dataset.char;
+    if (id === dragFrom.id) moveJob(id, dragFrom.i, Number(li.dataset.i));
+    dragFrom = null;
+  });
+  root.addEventListener('dragend', () => {
+    dragFrom = null;
+    for (const el of root.querySelectorAll('.is-dragging, .is-over')) {
+      el.classList.remove('is-dragging', 'is-over');
+    }
+  });
+}
+
+async function saveJobOrder(lodestoneId) {
+  const claim = state.characters.find((c) => String(c.lodestone_id) === String(lodestoneId));
+  if (!claim) return;
+  /* Snapshot before the await, for the reason saveMine() spells out. */
+  const target = currentOrder(lodestoneId);
+  const status = $(`jo-status-${lodestoneId}`);
+  const btn = document.querySelector(`[data-save="${CSS.escape(String(lodestoneId))}"]`);
+  if (btn) btn.disabled = true;
+  if (status) status.textContent = 'Saving...';
+  try {
+    const { error } = await db.from('raid_characters')
+      .update({ job_order: target }).eq('id', claim.id);
+    if (error) throw error;
+    claim.job_order = target;
+    jobOrderDraft.delete(String(lodestoneId));
+    renderCustom();
+    /* The plate and its role hints read the top of this list. */
+    renderChars();
+  } catch (err) {
+    if (status) status.textContent = `Not saved: ${err.message || err}`;
+    if (btn) btn.disabled = false;
   }
 }

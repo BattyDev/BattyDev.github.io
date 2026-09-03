@@ -372,3 +372,61 @@ update public.raid_members set role = 'member'
   where id = '55555555-5555-5555-5555-555555555555';
 select coalesce(string_agg(display_name, ', '), '(none -- owner override worked)') as leaders
   from public.raid_members where role = 'leader';
+
+\echo ''
+\echo '=== N. preferred job order (006) ==='
+
+-- Section M ends by demoting the last leader through the owner override, so at
+-- this point the company has none. Put Batty back before the leader case below,
+-- or it passes for the wrong reason -- "0 rows affected" would look like the
+-- policy refusing a leader when really there was no leader to refuse.
+update public.raid_members set role = 'leader'
+  where discord_id = '100000000000000001';
+
+select 'owner sets their own job order' as attempt,
+       test.as_role('authenticated', '33333333-3333-3333-3333-333333333333',
+         $q$ with i as (insert into public.raid_characters
+               (member_id, lodestone_id, character_name, world, job_order)
+             values ('33333333-3333-3333-3333-333333333333', '4000001', 'Order Test', 'Malboro',
+                     array['Sage','Warrior','Black Mage'])
+             returning array_to_string(job_order, ' > '))
+             select * from i $q$) as result
+union all select 'owner reorders it (needs the new UPDATE policy)',
+       test.as_role('authenticated', '33333333-3333-3333-3333-333333333333',
+         $q$ with u as (update public.raid_characters
+             set job_order = array['Warrior','Sage','Black Mage']
+             where lodestone_id = '4000001'
+             returning array_to_string(job_order, ' > '))
+             select * from u $q$)
+union all select 'another member reorders it',
+       test.as_role('authenticated', '55555555-5555-5555-5555-555555555555',
+         $q$ with u as (update public.raid_characters
+             set job_order = array['Black Mage']
+             where lodestone_id = '4000001' returning 1)
+             select count(*)::text || ' rows affected' from u $q$)
+union all select 'another member hands it to themselves',
+       test.as_role('authenticated', '55555555-5555-5555-5555-555555555555',
+         $q$ with u as (update public.raid_characters
+             set member_id = '55555555-5555-5555-5555-555555555555'
+             where lodestone_id = '4000001' returning 1)
+             select count(*)::text || ' rows affected' from u $q$)
+union all select 'owner hands it to somebody else (WITH CHECK)',
+       test.as_role('authenticated', '33333333-3333-3333-3333-333333333333',
+         $q$ with u as (update public.raid_characters
+             set member_id = '55555555-5555-5555-5555-555555555555'
+             where lodestone_id = '4000001' returning 1)
+             select count(*)::text || ' rows affected' from u $q$)
+union all select 'still owned by its claimant',
+       test.as_role('authenticated', '33333333-3333-3333-3333-333333333333',
+         $q$ select case when member_id = '33333333-3333-3333-3333-333333333333'
+                         then 'yes' else 'NO' end
+             from public.raid_characters where lodestone_id = '4000001' $q$)
+union all select 'a leader may still reassign it',
+       test.as_role('authenticated', '11111111-1111-1111-1111-111111111111',
+         $q$ with u as (update public.raid_characters
+             set member_id = '55555555-5555-5555-5555-555555555555'
+             where lodestone_id = '4000001' returning 1)
+             select count(*)::text || ' rows affected' from u $q$)
+union all select 'anon sees none of it',
+       test.as_role('anon', null,
+         $q$ select count(*)::text from public.raid_characters $q$);

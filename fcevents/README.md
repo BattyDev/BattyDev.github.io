@@ -103,6 +103,7 @@ backup, in the same order.
 | `sql/003_character_visibility.sql` | Opens character claims to members (SELECT only) |
 | `sql/004_last_leader_guard.sql` | Refuses to remove the last leader from inside the app |
 | `sql/005_timezone_and_level.sql` | A member's timezone; an event's required/recommended level |
+| `sql/006_job_preferences.sql` | Preferred job order, and the UPDATE policy it needed |
 | `functions/announce-event/index.ts` | Edge Function that posts an event to Discord |
 | `sql/test/00_supabase_shim.sql` | Local-only: fakes Supabase's auth schema and roles |
 | `sql/test/01_rls_proof.sql` | Local-only: proves the availability split with role impersonation |
@@ -319,6 +320,43 @@ Two ways to get a per-event card, when it is wanted:
    the shareable URL becomes a `supabase.co` one rather than `battydev.com`,
    which is why it is not built yet — say the word.
 
+## Job preferences
+
+The Lodestone carries every job a character has ever levelled, in the game's own
+order — which says nothing about what somebody wants to be *asked* to play. A
+capped Warrior they are bored of outranks the level 90 Sage they are enjoying,
+and the site would read them as a tank forever. **Customisation** is where they
+say otherwise, and the plate and role hints read the top of that list instead of
+the level column.
+
+Stored as an ordered `text[]` on the claim rather than a table of
+`(character, job, position)` rows: the order *is* the value, there are no
+per-row attributes to grow into, and reordering is one write instead of
+renumbering. A join table would be right if positions ever needed querying or
+constraining individually; they do not.
+
+The array is a **hint, not the truth**. It is written once while the character
+keeps levelling, so it goes stale in both directions — jobs appear that are not
+in it, and jobs leave that still are. `mergeJobOrder()` reconciles at render
+time: stored names that still exist, in the stored order, then everything new in
+default order. Nothing tries to keep the column exhaustive.
+
+Job names are deliberately unconstrained by any CHECK. Square Enix adds jobs
+every expansion, and a fixed list would turn the next one into a failed write
+for whoever levels it first — the same reasoning as the timezone column in 005.
+
+**This needed a policy that turned out to be missing.** 001 gave
+`raid_characters` INSERT and DELETE for the claimant and ALL for a leader, but
+never UPDATE for the claimant, because until now a claim had nothing worth
+changing. `raid_characters_update_self` adds it, with a `WITH CHECK` that stops
+it becoming a way to hand a character to someone else — reassigning stays a
+leader's job.
+
+Ordering is done with up/down arrows as the *primary* control, with drag layered
+on top. Native HTML5 drag-and-drop does nothing on touch and nothing with a
+keyboard, so arrows are what actually make the feature usable; dragging is for
+people with a mouse, who will reach for it first.
+
 ## Announcing to Discord
 
 The organiser panel on an event has an **Announce to Discord** button. It calls
@@ -362,6 +400,7 @@ psql -f sql/test/00_supabase_shim.sql \
      -f sql/003_character_visibility.sql \
      -f sql/004_last_leader_guard.sql \
      -f sql/005_timezone_and_level.sql \
+     -f sql/006_job_preferences.sql \
      -f sql/test/01_rls_proof.sql \
      -f sql/test/02_events_proof.sql
 ```
