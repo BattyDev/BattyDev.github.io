@@ -163,6 +163,7 @@ function installStub(seed, members, types) {
               return { data: null, error: { message: 'duplicate key value violates unique constraint' } };
             }
             r.id = r.id || 'ch-' + (++seq);
+            if (r.job_order === undefined) r.job_order = null;
           }
           if (table === 'raid_event_signups') {
             /* raid_guard_signup: assigned_role is the manager's alone. */
@@ -189,6 +190,8 @@ function installStub(seed, members, types) {
           if (table === 'raid_events') return canManage(r.id);
           if (table === 'raid_event_signups') return r.member_id === uid() || canManage(r.event_id);
           if (table === 'raid_members') return r.id === uid() || isLeader();
+          /* 006: the claimant may update their own row; a leader may touch any. */
+          if (table === 'raid_characters') return r.member_id === uid() || isLeader();
           return r.member_id === uid();
         });
         for (const r of targets) {
@@ -788,6 +791,76 @@ function check(label, actual, expected) {
       await c.from('raid_characters').delete().eq('id', target.id);
       return window.__stub.T.raid_characters.length === before;
     }), true);
+
+  // ---- H1d. job preference order ------------------------------------------
+  console.log('\n=== H1d. preferred job order ===');
+  await signIn(MEMBER);
+  /* H1c had a leader remove this member's claim, to prove they could. Re-claim
+     it, because ordering jobs needs a character to order them on -- and Cedho
+     Nalen is the fixture's only character with more than one job. */
+  await page.locator('[data-view-target="chars"]').click();
+  await page.waitForSelector('#claim-list button.adventurer');
+  await page.evaluate(() => {
+    const p = [...document.querySelectorAll('#claim-list button.adventurer')]
+      .find((el) => el.innerText.includes('Cedho Nalen'));
+    p.click();
+  });
+  await page.waitForTimeout(400);
+
+  await page.locator('[data-view-target="custom"]').click();
+  await page.waitForTimeout(300);
+
+  /* MEMBER claimed Cedho Nalen earlier: Astrologian 100 (healer), Warrior 90
+     (tank). Default order is combat first, by level. */
+  const jobNames = () => page.evaluate(() =>
+    [...document.querySelectorAll('#custom-body .job-order li .jname')].map((e) => e.textContent.trim()));
+
+  check('the linked character\'s jobs are listed', await jobNames(), ['Astrologian', 'Warrior']);
+  check('save starts disabled', await page.locator('[data-save]').first().isDisabled(), true);
+  check('the top row cannot move up',
+    await page.locator('.job-order li[data-i="0"] [data-move="up"]').isDisabled(), true);
+
+  await page.locator('.job-order li[data-i="1"] [data-move="up"]').click();
+  await page.waitForTimeout(200);
+  check('the arrow reorders them', await jobNames(), ['Warrior', 'Astrologian']);
+  check('and arms the save button', await page.locator('[data-save]').first().isDisabled(), false);
+  check('nothing is written before saving',
+    await page.evaluate(() => window.__stub.T.raid_characters[0].job_order), null);
+
+  await page.locator('[data-save]').first().click();
+  await page.waitForTimeout(400);
+  check('saving persists the order',
+    await page.evaluate(() => window.__stub.T.raid_characters
+      .find((c) => c.member_id === 'u-cedho').job_order), ['Warrior', 'Astrologian']);
+  check('and disarms the button', await page.locator('[data-save]').first().isDisabled(), true);
+  await page.screenshot({ path: `${SHOTS}/h1d-job-order.png`, fullPage: true });
+
+  /* The point of the ordering: the plate should now lead with the chosen job
+     rather than the highest-levelled one. */
+  await page.locator('[data-view-target="chars"]').click();
+  await page.waitForSelector('#my-chars .adventurer');
+  check('the plate leads with the preferred job, not the highest level',
+    await page.evaluate(() =>
+      document.querySelector('#my-chars .job-list .job').textContent.replace(/\s+/g, ' ').trim()),
+    'Warrior 90');
+  check('and the role hints follow that order',
+    await page.evaluate(() =>
+      [...document.querySelectorAll('#my-chars .role-hint span')].map((e) => e.textContent.trim())),
+    ['Tank', 'Healer']);
+
+  await page.locator('[data-view-target="custom"]').click();
+  await page.waitForTimeout(250);
+  await page.locator('[data-reset]').first().click();
+  await page.waitForTimeout(200);
+  check('reset restores the default order', await jobNames(), ['Astrologian', 'Warrior']);
+
+  /* Somebody with no character linked has nothing to order, and is told where
+     to go rather than shown an empty box. */
+  await signIn(FOURTH);
+  await page.locator('[data-view-target="custom"]').click();
+  await page.waitForTimeout(400);
+  check('with no character linked, it says what to do first',
+    (await page.locator('#custom-body').innerText()).includes('Link a character first'), true);
 
   // ---- H2. announcing to Discord -----------------------------------------
   console.log('\n=== H2. announce to Discord ===');
