@@ -726,6 +726,9 @@ function applyTimezone(tz) {
   if (state.openEvent) renderDetail();
   if (state.events.length) renderEvents();
   if (isLeader() && companyCells) renderCompany();
+  /* The snapshot's build time is an absolute time like any other on the page,
+     so it is drawn in the chosen zone too. */
+  if (state.fcMeta) renderSnapshot();
 }
 
 /* ---------- loading ---------- */
@@ -838,7 +841,12 @@ function wireAuth() {
       state.characters = [];
       state.charFilter = '';
       jobOrderDraft.clear();
+      state.fcRoster = [];
+      state.fcMeta = null;
+      refreshNote = '';
+      if (refreshTicker) { clearInterval(refreshTicker); refreshTicker = null; }
       $('custom-body').innerHTML = '';
+      $('custom-source').innerHTML = '';
       $('events-detail').hidden = true;
       $('events-index').hidden = false;
       $('events-list').innerHTML = '';
@@ -1881,6 +1889,7 @@ const JOB_ROLE = (() => {
 
 Object.assign(state, {
   fcRoster: [],           // the Lodestone roster, from the published JSON
+  fcMeta: null,           // provenance of that snapshot: when it was built, and by which run
   jobIcons: {},
   characters: [],         // every claim this viewer can read (all of them)
   charFilter: '',
@@ -2081,7 +2090,14 @@ async function loadCharacters() {
   if (state.openEvent) renderRoster();
 }
 
-/* The published roster, with the same URL and local fallback /ffxiv uses. */
+/* The published roster, with the same URL and local fallback /ffxiv uses.
+   Returns the source it managed to read, so a manual refresh can say what
+   actually happened rather than silently doing nothing.
+
+   A failed fetch leaves the roster it already had in place. On first load that
+   is an empty list either way, but on a refresh it matters: a flaky network
+   should not blank out everybody's plates and make every claim look like it
+   points at a character that has left the Free Company. */
 async function loadFcRoster() {
   const grab = async (url) => {
     const res = await fetch(url, { cache: 'no-store' });
@@ -2089,18 +2105,34 @@ async function loadFcRoster() {
     return res.json();
   };
   let data = null;
+  let source = null;
   try {
     data = await grab(ROSTER_URL);
+    source = 'published';
   } catch {
-    try { data = await grab(ROSTER_FALLBACK); } catch { data = null; }
+    try { data = await grab(ROSTER_FALLBACK); source = 'local'; } catch { data = null; }
   }
-  state.fcRoster = (data?.roster || []).filter((c) => c && c.id && c.name);
 
-  try {
-    state.jobIcons = await grab(`${JOB_ICONS}job-icons.json`);
-  } catch {
-    state.jobIcons = {};   // chips fall back to a bare label
+  if (data) {
+    state.fcRoster = (data.roster || []).filter((c) => c && c.id && c.name);
+    state.fcMeta = {
+      source,
+      generated_at: data.generated_at || null,
+      last_run: data.last_run || null,
+      read_at: new Date().toISOString(),
+    };
   }
+
+  /* Only worth fetching once -- the icon map is a static asset of this site,
+     not part of the nightly snapshot, so a refresh has nothing to re-read. */
+  if (!Object.keys(state.jobIcons).length) {
+    try {
+      state.jobIcons = await grab(`${JOB_ICONS}job-icons.json`);
+    } catch {
+      state.jobIcons = {};   // chips fall back to a bare label
+    }
+  }
+  return source;
 }
 
 /* =========================================================================
@@ -2155,10 +2187,167 @@ function preferredJob(c, claim) {
 
 const jobOrderDraft = new Map();   // lodestone_id -> [job name] being edited
 
+/* -------------------------------------------------------------------------
+   Character data: what a "refresh" can honestly do
+   -------------------------------------------------------------------------
+   Levels, portraits, titles and Grand Company all come from ffxiv.json, which
+   batty-mac builds by reading the Lodestone once a night and force-pushes to
+   the data branch. This page is a static file on GitHub Pages: it cannot read
+   the Lodestone itself (no CORS, and the Lodestone is HTML to be parsed, not an
+   API), and there is no endpoint anywhere that makes batty-mac run early.
+
+   So the button below re-reads the PUBLISHED SNAPSHOT. That is genuinely worth
+   having -- it picks up a run that landed after this tab was opened, and it is
+   the difference between a stale tab left open all weekend and current data --
+   but it is not a trip to the Lodestone, and the panel says so rather than
+   letting somebody level a job and wonder why the button will not show it.
+
+   The cooldown is politeness to raw.githubusercontent.com, whose CDN caches
+   this file for about five minutes anyway: refreshing faster than that would
+   mostly re-download an identical body. Only manual presses are counted -- the
+   fetch on page load does not start the clock, or arriving at this tab would
+   find the button already greyed out for no reason a member could see. */
+
+const REFRESH_KEY = 'fcevents.roster-refreshed-at';
+const REFRESH_MS = 5 * 60 * 1000;
+let refreshTicker = null;
+let refreshBusy = false;
+let refreshNote = '';
+
+function lastRefreshAt() {
+  try {
+    const v = Number(localStorage.getItem(REFRESH_KEY)) || 0;
+    /* A stored time in the future -- a clock correction, a shared machine set
+       to tomorrow -- would otherwise lock the button out indefinitely. */
+    return v > Date.now() ? 0 : v;
+  } catch { return 0; }   // private mode, or storage disabled
+}
+
+function refreshWaitMs() { return Math.max(0, lastRefreshAt() + REFRESH_MS - Date.now()); }
+
+const mmss = (ms) => {
+  const t = Math.ceil(ms / 1000);
+  return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+};
+
+/* How old the snapshot is, in words. Deliberately coarse: the interesting
+   question is "is this from last night or last week", never the minute. */
+function ageWords(iso) {
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (!Number.isFinite(mins) || mins < 0) return 'just now';
+  if (mins < 60) return `${mins} minute${mins === 1 ? '' : 's'} ago`;
+  const h = Math.floor(mins / 60);
+  if (h < 24) return `${h} hour${h === 1 ? '' : 's'} ago`;
+  const d = Math.floor(h / 24);
+  return `${d} day${d === 1 ? '' : 's'} ago`;
+}
+
+function renderSnapshot() {
+  const el = $('custom-source');
+  if (!el) return;
+  const meta = state.fcMeta;
+  const wait = refreshWaitMs();
+
+  let provenance;
+  if (!meta) {
+    provenance = '<p class="empty">Character data could not be read at all, so the plates '
+      + 'below fall back to the name on the claim.</p>';
+  } else {
+    const run = meta.last_run;
+    const bad = run && run.status && run.status !== 'ok';
+    provenance = `<dl class="snap-facts">
+      <div><dt>Snapshot built</dt><dd>${esc(ageWords(meta.generated_at))}${
+        meta.generated_at ? ` <span class="snap-abs">${esc(fmtWhen(meta.generated_at))}</span>` : ''}</dd></div>
+      <div><dt>Last nightly run</dt><dd>${run
+        ? `${esc(run.date || 'unknown')} &mdash; <span class="${bad ? 'snap-bad' : 'snap-ok'}">${esc(run.status || 'unknown')}</span>`
+        : 'not recorded'}</dd></div>
+      <div><dt>Read from</dt><dd>${meta.source === 'published'
+        ? 'the published snapshot'
+        : 'this site&rsquo;s bundled copy <span class="snap-abs">(the published one was unreachable)</span>'}</dd></div>
+    </dl>`;
+  }
+
+  el.innerHTML = `<div class="panel snap">
+    <div class="grid-head">
+      <h2>Character data</h2>
+      <p class="grid-note" id="snap-status">${esc(refreshNote)}</p>
+    </div>
+    ${provenance}
+    <p class="hint">Levels, jobs, portraits and titles are read from a snapshot of the Lodestone
+       that is rebuilt once a night. Refreshing re-reads that snapshot &mdash; it does not visit
+       the Lodestone, so a job you levelled an hour ago will not appear until tonight&rsquo;s run.</p>
+    <div class="grid-actions">
+      <button type="button" class="primary" id="snap-refresh"${
+        wait || refreshBusy ? ' disabled' : ''}>${
+        refreshBusy ? 'Refreshing&hellip;' : 'Refresh character data'}</button>
+      <span class="hint" id="snap-cool">${wait ? `Available again in ${mmss(wait)}` : ''}</span>
+    </div>
+  </div>`;
+
+  scheduleCooldownTick();
+}
+
+/* One interval, alive only while a cooldown is actually running. It rewrites
+   two nodes rather than calling renderSnapshot(), so a tick cannot steal focus
+   from the button or interrupt a drag in the list below. */
+function scheduleCooldownTick() {
+  if (refreshTicker) { clearInterval(refreshTicker); refreshTicker = null; }
+  if (!refreshWaitMs()) return;
+  refreshTicker = setInterval(() => {
+    const cool = $('snap-cool');
+    const btn = $('snap-refresh');
+    if (!cool || !btn) { clearInterval(refreshTicker); refreshTicker = null; return; }
+    const wait = refreshWaitMs();
+    if (wait) { cool.textContent = `Available again in ${mmss(wait)}`; return; }
+    cool.textContent = '';
+    if (!refreshBusy) btn.disabled = false;
+    clearInterval(refreshTicker);
+    refreshTicker = null;
+  }, 1000);
+}
+
+async function refreshRoster() {
+  if (refreshBusy || refreshWaitMs()) return;
+  refreshBusy = true;
+  refreshNote = 'Refreshing...';
+  renderSnapshot();
+
+  const before = state.fcMeta?.generated_at || null;
+  let source = null;
+  try {
+    source = await loadFcRoster();
+  } catch { source = null; }
+
+  /* The cooldown starts on the attempt, not on success. A failing fetch is
+     exactly the case where somebody would hammer the button, and it is the
+     case where hammering helps least. */
+  try { localStorage.setItem(REFRESH_KEY, String(Date.now())); } catch { /* not fatal */ }
+  refreshBusy = false;
+
+  if (!source) {
+    refreshNote = 'Could not reach the snapshot. Showing what was already loaded.';
+  } else if (source === 'local') {
+    refreshNote = 'The published snapshot was unreachable; read this site\'s bundled copy.';
+  } else if (before && state.fcMeta?.generated_at === before) {
+    refreshNote = 'Already up to date \u2014 tonight\'s run has not published yet.';
+  } else {
+    refreshNote = 'Updated.';
+  }
+
+  /* Everything that reads a character re-reads it. renderCustom() keeps any
+     unsaved job order, because it draws from jobOrderDraft where one exists. */
+  renderChars();
+  renderCustom();
+  if (state.openEvent) renderRoster();
+}
+
+
 function renderCustom() {
   const el = $('custom-body');
   const uid = state.session?.user?.id;
   const mine = charsOf(uid);
+
+  renderSnapshot();
 
   if (!mine.length) {
     el.innerHTML = '<div class="panel"><p class="empty">Link a character first &mdash; the jobs '
@@ -2256,6 +2445,7 @@ function wireCustom() {
   let dragFrom = null;
 
   root.addEventListener('click', (e) => {
+    if (e.target.closest('#snap-refresh')) return refreshRoster();
     const move = e.target.closest('[data-move]');
     if (move) {
       const id = move.closest('[data-char]').dataset.char;

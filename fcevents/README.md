@@ -276,7 +276,7 @@ phone the gutter narrows to 38px and days share what is left (about 42px each),
 with taller cells so they stay tappable. The event poll can be 28 days wide and
 still scrolls, just with more of it on screen per swipe.
 
-Seven checks in the harness run at 390px and assert all of this, because it was
+Nine checks in the harness run at 390px and assert all of this, because it was
 reported from a real phone rather than found by looking.
 
 ## The two landings
@@ -356,6 +356,43 @@ Ordering is done with up/down arrows as the *primary* control, with drag layered
 on top. Native HTML5 drag-and-drop does nothing on touch and nothing with a
 keyboard, so arrows are what actually make the feature usable; dragging is for
 people with a mouse, who will reach for it first.
+
+## Refreshing character data
+
+Customisation is where somebody stares straight at level numbers, so it is where
+"why does it still say 90" has to be answered. The panel at the top of that tab
+dates the snapshot, reports whether the last nightly run succeeded, and says
+which copy is on screen — the published one, or this site's bundled fallback.
+
+**The Refresh button re-reads the published snapshot. It does not read the
+Lodestone**, and the panel says so in as many words. It cannot: this is a static
+page on GitHub Pages, the Lodestone serves HTML to be parsed rather than an API
+and sends no CORS headers, and there is no endpoint anywhere that makes
+`batty-mac` run early — `ffxiv.json` is built once a night on a machine nobody
+here can reach. Refreshing is still worth having: it picks up a run that landed
+after the tab was opened, which is the difference between a tab left open all
+weekend and current data. It is not a way to see a job you levelled an hour ago,
+and it does not pretend to be.
+
+A true on-demand read would mean writing a second, independent Lodestone parser
+in an Edge Function — duplicating `batty-mac`'s logic, and free to drift from it
+the first time Square Enix moves a `<div>`. That is a separate decision, not a
+button.
+
+The five-minute cooldown is politeness to `raw.githubusercontent.com`, whose CDN
+caches that file for roughly the same interval anyway; pressing faster would
+mostly re-download an identical body. It is kept in `localStorage` and only
+manual presses start the clock — counting the fetch on page load would find the
+button already greyed out on arrival, for no reason a member could see. A stored
+timestamp in the future (a clock correction, a shared machine) reads as zero
+rather than locking the button out indefinitely.
+
+Two things the refresh deliberately does not do. It **never blanks the roster**:
+a failed fetch leaves the last good read in place, because a flaky network
+should not turn every plate into "no longer on the FC roster". And it **never
+discards an unsaved reorder** — the panel lives in its own container above
+`#custom-body`, so the once-a-second countdown cannot redraw a list somebody is
+mid-drag on, and `renderCustom()` draws from `jobOrderDraft` where one exists.
 
 ## Announcing to Discord
 

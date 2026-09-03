@@ -37,8 +37,14 @@ const SEED = [
 ];
 
 /* A stand-in for the published Lodestone roster. Shapes match ffxiv.json:
-   the job list is what rolesFromJobs() reads to suggest raid roles. */
-const FC_ROSTER = { roster: [
+   the job list is what rolesFromJobs() reads to suggest raid roles, and the
+   provenance fields are what the Customisation page's freshness panel reads.
+   generated_at is relative so the "x hours ago" line does not rot. */
+const BUILT_AT = new Date(Date.now() - 3 * 86400 * 1000).toISOString();
+const FC_ROSTER = {
+  generated_at: BUILT_AT,
+  last_run: { date: BUILT_AT.slice(0, 10), status: 'ok' },
+  roster: [
   { id: '2299082', name: 'Cedho Nalen', world: 'Malboro', race: 'Hrothgar', title: 'Heliodrome Hero',
     grand_company: 'Flames', avatar: null,
     main_job: { job: 'Astrologian', level: 100 },
@@ -55,7 +61,19 @@ const FC_ROSTER = { roster: [
     grand_company: null, avatar: null,
     main_job: { job: 'Carpenter', level: 90 },
     jobs: [{ job: 'Carpenter', level: 90, role: 'craft' }] },
-] };
+  ],
+};
+
+/* What a later nightly run would look like: same characters, Warrior capped.
+   Served in place of the fixture above once the refresh test wants to prove a
+   press actually re-reads the file rather than redrawing what it already had. */
+const FC_ROSTER_NEXT = JSON.parse(JSON.stringify(FC_ROSTER));
+/* Hours rather than minutes: the age line is deliberately coarse, and a
+   minutes-old fixture would read differently depending on how long the run
+   before this point took. Three days versus three hours cannot drift. */
+FC_ROSTER_NEXT.generated_at = new Date(Date.now() - 3 * 3600 * 1000).toISOString();
+FC_ROSTER_NEXT.last_run = { date: FC_ROSTER_NEXT.generated_at.slice(0, 10), status: 'ok' };
+FC_ROSTER_NEXT.roster[0].jobs.find((j) => j.job === 'Warrior').level = 100;
 
 const TYPES = [
   { code: 'savage', label: 'Savage Raid (8)', tanks: 2, healers: 2, dps: 4, party_size: 8, sort_order: 20 },
@@ -862,6 +880,119 @@ function check(label, actual, expected) {
   check('with no character linked, it says what to do first',
     (await page.locator('#custom-body').innerText()).includes('Link a character first'), true);
 
+  // ---- H1e. character data freshness and manual refresh -------------------
+  console.log('\n=== H1e. snapshot freshness and the refresh button ===');
+  /* The button re-reads the nightly snapshot; it cannot reach the Lodestone.
+     These checks are about that being true and being said out loud. */
+  await signIn(MEMBER);
+  await page.locator('[data-view-target="custom"]').click();
+  await page.waitForSelector('#snap-refresh');
+
+  const snapText = () => page.locator('#custom-source').innerText();
+
+  check('the panel dates the snapshot',
+    (await snapText()).includes('3 days ago'), true);
+  check('and reports the nightly run status',
+    (await snapText()).toLowerCase().includes('ok'), true);
+  check('and says which copy is on screen',
+    (await snapText()).toLowerCase().includes('the published snapshot'), true);
+  check('the wording does not promise a Lodestone read',
+    (await snapText()).toLowerCase().includes('does not visit'), true);
+  check('the button starts available', await page.locator('#snap-refresh').isDisabled(), false);
+
+  /* An unsaved reorder must survive the redraw a refresh causes -- losing it
+     would be the same class of bug the Save button was added to fix. */
+  /* H1d ended mid-edit, with a reset drafted but not written. Commit it, so
+     that the reorder below is genuinely unsaved -- otherwise "survives the
+     refresh" would pass just by redrawing from the database. */
+  if (!(await page.locator('[data-save]').first().isDisabled())) {
+    await page.locator('[data-save]').first().click();
+    await page.waitForTimeout(300);
+  }
+  await page.locator('.job-order li[data-i="0"] [data-move="down"]').click();
+  await page.waitForTimeout(150);
+  const draftOrder = await page.evaluate(() =>
+    [...document.querySelectorAll('#custom-body .job-order li .jname')].map((e) => e.textContent.trim()));
+  check('the draft differs from what is stored', draftOrder, ['Warrior', 'Astrologian']);
+  check('and is marked unsaved',
+    (await page.locator('#custom-body .grid-note').first().innerText()).toLowerCase(),
+    'unsaved changes');
+
+  /* A later nightly run lands while the tab is open: Warrior is now capped. */
+  await page.route('**/ffxiv.json*', (r) => r.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify(FC_ROSTER_NEXT),
+  }));
+  await page.locator('#snap-refresh').click();
+  await page.waitForFunction(() =>
+    document.getElementById('snap-status').textContent.trim() === 'Updated.');
+
+  const after = await snapText();
+  check('refreshing picks up the newer snapshot', after.includes('3 hours ago'), true);
+  check('and stops claiming the older one', after.includes('3 days ago'), false);
+  check('and the new level shows in the job list',
+    await page.evaluate(() => {
+      const li = [...document.querySelectorAll('#custom-body .job-order li')]
+        .find((e) => e.querySelector('.jname').textContent.trim() === 'Warrior');
+      return li.querySelector('.jlv').textContent.trim();
+    }), '100');
+  check('an unsaved reorder survives the refresh',
+    await page.evaluate(() =>
+      [...document.querySelectorAll('#custom-body .job-order li .jname')].map((e) => e.textContent.trim())),
+    draftOrder);
+  check('and is still flagged as unsaved afterwards',
+    (await page.locator('#custom-body .grid-note').first().innerText()).toLowerCase(),
+    'unsaved changes');
+
+  check('the button is spent for now', await page.locator('#snap-refresh').isDisabled(), true);
+  check('and says when it comes back',
+    /Available again in 5:00|Available again in 4:\d\d/
+      .test(await page.locator('#snap-cool').innerText()), true);
+  await page.screenshot({ path: `${SHOTS}/h1e-snapshot.png`, fullPage: true });
+
+  /* The cooldown is per browser, not per render: leaving the tab and coming
+     back must not hand out a fresh press. */
+  await page.locator('[data-view-target="chars"]').click();
+  await page.waitForTimeout(150);
+  await page.locator('[data-view-target="custom"]').click();
+  await page.waitForTimeout(150);
+  check('the cooldown survives leaving and re-entering the tab',
+    await page.locator('#snap-refresh').isDisabled(), true);
+
+  /* And it is a cooldown rather than a one-shot: wind the stored timestamp back
+     past five minutes and the button returns. */
+  await page.evaluate(() => {
+    localStorage.setItem('fcevents.roster-refreshed-at', String(Date.now() - 6 * 60 * 1000));
+  });
+  await page.locator('[data-view-target="chars"]').click();
+  await page.locator('[data-view-target="custom"]').click();
+  await page.waitForTimeout(200);
+  check('once five minutes have passed it is available again',
+    await page.locator('#snap-refresh').isDisabled(), false);
+  check('and the countdown clears', await page.locator('#snap-cool').innerText(), '');
+
+  /* A refresh that cannot reach either copy keeps the roster it already has,
+     rather than blanking every plate on the page. */
+  await page.route('**/ffxiv.json*', (r) => r.fulfill({ status: 500, body: 'nope' }));
+  await page.locator('#snap-refresh').click();
+  await page.waitForFunction(() =>
+    document.getElementById('snap-status').textContent.includes('Could not reach'));
+  check('a failed refresh keeps the roster it already had',
+    await page.locator('#custom-body .job-order li').count() > 0, true);
+  check('and the job list still carries the levels from the last good read',
+    await page.evaluate(() => {
+      const li = [...document.querySelectorAll('#custom-body .job-order li')]
+        .find((e) => e.querySelector('.jname').textContent.trim() === 'Warrior');
+      return li.querySelector('.jlv').textContent.trim();
+    }), '100');
+  check('and still spends the cooldown, so it cannot be hammered',
+    await page.locator('#snap-refresh').isDisabled(), true);
+
+  /* Put the fixture and the cooldown back for whatever runs next. */
+  await page.route('**/ffxiv.json*', (r) => r.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify(FC_ROSTER),
+  }));
+  await page.evaluate(() => localStorage.removeItem('fcevents.roster-refreshed-at'));
+
   // ---- H2. announcing to Discord -----------------------------------------
   console.log('\n=== H2. announce to Discord ===');
   /* Back to the event as its creator: the previous block left the page on the
@@ -970,6 +1101,18 @@ function check(label, actual, expected) {
     await phone.evaluate(() =>
       document.querySelector('#mine-grid .cell').getBoundingClientRect().height >= 24), true);
   await phone.screenshot({ path: `${SHOTS}/j-phone.png`, fullPage: true });
+
+  /* The freshness panel puts a definition list and a wide button on the
+     narrowest page there is, so it gets the same treatment as the grid. */
+  await phone.locator('[data-view-target="custom"]').click();
+  await phone.waitForSelector('#snap-refresh');
+  check('the freshness panel does not scroll the page sideways', await noOverflow(), true);
+  check('and its button stays on screen',
+    await phone.evaluate(() => {
+      const r = document.getElementById('snap-refresh').getBoundingClientRect();
+      return r.left >= 0 && r.right <= 390;
+    }), true);
+  await phone.screenshot({ path: `${SHOTS}/j-phone-custom.png`, fullPage: true });
   await phone.evaluate(() => window.__stub.reset());
   await phone.close();
 
