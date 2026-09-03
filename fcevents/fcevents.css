@@ -1161,3 +1161,32 @@ button.adventurer:disabled:hover { transform: none; box-shadow: none; }
 
 .custom-char { margin-bottom: 20px; }
 .custom-char .grid-head h2 { text-transform: none; letter-spacing: 0.06em; font-size: 16px; }
+
+/* ---- character data provenance -----------------------------------------
+   A member who reorders their jobs is looking straight at level numbers, so
+   this is where "why does it still say 90" gets answered: when the snapshot
+   was built, whether the nightly run succeeded, and which copy is on screen. */
+.snap { margin-bottom: 20px; }
+.snap .grid-head h2 { text-transform: none; letter-spacing: 0.06em; font-size: 16px; }
+
+.snap-facts {
+  margin: 0 0 12px;
+  display: grid;
+  gap: 6px 20px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  font-size: 13px;
+}
+.snap-facts > div { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.snap-facts dt {
+  color: var(--ink-faint);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+.snap-facts dd { margin: 0; color: var(--ink); }
+.snap-abs { color: var(--ink-faint); font-size: 11px; }
+.snap-ok { color: var(--ok); }
+.snap-bad { color: var(--warn); }
+
+#snap-cool { margin: 0; align-self: center; font-variant-numeric: tabular-nums; }

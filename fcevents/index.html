@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
-<link href="fcevents.css?v=2" rel="stylesheet">
+<link href="fcevents.css?v=3" rel="stylesheet">
 </head>
 <body>
 
@@ -438,6 +438,12 @@
       <p class="lede">Put your jobs in the order you would rather play them.</p>
     </div>
 
+    <!-- Where the character data comes from, how old it is, and the button
+         that re-reads it. Its own container rather than part of #custom-body:
+         the cooldown ticks once a second, and redrawing the job lists under a
+         member's cursor while they are dragging a row would be hostile. -->
+    <div id="custom-source"></div>
+
     <div id="custom-body"></div>
   </section>
 
@@ -483,6 +489,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="config.js?v=1"></script>
-<script src="fcevents.js?v=2"></script>
+<script src="fcevents.js?v=3"></script>
 </body>
 </html>
