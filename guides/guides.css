@@ -1,0 +1,348 @@
+/* BattyDev · Guides
+   Chrome (wallpaper, home-bar, main, section-head, panel) is lifted from
+   /health so this reads as the same site. Like /health this is a "system"
+   page rather than a game dashboard, so it keeps the landing page's aqua and
+   green rather than FFXIV's gold -- topics under here will not all be FFXIV.
+
+   One stylesheet covers all three page shapes in the section: the topic hub,
+   a topic's guide index, and a paginated guide. They share enough chrome that
+   splitting them would mean maintaining the home bar three times. */
+
+:root {
+  --void: #07151c;
+  --deep: #0b1d28;
+  --panel: rgba(18, 40, 56, 0.78);
+  --panel-solid: #12283a;
+  --rule: rgba(102, 237, 241, 0.24);
+  --aqua: #66edf1;
+  --aqua-dim: #3aa8ac;
+  --green: #9bf00b;
+  --amber: #f0b429;
+  --red: #e2564d;
+  --ink: #e8eef2;
+  --ink-dim: #9db2c0;
+  --ink-faint: #6b8496;
+  --radius: 3px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--void);
+  color: var(--ink);
+  font-family: 'Roboto Condensed', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+.wallpaper {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(1200px 600px at 20% -10%, rgba(102,237,241,0.10) 0%, transparent 60%),
+    radial-gradient(900px 500px at 90% 10%, rgba(155,240,11,0.06) 0%, transparent 55%),
+    linear-gradient(180deg, #0a1c26 0%, var(--void) 60%);
+}
+
+/* ---- home bar (shared with /ffxiv, /palworld and /health) ---- */
+.home-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 18px;
+  padding-top: calc(10px + env(safe-area-inset-top));
+  background: rgba(5, 15, 21, 0.88);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--rule);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.account { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+.gamerpic {
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(160deg, var(--aqua) 0%, #1d6d70 100%);
+  color: var(--void);
+  font-weight: 900;
+}
+.account b { display: block; font-weight: 700; font-size: 15px; }
+.account small { display: block; color: var(--ink-faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; }
+
+/* Anchors, not view-switcher buttons: every destination in this section is a
+   separate document, so there is no view state for them to toggle. */
+.system-icons { display: flex; gap: 4px; margin-left: auto; }
+.system-icons a {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ink-dim);
+  width: 38px; height: 34px;
+  border-radius: var(--radius);
+  text-decoration: none;
+  font-size: 16px;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: color .15s, background .15s, border-color .15s;
+}
+.system-icons a:hover { color: var(--ink); background: rgba(102,237,241,0.08); }
+.system-icons a[aria-current="page"] {
+  color: var(--aqua);
+  border-color: var(--rule);
+  background: rgba(102,237,241,0.10);
+}
+.system-icons a:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+
+.system-status { display: flex; align-items: center; gap: 10px; }
+.stamp { color: var(--ink-faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; }
+
+main { max-width: 1080px; margin: 0 auto; padding: 26px 18px 80px; }
+
+.section-head { margin-bottom: 18px; }
+.eyebrow { margin: 0; color: var(--aqua-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; }
+h1 { margin: 2px 0 4px; font-size: 30px; font-weight: 700; letter-spacing: 0.01em; }
+.lede { margin: 0; color: var(--ink-dim); font-size: 14px; max-width: 62ch; }
+
+/* Breadcrumb sits above the heading so the depth is obvious -- these pages are
+   nested two deep and are reached by direct link as often as by browsing. */
+.crumbs { margin: 0 0 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-faint); }
+.crumbs a { color: var(--aqua-dim); text-decoration: none; }
+.crumbs a:hover { color: var(--aqua); }
+.crumbs a:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.crumbs .sep { padding: 0 6px; opacity: .6; }
+
+/* ---- card grid: topics on the hub, guides inside a topic ---- */
+/* auto-fill, not auto-fit: auto-fit collapses the empty tracks, so a shelf
+   holding one topic would stretch that card across the whole page. auto-fill
+   keeps the track width, so cards stay card-sized until there are enough of
+   them to fill the row. */
+.cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+
+.card {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color .15s, background .15s, transform .15s;
+}
+.card:hover { border-color: var(--aqua-dim); background: rgba(102,237,241,0.07); transform: translateY(-2px); }
+.card:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.card .icon {
+  flex: none;
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
+  border-radius: var(--radius);
+  border: 1px solid var(--rule);
+  background: rgba(7,21,28,0.6);
+  color: var(--aqua);
+  font-size: 18px;
+}
+/* min-width:0 so a long title wraps instead of forcing the flex row wider. */
+.card .body { min-width: 0; }
+.card b { display: block; font-size: 17px; font-weight: 700; line-height: 1.2; }
+.card .desc { display: block; margin-top: 3px; color: var(--ink-dim); font-size: 13px; }
+.card .meta { display: block; margin-top: 7px; color: var(--ink-faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; }
+
+/* A topic with no guides yet still gets a tile, so the hub shows the shape of
+   the section rather than only what happens to be written. */
+.card.is-empty { opacity: .55; pointer-events: none; }
+
+/* ---- phase rail: the pager's map, and a jump target ---- */
+/* The rail is built by script and the pager does nothing without it, so both
+   stay out of the layout until guide.js marks the guide paged. */
+.rail, .pager { display: none; }
+.is-paged .rail {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 0 0 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--rule);
+  scrollbar-width: thin;
+}
+.rail button {
+  flex: none;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 5px 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color .15s, background .15s, border-color .15s;
+}
+.rail button:hover { color: var(--ink); background: rgba(102,237,241,0.08); }
+.rail button:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+.rail button.is-active {
+  color: var(--void);
+  background: var(--aqua);
+  border-color: var(--aqua);
+  font-weight: 700;
+}
+/* Everything already stepped through, so the rail doubles as a progress bar. */
+.rail button.is-seen:not(.is-active) { color: var(--ink); border-color: var(--aqua-dim); }
+
+/* ---- one phase ---- */
+/* Hiding is scoped to .is-paged, which guide.js adds only once it has wired the
+   rail and pager. With script off every phase stays stacked in reading order --
+   a longer read than the pager gives, but a complete one. */
+.is-paged .phase { display: none; }
+.is-paged .phase.is-active { display: block; animation: phase-in .18s ease both; }
+
+/* Stacked fallback: without the pager the phases run together, so rule them
+   apart the way the source markdown's horizontal rules do. */
+.phase + .phase { border-top: 1px solid var(--rule); margin-top: 26px; padding-top: 26px; }
+.is-paged .phase + .phase { border-top: 0; margin-top: 0; padding-top: 0; }
+@keyframes phase-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.phase > .section-head { margin-bottom: 16px; }
+
+/* guide.js focuses the heading on each step so a screen reader announces the
+   new phase instead of leaving the reader where the pager button was. Chromium
+   rings a programmatically focused tabindex="-1" element, which is noise after
+   a mouse click on Next -- but it sets :focus-visible when the last input was
+   the keyboard, which is exactly when the ring is wanted. So drop the default
+   and re-add it only for that case. */
+.phase h1:focus { outline: none; }
+.phase h1:focus-visible { outline: 2px solid var(--green); outline-offset: 4px; }
+
+/* ---- guide prose ---- */
+.prose { max-width: 74ch; }
+.prose p { margin: 0 0 12px; }
+.prose > :last-child { margin-bottom: 0; }
+.prose h2 {
+  margin: 22px 0 10px;
+  font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.16em;
+  color: var(--aqua);
+}
+.prose ul, .prose ol { margin: 0 0 12px; padding-left: 20px; }
+.prose li { margin-bottom: 6px; }
+.prose li > ul, .prose li > ol { margin-top: 6px; }
+.prose b, .prose strong { font-weight: 700; color: #fff; }
+.prose em { color: var(--ink); }
+.prose a { color: var(--aqua); }
+.prose code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .88em;
+  background: rgba(7,21,28,0.75);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 1px 5px;
+}
+.prose hr { border: 0; border-top: 1px solid var(--rule); margin: 20px 0; }
+
+/* Pulled-out claim that the rest of a phase hangs on. Aqua by default; amber
+   for a caveat, red for the one rule that invalidates other advice. */
+.callout {
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--aqua);
+  background: rgba(102,237,241,0.07);
+  border-radius: var(--radius);
+  padding: 11px 14px;
+  margin: 0 0 14px;
+  font-size: 14px;
+}
+.callout.warn { border-left-color: var(--amber); background: rgba(240,180,41,0.08); border-color: rgba(240,180,41,0.32); }
+.callout.key  { border-left-color: var(--green); background: rgba(155,240,11,0.07); border-color: rgba(155,240,11,0.30); }
+.callout p { margin: 0 0 8px; }
+.callout > :last-child { margin-bottom: 0; }
+.callout .tag {
+  display: block; margin-bottom: 4px;
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.16em;
+  color: var(--aqua);
+}
+.callout.warn .tag { color: var(--amber); }
+.callout.key .tag { color: var(--green); }
+
+/* Tables come straight from the source markdown, so they can be wider than the
+   phone. .scroll-x wraps them rather than letting them squeeze the layout. */
+.scroll-x { overflow-x: auto; margin-bottom: 14px; }
+table.data { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 340px; }
+table.data th {
+  text-align: left; color: var(--ink-faint); font-weight: 400;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em;
+  padding: 5px 14px 5px 0; border-bottom: 1px solid var(--rule); white-space: nowrap;
+}
+table.data td { padding: 7px 14px 7px 0; border-bottom: 1px solid rgba(102,237,241,0.08); vertical-align: top; }
+table.data td:first-child { white-space: nowrap; font-weight: 700; }
+table.data tr:last-child td { border-bottom: 0; }
+
+/* ---- pager ---- */
+.is-paged .pager {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}
+.pager button {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--ink-dim);
+  font: inherit; font-size: 13px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.pager button:hover:not(:disabled) { color: var(--ink); border-color: var(--aqua-dim); background: rgba(102,237,241,0.07); }
+.pager button:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+.pager button:disabled { opacity: .3; cursor: default; }
+.pager .next { margin-left: auto; }
+.pager .count { color: var(--ink-faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; font-variant-numeric: tabular-nums; }
+
+/* The keyboard hint is only true where there are arrow keys, so it is hidden on
+   touch-primary devices rather than lying to a phone. */
+.kbd-hint { display: none; margin: 14px 0 0; color: var(--ink-faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; }
+.is-paged .kbd-hint { display: block; }
+.kbd-hint kbd {
+  font-family: inherit; font-size: 10px;
+  border: 1px solid var(--rule); border-radius: 2px;
+  padding: 1px 5px; margin: 0 1px; color: var(--ink-dim);
+}
+@media (hover: none) { .is-paged .kbd-hint { display: none; } }
+
+.empty { color: var(--ink-faint); font-size: 14px; font-style: italic; }
+
+@media (max-width: 620px) {
+  h1 { font-size: 24px; }
+  .prose h2 { margin-top: 18px; }
+  .is-paged .pager { flex-wrap: wrap; }
+  .pager .count { order: 3; width: 100%; text-align: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card, .rail button, .pager button { transition: none; }
+  .card:hover { transform: none; }
+  .phase.is-active { animation: none; }
+}
+
+/* Printing is how a guide gets read away from the browser, so print every
+   phase rather than only the one on screen, and drop the navigation. */
+@media print {
+  .wallpaper, .home-bar, .rail, .pager, .kbd-hint { display: none !important; }
+  body { background: #fff; color: #000; }
+  main { max-width: none; padding: 0; }
+  .phase { display: block !important; page-break-after: always; }
+  .phase:last-child { page-break-after: auto; }
+  .prose { max-width: none; }
+  .callout { border-color: #999; background: none; }
+  table.data th, table.data td { border-color: #999; }
+  .eyebrow, .crumbs { color: #555; }
+  .prose h2 { color: #000; }
+}
