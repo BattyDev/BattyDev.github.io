@@ -17,6 +17,30 @@
     background: #08171f; border: 1px solid var(--rule); border-radius: var(--radius);
     touch-action: manipulation;
   }
+  .post-layer { position: absolute; inset: 0; pointer-events: none; }
+  .post-btn {
+    position: absolute; width: 34px; height: 34px;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    border-radius: 50%;
+    border: 2px dashed transparent;
+    background: transparent;
+    padding: 0; cursor: default;
+  }
+  /* Only an open post that can actually take the current pick advertises itself. */
+  .post-btn.is-open {
+    border-color: var(--gold);
+    background: rgba(7, 21, 28, 0.45);
+    cursor: pointer;
+  }
+  .post-btn.is-open:hover { background: rgba(198, 166, 100, 0.3); }
+  /* Every post stays focusable so the board can be read by keyboard, and the
+     focus ring must remain visible even on posts drawn only on the canvas. */
+  .post-btn:focus-visible {
+    outline: 3px solid var(--gold-bright);
+    outline-offset: 3px;
+    background: rgba(198, 166, 100, 0.35);
+  }
   .hud {
     display: flex; gap: 18px; flex-wrap: wrap; align-items: center;
     margin-bottom: 12px; font-size: .82rem;
@@ -50,7 +74,9 @@
     <p class="eyebrow">Defend the crystal</p>
     <h2 class="section">Station your company</h2>
     <p class="hint">
-      Pick an adventurer, then click a marked post along the path.
+      Pick an adventurer, then choose a marked post along the path. The posts are
+      buttons, so you can reach them with <kbd>Tab</kbd> and station a unit with
+      <kbd>Enter</kbd> as well as by clicking.
       <b>Tanks</b> hold enemies in place, <b>healers</b> mend the crystal and hasten
       whoever stands beside them, <b>DPS</b> do the killing. Enemies that reach the
       crystal take a bite out of it.
@@ -65,12 +91,19 @@
     </div>
 
     <div class="field-wrap">
-      <canvas id="field" width="1260" height="616"></canvas>
+      <canvas id="field" width="1260" height="616" role="img"
+              aria-label="Defence field. The eleven numbered posts below the field are the
+                          keyboard-operable controls for stationing adventurers."></canvas>
+      <!-- Focusable mirror of the canvas posts: the canvas itself cannot take
+           focus, so placement is driven by these buttons (WCAG 2.1.1). -->
+      <div class="post-layer" id="posts"></div>
     </div>
+
+    <p id="live" class="sr-only" role="status" aria-live="polite"></p>
 
     <div class="bench" id="bench"></div>
 
-    <div id="verdict" class="verdict" hidden>
+    <div id="verdict" class="verdict" tabindex="-1" hidden>
       <h3 id="verdict-title">—</h3>
       <p id="verdict-text"></p>
     </div>

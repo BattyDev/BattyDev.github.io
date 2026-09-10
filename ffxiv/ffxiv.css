@@ -13,13 +13,13 @@
   --gold-bright: #e6cf95;
   --ink: #e8eef2;
   --ink-dim: #9db2c0;
-  --ink-faint: #6b8496;
+  --ink-faint: #7d94a4;
 
   /* Grand Company colours, from the in-game emblems. Drives per-character accent. */
-  --gc-maelstrom: #c0392b;
+  --gc-maelstrom: #e0776a;
   --gc-adder: #d4b13f;
-  --gc-flames: #d4722a;
-  --gc-none: #6b8496;
+  --gc-flames: #dd7c33;
+  --gc-none: #7d94a4;
 
   --accent: var(--gc-none);
   --radius: 3px;
@@ -57,6 +57,30 @@ body {
 }
 
 /* ---- home bar (shared with /palworld) ---- */
+/* Skip link: visually hidden until keyboard-focused, so keyboard and screen
+   reader users can bypass the nav (WCAG 2.4.1 Bypass Blocks). */
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -60px;
+  z-index: 100;
+  padding: 10px 16px;
+  background: var(--panel-solid);
+  color: var(--ink);
+  border: 2px solid var(--gold);
+  border-radius: var(--radius);
+  font-family: "Roboto Condensed", system-ui, sans-serif;
+  font-size: 14px;
+  text-decoration: none;
+  transition: top 0.15s ease-in-out;
+}
+.skip-link:focus { top: 8px; }
+main:focus { outline: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .skip-link { transition: none; }
+}
+
 .home-bar {
   display: flex;
   align-items: center;
@@ -132,6 +156,16 @@ body {
   white-space: nowrap;
 }
 @media (max-width: 620px) { .system-status { display: none; } }
+
+/* Below ~380px the account block plus five 38px icons exceed the viewport and
+   force a horizontal scroll. Let the bar wrap instead (WCAG 1.4.10 Reflow);
+   targets stay at their full size rather than shrinking under 24px. */
+@media (max-width: 400px) {
+  .home-bar { flex-wrap: wrap; gap: 8px 10px; padding-left: 12px; padding-right: 12px; }
+  .system-icons { margin-left: 0; width: 100%; justify-content: space-between; gap: 2px; }
+  .account { min-width: 0; }
+  .account small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
 
 /* ---- layout ---- */
 main { max-width: 1140px; margin: 0 auto; padding: 28px 20px 72px; }

@@ -40,6 +40,16 @@
   @keyframes bob { 0%,100% { margin-top: 0 } 50% { margin-top: -3px } }
   .lane.is-running .rail i { animation: bob .42s ease-in-out infinite; }
   @media (prefers-reduced-motion: reduce) { .lane.is-running .rail i { animation: none } }
+  /* The lane is face(84) + name(190) + rail + place; below ~560px that fixed
+     width forces a horizontal scroll, so the lane stacks instead (WCAG 1.4.10). */
+  @media (max-width: 560px) {
+    .lane { flex-wrap: wrap; gap: 8px; }
+    .lane .face { width: 56px; height: 62px; }
+    .lane .nm { flex: 1 1 auto; }
+    .lane .rail { flex: 1 1 100%; order: 3; height: 68px; }
+    .lane .rail i { width: 56px; height: 62px; }
+    .lane .place { flex: 0 0 auto; margin-left: auto; }
+  }
   .lane .place { flex: 0 0 56px; text-align: right; font-family: Cinzel, Georgia, serif; font-size: 1.6rem; color: var(--gold-bright); }
   .finish { position: absolute; right: 6px; top: 0; bottom: 0; width: 2px; background: repeating-linear-gradient(180deg, var(--gold) 0 4px, transparent 4px 8px); }
 </style>
