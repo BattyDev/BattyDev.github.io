@@ -14,7 +14,7 @@
   --gold-bright: #e6cf95;
   --ink: #e8eef2;
   --ink-dim: #9db2c0;
-  --ink-faint: #6b8496;
+  --ink-faint: #7d94a4;
 
   --ok: #6fbf73;
   --warn: #d4722a;
@@ -24,7 +24,7 @@
   --gc-maelstrom: #c0392b;
   --gc-adder: #d4b13f;
   --gc-flames: #d4722a;
-  --gc-none: #6b8496;
+  --gc-none: #7d94a4;
   --accent: var(--gc-none);
 
   --radius: 3px;

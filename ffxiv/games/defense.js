@@ -107,6 +107,10 @@
         if (gil < cost) return;
         selected = selected === u ? null : u;
         renderBench();
+        renderPosts();
+        announce(selected
+          ? selected.name + " selected. Choose a post to station them."
+          : "Selection cleared.");
       });
       box.appendChild(b);
     });
@@ -130,30 +134,95 @@
     };
   }
 
+  function postTaken(i) {
+    return towers.some(function (t) { return t.post === i; });
+  }
+
+  /* Placement by post index, shared by the pointer path and the keyboard
+     overlay below, so both routes obey identical rules (WCAG 2.1.1). */
+  function placeAt(index) {
+    if (!selected || index === null || postTaken(index)) return false;
+
+    var cost = benchCost(selected);
+    if (gil < cost) return false;
+    gil -= cost;
+
+    var placed = selected;
+    var st = towerStats(placed);
+    towers.push({
+      u: placed, post: index, x: POSTS[index][0], y: POSTS[index][1],
+      st: st, cd: 0, haste: 0
+    });
+    bench = bench.filter(function (u) { return u !== placed; });
+    selected = null;
+    renderBench(); updateHud(); renderPosts();
+    announce(placed.name + " stationed at post " + (index + 1) +
+             ". " + Math.floor(gil) + " gil remaining.");
+    return true;
+  }
+
   canvas.addEventListener("click", function (ev) {
     if (!selected) return;
     var p = canvasPos(ev);
     var best = null, bestD = 42 * SCALE;
     POSTS.forEach(function (post, i) {
-      if (towers.some(function (t) { return t.post === i; })) return;
+      if (postTaken(i)) return;
       var d = Math.hypot(post[0] - p.x, post[1] - p.y);
       if (d < bestD) { bestD = d; best = i; }
     });
-    if (best === null) return;
-
-    var cost = benchCost(selected);
-    if (gil < cost) return;
-    gil -= cost;
-
-    var st = towerStats(selected);
-    towers.push({
-      u: selected, post: best, x: POSTS[best][0], y: POSTS[best][1],
-      st: st, cd: 0, haste: 0
-    });
-    bench = bench.filter(function (u) { return u !== selected; });
-    selected = null;
-    renderBench(); updateHud();
+    placeAt(best);
   });
+
+  /* ---------- keyboard-operable posts ----------
+     The canvas is a pointer-only surface, so every post is mirrored as a real
+     button in an overlay. Buttons give focus, Enter/Space and screen reader
+     naming for free; positions are percentages so they track the responsive
+     canvas. */
+  function renderPosts() {
+    var layer = $("posts");
+    if (!layer) return;
+    layer.innerHTML = "";
+    POSTS.forEach(function (post, i) {
+      var tower = null;
+      towers.forEach(function (t) { if (t.post === i) tower = t; });
+
+      var b = document.createElement("button");
+      b.type = "button";
+      var open = !tower && !!selected && gil >= benchCost(selected);
+      b.className = "post-btn" + (open ? " is-open" : "");
+      b.style.left = (post[0] / W * 100) + "%";
+      b.style.top = (post[1] / H * 100) + "%";
+
+      /* Never disabled: a disabled button leaves the tab order, and these are the
+         only way to read the board without seeing the canvas. */
+      if (tower) {
+        b.setAttribute("aria-label",
+          "Post " + (i + 1) + ", held by " + tower.u.name + ", " + tower.u.job + ".");
+      } else if (!selected) {
+        b.setAttribute("aria-label",
+          "Post " + (i + 1) + ", empty. Choose an adventurer from the bench first.");
+      } else if (!open) {
+        b.setAttribute("aria-label",
+          "Post " + (i + 1) + ", empty. Not enough gil to station " +
+          selected.name + ", who costs " + benchCost(selected) + ".");
+      } else {
+        b.setAttribute("aria-label",
+          "Post " + (i + 1) + ", empty. Station " + selected.name +
+          " here for " + benchCost(selected) + " gil.");
+      }
+
+      b.addEventListener("click", function () {
+        if (!placeAt(i)) announce(b.getAttribute("aria-label"));
+      });
+      layer.appendChild(b);
+    });
+  }
+
+  /* Polite live region: canvas state changes are invisible to screen readers. */
+  function announce(message) {
+    var live = $("live");
+    if (live) live.textContent = message;
+  }
 
   /* ---------- waves ---------- */
 
@@ -162,6 +231,7 @@
     running = true;
     $("start").disabled = true;
     $("start").textContent = "Wave " + wave + " incoming…";
+    announce("Wave " + wave + " incoming.");
 
     var count = 4 + wave * 2;
     var hp = 42 * Math.pow(1.28, wave - 1);
@@ -197,7 +267,8 @@
     }
     $("start").disabled = false;
     $("start").textContent = "Begin wave " + (wave + 1);
-    renderBench(); updateHud();
+    renderBench(); updateHud(); renderPosts();
+    announce("Wave cleared. " + Math.floor(gil) + " gil available.");
   }
 
   /* ---------- simulation ---------- */
@@ -275,6 +346,9 @@
       (wave - 1 === 1 ? "" : "s") + ".";
     $("restart").hidden = false;
     $("start").disabled = true;
+    renderPosts();
+    announce("The crystal falls. The company held for " + (wave - 1) + " waves.");
+    $("verdict").focus();
   }
 
   /* ---------- rendering ---------- */
@@ -429,7 +503,7 @@
     $("loading").hidden = true;
     $("game").hidden = false;
     $("stamp").textContent = units.length + " adventurers";
-    renderBench(); updateHud();
+    renderBench(); updateHud(); renderPosts();
     lastT = performance.now();
     raf = requestAnimationFrame(loop);
   }).catch(function (err) {

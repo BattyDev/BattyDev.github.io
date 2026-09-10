@@ -12,11 +12,11 @@
   --gold-bright: #e6cf95;
   --ink: #e8eef2;
   --ink-dim: #9db2c0;
-  --ink-faint: #6b8496;
+  --ink-faint: #7d94a4;
 
-  --tank: #4d80c4;
+  --tank: #5687c7;
   --healer: #58b070;
-  --dps: #c4544d;
+  --dps: #cb6761;
 
   --radius: 3px;
 }
@@ -363,4 +363,16 @@ button.ghost { background: transparent; }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
+}
+
+/* Screen-reader-only: kept in the accessibility tree, out of the visual layout.
+   Used for live regions announcing canvas state that AT cannot otherwise read. */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

@@ -131,7 +131,10 @@ function setTabs() {
       for (const candidate of document.querySelectorAll(".tab-button")) {
         const active = candidate === button;
         candidate.classList.toggle("active", active);
-        candidate.setAttribute("aria-selected", String(active));
+        /* aria-selected is only valid on role="tab"; this is a nav of buttons,
+           so current-view state is carried by aria-current instead. */
+        if (active) candidate.setAttribute("aria-current", "page");
+        else candidate.removeAttribute("aria-current");
       }
       for (const panel of document.querySelectorAll(".tab-panel")) {
         const active = panel.dataset.panel === selected;
