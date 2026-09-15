@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07151c">
+<title>Moogle Treasure Trove: First Hunt for Astronomy · BattyDev Guides</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;700;900&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="../guides.css?v=2" rel="stylesheet">
+</head>
+<body>
+
+<div class="wallpaper" aria-hidden="true"></div>
+
+<header class="home-bar">
+  <a class="account" href="./" aria-label="Return to FFXIV guides">
+    <span class="gamerpic">B</span>
+    <span><b>Treasure Trove</b><small>FFXIV · Guides</small></span>
+  </a>
+  <nav class="system-icons" aria-label="Sections">
+    <a href="../" aria-label="All topics"><i class="bi bi-journals"></i></a>
+    <a href="./" aria-label="FFXIV guides"><i class="bi bi-shield-shaded"></i></a>
+  </nav>
+  <div class="system-status">
+    <!-- Filled by treasure-trove.js; the static text is the pre-script answer
+         rather than a placeholder, so a failed script still says something true. -->
+    <span class="stamp" id="countdown">Ends Oct 19</span>
+  </div>
+</header>
+
+<main data-guide="ffxiv-treasure-trove">
+
+  <div class="section-head">
+    <p class="crumbs"><a href="../">Guides</a><span class="sep">/</span><a href="./">FFXIV</a><span class="sep">/</span>Treasure Trove</p>
+  </div>
+
+  <!-- Outside the phases on purpose: the pager only swaps .phase sections, so
+       the tracker stays on screen wherever you are in the guide. It is the one
+       part of this page you come back to rather than read once. -->
+  <section class="tracker" aria-labelledby="tracker-h">
+    <h2 id="tracker-h">Uolon Horn progress</h2>
+    <p class="hint">The mount costs 100 tomestones plus 10 tokens. Tap a pom to mark a token
+      earned. The first six are the weekly Minimog tokens; the striped four stand for the
+      Ultimog's five, which need Endwalker finished.</p>
+    <div class="poms" id="poms"></div>
+    <div class="tally">
+      <span>Tokens <b id="tcount">0</b>/10</span>
+      <span>Tomestones <b id="tomes">0</b>/100
+        <button type="button" id="minus" aria-label="Remove 5 tomestones">−5</button>
+        <button type="button" id="plus" aria-label="Add 5 tomestones">+5</button>
+      </span>
+    </div>
+    <p class="legend">
+      <span><i style="background:var(--pom)"></i>Earned</span>
+      <span><i style="border:2px dashed var(--ink-faint)"></i>Minimog · 1 per week</span>
+      <span><i style="background:repeating-linear-gradient(45deg,transparent 0 3px,var(--rule) 3px 5px);border:1px solid var(--rule)"></i>Ultimog · locked</span>
+    </p>
+  </section>
+
+  <nav class="rail" id="rail" aria-label="Sections"></nav>
+
+  <section class="phase" id="math" data-label="The math" aria-labelledby="math-h">
+    <div class="section-head">
+      <p class="eyebrow">First Hunt for Astronomy</p>
+      <h1 id="math-h">The honest math</h1>
+      <p class="lede">Written for a character who has finished Shadowbringers (5.3) but not
+        Endwalker yet. Runs until October 19, 7:59 a.m. PDT.</p>
+    </div>
+    <div class="prose">
+      <p>Tokens come from two places only. The <b>Ultimog challenge</b> gives 5 tokens and
+        70 tomestones once, and each weekly <b>Minimog challenge</b> gives 1 token and 10
+        tomestones. That means the mount needs the Ultimog plus at least 5 of the 6 Minimogs.</p>
+
+      <div class="callout warn">
+        <span class="tag">This half, the mount is out of reach</span>
+        <p>This Ultimog is "clear Aloalo Island 6 times", and Aloalo only unlocks after
+          Endwalker's 6.1 story. The most you can earn now is 6 tokens from Minimogs.</p>
+      </div>
+
+      <div class="callout key">
+        <span class="tag">That's fine</span>
+        <p>Tokens carry over into the Second Hunt for Astronomy, and tokens can be earned
+          there too. Bank every Minimog token you can now. Square Enix hasn't said yet what
+          the Second Hunt's challenges will be.</p>
+      </div>
+
+      <p>Tomestones are the easy part. Each Weekly Objective pays 20, and there are five
+        weeks left, so doing only your weeklies gets you to 100.</p>
+    </div>
+  </section>
+
+  <section class="phase" id="start" data-label="Start here" aria-labelledby="start-h">
+    <div class="section-head">
+      <p class="eyebrow">Setup</p>
+      <h1 id="start-h">Start here</h1>
+      <p class="lede">Six steps, in order. Nothing counts until the first one is done.</p>
+    </div>
+    <div class="prose">
+      <ol class="steps">
+        <li><strong>Get the Mogpendium</strong>
+          If this is your first Treasure Trove, talk to an
+          <a href="https://ffxiv.consolegameswiki.com/wiki/Itinerant_Moogle">Itinerant Moogle</a>.
+          Nothing counts until you do. They're in
+          <a href="https://ffxiv.consolegameswiki.com/wiki/Limsa_Lominsa_Lower_Decks">Limsa Lominsa Lower Decks</a>
+          (X 9.4, Y 11.6),
+          <a href="https://ffxiv.consolegameswiki.com/wiki/New_Gridania">New Gridania</a>
+          (X 12.4, Y 12.1), and
+          <a href="https://ffxiv.consolegameswiki.com/wiki/Ul%27dah_-_Steps_of_Nald">Ul'dah – Steps of Nald</a>
+          (X 9.6, Y 9.1).</li>
+        <li><strong>Open it from the menu</strong>
+          On controller, go to Duty › Collection ›
+          <a href="https://ffxiv.consolegameswiki.com/wiki/Mogpendium">Mogpendium</a>.
+          It has four tabs: Standard, Weekly, Minimog, and Ultimog.</li>
+        <li><strong>Check your Weekly Objective</strong>
+          Each player gets one random duty per week. It can be a duty you haven't unlocked
+          (like a Dawntrail alliance raid). If so, you'll have to skip that week's 20.</li>
+        <li><strong>Pick this week's easier Minimog</strong>
+          There are two options each week. Either one gives the reward, and doing both gives
+          nothing extra.</li>
+        <li><strong>Claim rewards by hand</strong>
+          Standard duty tomes arrive automatically. Weekly, Minimog, and Ultimog rewards have
+          to be claimed inside the Mogpendium. Claim them before patch 8.05 arrives.</li>
+        <li><strong>Spend at the moogle</strong>
+          Trade tomestones at any Itinerant Moogle. The exchange stays open until patch 8.1,
+          so there's no rush to shop.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="phase" id="weeks" data-label="Minimog weeks" aria-labelledby="weeks-h">
+    <div class="section-head">
+      <p class="eyebrow">One token each</p>
+      <h1 id="weeks-h">Minimog challenges, week by week</h1>
+      <p class="lede">Weeks reset on Tuesdays. The tag shows whether each option looks doable
+        at Batty's current progress.</p>
+    </div>
+    <div class="prose">
+      <p class="empty">Many options use the
+        <a href="https://ffxiv.consolegameswiki.com/wiki/The_Bozjan_Southern_Front">Bozjan Southern Front</a>,
+        which needs a level 80 combat job, the 5.3 MSQ finale, and the Bozja intro quests
+        <a href="https://ffxiv.consolegameswiki.com/wiki/The_Bozja_Incident">The Bozja Incident</a>
+        and <a href="https://ffxiv.consolegameswiki.com/wiki/Fire_in_the_Forge">Fire in the Forge</a>.
+        The Bozja Incident requires finishing the Stormblood alliance raids,
+        <a href="https://ffxiv.consolegameswiki.com/wiki/Return_to_Ivalice">Return to Ivalice</a>.</p>
+
+      <!-- data-start/data-end are the week's own boundaries; the script marks
+           whichever contains "now" rather than hardcoding a current week that
+           would go stale the next Tuesday. -->
+      <div class="weeks" id="week-list">
+        <article class="week" data-start="2026-09-09" data-end="2026-09-15">
+          <header><h3>Week 1 · Sep 9–14</h3></header>
+          <div class="opt"><span class="pill maybe">Bozja</span><p>Complete 5 <a href="https://ffxiv.consolegameswiki.com/wiki/Skirmishes">skirmishes</a> in Bozja.</p></div>
+          <div class="opt"><span class="pill yes">Doable</span><p>Catch a <a href="https://ffxiv.consolegameswiki.com/wiki/Caterwauler">Caterwauler</a> yourself as Fisher (level 50★★). Buying one doesn't count. This week has already ended.</p></div>
+        </article>
+
+        <article class="week" data-start="2026-09-15" data-end="2026-09-22">
+          <header><h3>Week 2 · Sep 15–21</h3></header>
+          <div class="opt"><span class="pill maybe">Bozja</span><p>Complete a <a href="https://ffxiv.consolegameswiki.com/wiki/Critical_Engagement">Critical Engagement</a>. Sign up in the Resistance Recruitment window. Spots are limited and chosen randomly, so it can take a few tries.</p></div>
+          <div class="opt"><span class="pill yes">Easiest</span><p>Decipher a <a href="https://ffxiv.consolegameswiki.com/wiki/Treasure_Maps">timeworn map</a> and dig up the treasure. Buy a cheap low-level map on the Market Board, use Decipher on it, go to the marked spot, and use Dig. The map page explains how to unlock Decipher and Dig.</p></div>
+        </article>
+
+        <article class="week" data-start="2026-09-22" data-end="2026-09-29">
+          <header><h3>Week 3 · Sep 22–28</h3></header>
+          <div class="opt"><span class="pill maybe">Bozja</span><p>Complete 5 skirmishes in Bozja.</p></div>
+          <div class="opt"><span class="pill yes">Doable</span><p>Play one match of <a href="https://ffxiv.consolegameswiki.com/wiki/Doman_Mahjong">Doman Mahjong</a> against other players. NPC matches don't count. Check the wiki for the unlock requirement first.</p></div>
+        </article>
+
+        <article class="week" data-start="2026-09-29" data-end="2026-10-06">
+          <header><h3>Week 4 · Sep 29–Oct 5</h3></header>
+          <div class="opt"><span class="pill maybe">Bozja</span><p>Complete a Critical Engagement.</p></div>
+          <div class="opt"><span class="pill yes">Doable</span><p>Beat the <a href="https://ffxiv.consolegameswiki.com/wiki/Idle_Imperial">Idle Imperial</a> at <a href="https://ffxiv.consolegameswiki.com/wiki/Triple_Triad">Triple Triad</a> in <a href="https://ffxiv.consolegameswiki.com/wiki/Azys_Lla">Azys Lla</a> (X 28, Y 31, Gamma Quadrant). You've already done the Heavensward MSQ needed to reach the zone. If you're new to Triple Triad, unlock it at the Gold Saucer and practice before this week.</p></div>
+        </article>
+
+        <article class="week" data-start="2026-10-06" data-end="2026-10-13">
+          <header><h3>Week 5 · Oct 6–12</h3></header>
+          <div class="opt"><span class="pill nope">Hard</span><p>Clear <a href="https://ffxiv.consolegameswiki.com/wiki/Castrum_Lacus_Litore">The Battle of Castrum Lacus Litore</a>. This needs Resistance Rank 10 in Bozja, which takes a long time.</p></div>
+          <div class="opt"><span class="pill yes">Easiest</span><p>Clear any 10-floor set of <a href="https://ffxiv.consolegameswiki.com/wiki/Palace_of_the_Dead">Palace of the Dead</a>. Floors 1–10 are quick and friendly, and the Duty Finder fills the party for you.</p></div>
+        </article>
+
+        <article class="week" data-start="2026-10-13" data-end="2026-10-20">
+          <header><h3>Week 6 · Oct 13–19</h3></header>
+          <div class="opt"><span class="pill nope">Hard</span><p>Complete <a href="https://ffxiv.consolegameswiki.com/wiki/Delubrum_Reginae">Delubrum Reginae</a> (normal; Savage doesn't count). It sits deep in the Bozja storyline.</p></div>
+          <div class="opt"><span class="pill nope">Locked</span><p>Complete <a href="https://ffxiv.consolegameswiki.com/wiki/Mount_Rokkon">Mount Rokkon</a> 4 times. This is an Endwalker variant dungeon, and the wiki marks this option as unconfirmed.</p></div>
+        </article>
+      </div>
+
+      <div class="callout">
+        <span class="tag">Realistic total for Batty: 4 tokens</span>
+        <p>From weeks 2 through 5. If you caught a Caterwauler last week, that's 5. Week 6 is
+          only possible if you push far into Bozja first.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="phase" id="ultimog" data-label="Ultimog" aria-labelledby="ultimog-h">
+    <div class="section-head">
+      <p class="eyebrow">5 tokens, once</p>
+      <h1 id="ultimog-h">Ultimog challenge</h1>
+      <p class="lede">Skip it this half.</p>
+    </div>
+    <div class="prose">
+      <p>Clear <a href="https://ffxiv.consolegameswiki.com/wiki/Aloalo_Island">Aloalo Island</a>
+        6 times for 70 tomestones and 5 tokens. It unlocks with
+        <a href="https://ffxiv.consolegameswiki.com/wiki/Stranger_from_Paradise">Stranger from Paradise</a>
+        after the 6.1 MSQ, so it isn't available until you get through Endwalker.</p>
+      <div class="callout warn">
+        <p>This is the single reason the mount can't be finished this half. Nothing else in
+          the event is blocked for you.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="phase" id="farming" data-label="Farming tomes" aria-labelledby="farming-h">
+    <div class="section-head">
+      <p class="eyebrow">Standard objectives</p>
+      <h1 id="farming-h">Farming tomestones</h1>
+      <p class="lede">What Batty can queue for right now. Marked duties show a moogle icon in
+        the Duty Finder.</p>
+    </div>
+    <div class="prose">
+      <h2>GATEs: the best filler</h2>
+      <p><a href="https://ffxiv.consolegameswiki.com/wiki/GATE">GATEs</a> are minigames at the
+        <a href="https://ffxiv.consolegameswiki.com/wiki/Gold_Saucer">Gold Saucer</a> that start
+        every 20 minutes. Tomestones scale with the MGP you earn.
+        <a href="https://ffxiv.consolegameswiki.com/wiki/The_Slice_Is_Right">The Slice Is Right</a>
+        pays up to 10 and
+        <a href="https://ffxiv.consolegameswiki.com/wiki/Any_Way_the_Wind_Blows">Any Way the Wind Blows</a>
+        up to 8. Even a poor showing pays 1. Stand in the Gold Saucer between duty queues so
+        you're ready when one starts.</p>
+
+      <h2>Ocean fishing: the relaxed option</h2>
+      <p><a href="https://ffxiv.consolegameswiki.com/wiki/Ocean_Fishing">Ocean Fishing</a> is a
+        boat ride leaving from Limsa Lominsa every two hours, and it needs Fisher. Score 2,000
+        points for 5 tomestones, 5,000 for 8, and 8,000 for 10. The wiki page shows the schedule
+        and which bait to bring for each route, and using the right bait makes a big difference.</p>
+
+      <h2>PvP: Hidden Gorge and Frontline</h2>
+      <p>A <a href="https://ffxiv.consolegameswiki.com/wiki/Hidden_Gorge">Hidden Gorge</a> match
+        takes about 10–13 minutes and pays 5 for a win or draw and 3 for a loss. Hidden Gorge
+        pops more often during this event.
+        <a href="https://ffxiv.consolegameswiki.com/wiki/Frontline">Frontline</a> maps pay the
+        same. You'll need <a href="https://ffxiv.consolegameswiki.com/wiki/PvP">PvP</a> unlocked
+        (level 30), and losing still pays, so it's low-pressure.</p>
+
+      <h2>Dungeons, trials and raids you've unlocked</h2>
+      <div class="scroll-x">
+        <table class="data">
+          <thead><tr><th>Duty</th><th>Type</th><th>Tomes</th><th>Why pick it</th></tr></thead>
+          <tbody>
+            <tr><td><a href="https://ffxiv.consolegameswiki.com/wiki/The_Praetorium">The Praetorium</a></td><td>Dungeon 50</td><td>7</td><td>Best dungeon payout, but it's long and full of cutscenes.</td></tr>
+            <tr><td><a href="https://ffxiv.consolegameswiki.com/wiki/Castrum_Meridianum">Castrum Meridianum</a></td><td>Dungeon 50</td><td>4</td><td>Shorter partner to the Praetorium.</td></tr>
+            <tr><td><a href="https://ffxiv.consolegameswiki.com/wiki/Holminster_Switch">Holminster Switch</a></td><td>Dungeon 71</td><td>4</td><td>Fast, and good for levelling a Shadowbringers job.</td></tr>
+            <tr><td><a href="https://ffxiv.consolegameswiki.com/wiki/Dohn_Mheg">Dohn Mheg</a>, <a href="https://ffxiv.consolegameswiki.com/wiki/The_Qitana_Ravel">Qitana Ravel</a>, <a href="https://ffxiv.consolegameswiki.com/wiki/Malikah%27s_Well">Malikah's Well</a>, <a href="https://ffxiv.consolegameswiki.com/wiki/Mt._Gulg">Mt. Gulg</a>, <a href="https://ffxiv.consolegameswiki.com/wiki/Amaurot">Amaurot</a></td><td>Dungeons 73–80</td><td>4</td><td>Normal Shadowbringers dungeons you've already cleared.</td></tr>
+            <tr><td><a href="https://ffxiv.consolegameswiki.com/wiki/The_Fractal_Continuum">Fractal Continuum</a>, <a href="https://ffxiv.consolegameswiki.com/wiki/Saint_Mocianne%27s_Arboretum">Saint Mocianne's</a>, and the Hard versions</td><td>Dungeons 60–70</td><td>4</td><td>Only if you've unlocked them from the Heavensward and Stormblood side content.</td></tr>
+            <tr><td><a href="https://ffxiv.consolegameswiki.com/wiki/Halatali_(Hard)">Halatali (Hard)</a>, <a href="https://ffxiv.consolegameswiki.com/wiki/Brayflox%27s_Longstop_(Hard)">Brayflox's (Hard)</a></td><td>Dungeons 50</td><td>4</td><td>Short A Realm Reborn post-game dungeons.</td></tr>
+            <tr><td><a href="https://ffxiv.consolegameswiki.com/wiki/The_Porta_Decumana">The Porta Decumana</a></td><td>Trial 50</td><td>3</td><td>One quick boss fight.</td></tr>
+            <tr><td>Stormblood trials: <a href="https://ffxiv.consolegameswiki.com/wiki/Kugane_Ohashi">Kugane Ohashi</a>, <a href="https://ffxiv.consolegameswiki.com/wiki/The_Jade_Stoa">Jade Stoa</a>, <a href="https://ffxiv.consolegameswiki.com/wiki/Hells%27_Kier">Hells' Kier</a>, <a href="https://ffxiv.consolegameswiki.com/wiki/The_Wreath_of_Snakes">Wreath of Snakes</a></td><td>Trials 70</td><td>2</td><td>Short, if you've unlocked them.</td></tr>
+            <tr><td><a href="https://ffxiv.consolegameswiki.com/wiki/Eden%27s_Gate:_Resurrection">Eden</a> raids (all 12 normal floors)</td><td>Raids 80</td><td>2</td><td>Only if you've started Eden. Each floor is a single short fight.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="empty">Out of reach for now: the Dawntrail alliance raids (Jeuno, San d'Oria,
+        Windurst), which pay 7–9 each, and The Gilded Araya (level 90).</p>
+
+      <div class="callout warn">
+        <span class="tag">What doesn't count</span>
+        <p><a href="https://ffxiv.consolegameswiki.com/wiki/Duty_Support">Duty Support</a>,
+          <a href="https://ffxiv.consolegameswiki.com/wiki/Trust">Trust</a>, and
+          <a href="https://ffxiv.consolegameswiki.com/wiki/Adventurer_Squadron">adventurer squadrons</a>
+          give no tomestones, so queue through the regular Duty Finder with real players. If you
+          go in as an <a href="https://ffxiv.consolegameswiki.com/wiki/Unrestricted_Party">unrestricted party</a>
+          with friends, turn on Level Sync or you'll get nothing.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="phase" id="routine" data-label="Weekly routine" aria-labelledby="routine-h">
+    <div class="section-head">
+      <p class="eyebrow">Every Tuesday</p>
+      <h1 id="routine-h">A weekly routine</h1>
+      <p class="lede">Four things, in order. These boxes clear themselves each Tuesday.</p>
+    </div>
+    <div class="prose">
+      <ul class="check" id="routine-list">
+        <li><input type="checkbox" id="r1"><label for="r1">Tuesday: open the Mogpendium and read your new Weekly Objective and Minimog options.</label></li>
+        <li><input type="checkbox" id="r2"><label for="r2">Finish the Weekly Objective (20 tomes) and claim it.</label></li>
+        <li><input type="checkbox" id="r3"><label for="r3">Finish the easier Minimog (10 tomes and 1 token) and claim it.</label></li>
+        <li><input type="checkbox" id="r4"><label for="r4">Top up with GATEs, a boat ride, or a few Hidden Gorge matches.</label></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="phase" id="spending" data-label="Spending" aria-labelledby="spending-h">
+    <div class="section-head">
+      <p class="eyebrow">The exchange</p>
+      <h1 id="spending-h">What to spend tomestones on</h1>
+      <p class="lede">The mount is the priority: set aside 100 and wait for the Second Hunt to
+        finish the tokens.</p>
+    </div>
+    <div class="prose">
+      <p>Anything beyond 100 can go to items you'd otherwise have a hard time getting.</p>
+      <div class="scroll-x">
+        <table class="data">
+          <thead><tr><th>Item</th><th>Cost</th><th>Why it's worth it</th></tr></thead>
+          <tbody>
+            <tr><td><a href="https://ffxiv.consolegameswiki.com/wiki/Uolon_Horn">Uolon Horn</a> (mount)</td><td>100 + 10 tokens</td><td>Exclusive to the two Astronomy hunts.</td></tr>
+            <tr><td><a href="https://ffxiv.consolegameswiki.com/wiki/Mameshiba_Neckerchief">Mameshiba Neckerchief</a></td><td>50</td><td>Its original source has been removed.</td></tr>
+            <tr><td><a href="https://ffxiv.consolegameswiki.com/wiki/Ramuh_Crystal">Ramuh Crystal</a></td><td>50</td><td>Otherwise only drops from a Savage raid.</td></tr>
+            <tr><td><a href="https://ffxiv.consolegameswiki.com/wiki/MGP_Platinum_Card">MGP Platinum Card</a></td><td>30</td><td>Good MGP for Gold Saucer shopping.</td></tr>
+            <tr><td><a href="https://ffxiv.consolegameswiki.com/wiki/Magicked_Prism_(Job_Mastery)">Magicked Prism (Job Mastery)</a> ×10</td><td>1</td><td>Very cheap glamour prisms. Buy these with any leftover tomestones.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="empty">The full shop list, including cosmetics, minions and orchestrion rolls, is
+        on the <a href="https://ffxiv.consolegameswiki.com/wiki/Moogle_Treasure_Trove:_The_First_Hunt_for_Astronomy#Irregular_Tomestone_Exchange">wiki</a>.
+        You can also track what you already own at
+        <a href="https://ffxivcollect.com/tomestones">FFXIV Collect</a>.</p>
+
+      <hr>
+      <p class="empty">Sources: the
+        <a href="https://na.finalfantasyxiv.com/lodestone/special/mogmog-collection/202609/lsekubsk45">official Lodestone event page</a>
+        and the
+        <a href="https://ffxiv.consolegameswiki.com/wiki/Moogle_Treasure_Trove:_The_First_Hunt_for_Astronomy">Console Games Wiki</a>,
+        as of September 15, 2026. Challenge details can change, so check the Mogpendium in-game.</p>
+    </div>
+  </section>
+
+  <div class="pager">
+    <button type="button" class="prev"><i class="bi bi-chevron-left" aria-hidden="true"></i> Previous</button>
+    <span class="count" aria-live="polite">—</span>
+    <button type="button" class="next">Next <i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+  </div>
+  <p class="kbd-hint"><kbd>←</kbd> <kbd>→</kbd> to page through</p>
+
+</main>
+
+<script src="../guide.js?v=2"></script>
+<script src="treasure-trove.js?v=1"></script>
+</body>
+</html>
