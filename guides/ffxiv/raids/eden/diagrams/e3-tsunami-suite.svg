@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" width="360" height="250" role="img" aria-labelledby="ti de">
+<title id="ti">The four Tsunami markers</title>
+<desc id="de">Leviathan's Tsunami sequence throws four different head markers out in quick succession:
+  Surging is a knockback on one player, Smothering is a stack, Splashing is a spread, and
+  Swirling is a donut centred on the marked player, safe only next to them.</desc>
+<style>
+  .bg{fill:#0b1d28}
+  .pan{fill:#122a38;stroke:#1d4557;stroke-width:1}
+  .name{font:700 9.5px 'Arial Narrow',Arial,sans-serif;fill:#66edf1;letter-spacing:.1em}
+  .tiny{font:700 8.5px 'Arial Narrow',Arial,sans-serif;fill:#7d94a4;letter-spacing:.08em}
+  .lbl{font:700 9.5px 'Arial Narrow',Arial,sans-serif;fill:#9db2c0;letter-spacing:.08em}
+  .p{stroke:#07151c;stroke-width:1.2;fill:#e8eef2}
+  .me{fill:#f0b429;stroke:#07151c;stroke-width:1.2}
+  .bad{fill:#e2564d;fill-opacity:.26;stroke:#e2564d;stroke-width:1.1}
+  .ok{fill:#9bf00b;fill-opacity:.18;stroke:#9bf00b;stroke-width:1.2}
+  .arrow{stroke:#f0b429;stroke-width:1.6;fill:none;marker-end:url(#a)}
+  @media (prefers-reduced-motion:no-preference){
+    .pulse{animation:pulse 4s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+  }
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+  <path d="M0 0 L10 5 L0 10 z" fill="#f0b429"/></marker></defs>
+<rect class="bg" width="360" height="250" rx="4"/>
+
+<!-- Surging: knockback on the marked player -->
+<rect class="pan" x="14" y="26" width="160" height="94" rx="4"/>
+<text class="name" x="24" y="42">SURGING · KNOCKBACK</text>
+<circle class="me" cx="70" cy="82" r="6"/>
+<g class="pulse"><line class="arrow" x1="80" y1="82" x2="108" y2="82"/>
+<line class="arrow" x1="70" y1="72" x2="70" y2="56"/>
+<line class="arrow" x1="60" y1="82" x2="34" y2="82"/></g>
+<text class="tiny" x="126" y="86">room behind</text>
+
+<!-- Smothering: stack -->
+<rect class="pan" x="186" y="26" width="160" height="94" rx="4"/>
+<text class="name" x="196" y="42">SMOTHERING · STACK</text>
+<circle class="ok pulse" cx="248" cy="82" r="26"/>
+<circle class="me" cx="248" cy="82" r="6"/>
+<circle class="p" cx="236" cy="72" r="4.5"/><circle class="p" cx="260" cy="72" r="4.5"/>
+<circle class="p" cx="236" cy="92" r="4.5"/><circle class="p" cx="260" cy="92" r="4.5"/>
+<text class="tiny" x="288" y="86">everyone in</text>
+
+<!-- Splashing: spread -->
+<rect class="pan" x="14" y="128" width="160" height="94" rx="4"/>
+<text class="name" x="24" y="144">SPLASHING · SPREAD</text>
+<g class="pulse">
+<circle class="bad" cx="52" cy="176" r="17"/><circle class="bad" cx="94" cy="192" r="17"/>
+<circle class="bad" cx="100" cy="158" r="17"/><circle class="bad" cx="142" cy="178" r="17"/></g>
+<circle class="p" cx="52" cy="176" r="4.5"/><circle class="p" cx="94" cy="192" r="4.5"/>
+<circle class="p" cx="100" cy="158" r="4.5"/><circle class="p" cx="142" cy="178" r="4.5"/>
+<text class="tiny" x="24" y="216">no two circles touching</text>
+
+<!-- Swirling: donut -->
+<rect class="pan" x="186" y="128" width="160" height="94" rx="4"/>
+<text class="name" x="196" y="144">SWIRLING · DONUT</text>
+<path class="bad pulse" fill-rule="evenodd" d="M248 146 A32 32 0 1 1 247.9 146 Z M235 178 A13 13 0 1 0 261 178 A13 13 0 1 0 235 178 Z"/>
+<circle class="ok" cx="248" cy="178" r="13"/>
+<circle class="me" cx="248" cy="178" r="6"/>
+<text class="tiny" x="288" y="176">safe is</text>
+<text class="tiny" x="288" y="188">under them</text>
+
+<text class="lbl" x="180" y="240" text-anchor="middle" textLength="347" lengthAdjust="spacingAndGlyphs">Amber is the marked player — the rest of the raid reads the marker off them</text>
+</svg>

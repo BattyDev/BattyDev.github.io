@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" width="360" height="250" role="img" aria-labelledby="ti de">
+<title id="ti">Spell-In-Waiting — what is cast is not what lands</title>
+<desc id="de">Spell-In-Waiting detaches Voidwalker's next spells from their cast bars. A marked spell
+  shows a countdown clock over the target and resolves up to thirty seconds later, on top of
+  whatever the boss is doing by then. Read the clock, not the cast bar.</desc>
+<style>
+  .bg{fill:#0b1d28}
+  .lbl{font:700 9.5px 'Arial Narrow',Arial,sans-serif;fill:#9db2c0;letter-spacing:.08em}
+  .tiny{font:700 8.5px 'Arial Narrow',Arial,sans-serif;fill:#7d94a4;letter-spacing:.1em}
+  .cap{font:700 9.5px 'Arial Narrow',Arial,sans-serif;fill:#66edf1;letter-spacing:.14em}
+  .rowlbl{font:700 9.5px 'Arial Narrow',Arial,sans-serif;letter-spacing:.14em;fill:#66edf1}
+  .chiptx{font:700 9px 'Arial Narrow',Arial,sans-serif;letter-spacing:.06em;fill:#07151c}
+  .axis{stroke:#2b5a6b;stroke-width:1}
+  .lane{fill:#122a38;stroke:#1d4557;stroke-width:1}
+  .link{fill:none;stroke:#f0b429;stroke-width:1.5;stroke-dasharray:4 3}
+  .clock{fill:#f0b429}
+  .clockhand{stroke:#07151c;stroke-width:1.4;stroke-linecap:round}
+  .head{stroke:#66edf1;stroke-width:1.5;stroke-opacity:.9;opacity:0}
+  .sp{fill:#f0843c}.st{fill:#66edf1}.gz{fill:#ff6f82}
+  @media (prefers-reduced-motion:no-preference){
+    .head{animation:sweep 9s linear infinite;opacity:1}
+    .clockhand{animation:tick 3s linear infinite;transform-origin:var(--ox) var(--oy)}
+    @keyframes sweep{0%{transform:translate(0,0)}100%{transform:translate(292px,0)}}
+    @keyframes tick{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  }
+</style>
+<rect class="bg" width="360" height="250" rx="4"/>
+<text class="cap" x="180" y="18" text-anchor="middle" textLength="347" lengthAdjust="spacingAndGlyphs">SPELL-IN-WAITING · READ THE CLOCK, NOT THE CAST BAR</text>
+
+<!-- lane 1: the cast -->
+<rect class="lane" x="36" y="54" width="294" height="34" rx="4"/>
+<text class="rowlbl" x="36" y="48">CAST</text>
+<g><rect class="sp" x="52"  y="60" width="52" height="22" rx="3"/><text class="chiptx" x="78"  y="75" text-anchor="middle">FIRE III</text></g>
+<g><rect class="st" x="124" y="60" width="52" height="22" rx="3"/><text class="chiptx" x="150" y="75" text-anchor="middle" textLength="49" lengthAdjust="spacingAndGlyphs">DARKNESS</text></g>
+<g><rect class="gz" x="196" y="60" width="52" height="22" rx="3"/><text class="chiptx" x="222" y="75" text-anchor="middle" textLength="49" lengthAdjust="spacingAndGlyphs">SHADOWEYE</text></g>
+
+<!-- the delay: each spell slides right before it resolves -->
+<path class="link" d="M78 88  C78 116 138 116 138 154"/>
+<path class="link" d="M150 88 C150 116 210 116 210 154"/>
+<path class="link" d="M222 88 C222 116 282 116 282 154"/>
+<g><circle class="clock" cx="108" cy="121" r="8"/><path class="clockhand" style="--ox:108px;--oy:121px" d="M108 121 V115"/></g>
+<g><circle class="clock" cx="180" cy="121" r="8"/><path class="clockhand" style="--ox:180px;--oy:121px" d="M180 121 V115"/></g>
+<g><circle class="clock" cx="252" cy="121" r="8"/><path class="clockhand" style="--ox:252px;--oy:121px" d="M252 121 V115"/></g>
+
+<!-- lane 2: when it actually lands -->
+<rect class="lane" x="36" y="154" width="294" height="34" rx="4"/>
+<text class="rowlbl" x="36" y="148">LANDS</text>
+<g><rect class="sp" x="112" y="160" width="52" height="22" rx="3"/><text class="chiptx" x="138" y="175" text-anchor="middle">SPREAD</text></g>
+<g><rect class="st" x="184" y="160" width="52" height="22" rx="3"/><text class="chiptx" x="210" y="175" text-anchor="middle">STACK</text></g>
+<g><rect class="gz" x="256" y="160" width="52" height="22" rx="3"/><text class="chiptx" x="282" y="175" text-anchor="middle" textLength="49" lengthAdjust="spacingAndGlyphs">LOOK AWAY</text></g>
+
+<line class="axis" x1="36" y1="204" x2="330" y2="204"/>
+<g class="tiny">
+  <text x="38" y="218">CAST</text>
+  <text x="180" y="218" text-anchor="middle">+15s</text>
+  <text x="330" y="218" text-anchor="end">+30s</text>
+</g>
+<line class="head" x1="38" y1="50" x2="38" y2="200"/>
+
+<text class="lbl" x="180" y="240" text-anchor="middle">A delayed spell lands on top of a live cast — solve both at once</text>
+</svg>

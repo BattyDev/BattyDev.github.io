@@ -1,0 +1,144 @@
+/* BattyDev · Guides — Eden's Gate
+   Everything here is specific to the two Eden's Gate write-ups, so it lives
+   beside them rather than in guides.css. The section skin is still the source
+   of truth for chrome, type and colour; this file only adds the two shapes
+   those guides need and guides.css has no reason to carry:
+
+     .mech     one mechanic — what it is, a picture of it, and a row per role
+     .fig      the animated diagrams in diagrams/
+
+   Loaded after guides.css, so the custom properties declared there are in
+   scope and nothing here needs to restate a colour by value. */
+
+/* ---- role picker (outside the phases, so it follows you through the guide) ---- */
+.rolebar { display: flex; flex-wrap: wrap; gap: 6px; }
+.rolebar button {
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--ink-dim);
+  font: inherit; font-size: 12px;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 5px 12px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 7px;
+  transition: color .15s, background .15s, border-color .15s;
+}
+.rolebar button:hover { color: var(--ink); background: rgba(102,237,241,0.08); }
+.rolebar button:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+.rolebar button[aria-pressed="true"] { color: var(--void); background: var(--aqua); border-color: var(--aqua); font-weight: 700; }
+/* The swatch ties a chip to the dot colour used for that role in every diagram. */
+.rolebar .sw { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.rolebar button[aria-pressed="true"] .sw { box-shadow: 0 0 0 1px var(--void); }
+
+/* ---- one mechanic ---- */
+.mech { border-top: 1px solid var(--rule); padding-top: 16px; margin-top: 18px; }
+.mech:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+.mech > h3 {
+  margin: 0 0 2px;
+  font-size: 17px; font-weight: 700; color: #fff;
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+}
+/* What kind of thing this is, so the shape is readable before the prose is. */
+.mech .kind {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+  background: rgba(102,237,241,0.12); color: var(--aqua);
+}
+.mech .kind.raidwide { background: rgba(240,180,41,0.14); color: var(--amber); }
+.mech .kind.buster   { background: rgba(226,86,77,0.14); color: var(--red); }
+.mech .kind.death    { background: rgba(226,86,77,0.2); color: var(--red); }
+.mech .kind.dodge    { background: rgba(155,240,11,0.12); color: var(--green); }
+.mech > p { margin: 0 0 12px; font-size: 14px; color: var(--ink-dim); max-width: 74ch; }
+.mech > p b, .mech > p strong { color: #fff; }
+
+/* ---- the four role rows ---- */
+.roles { margin: 0; display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; }
+.roles .role { display: grid; grid-template-columns: 116px 1fr; gap: 0; background: var(--panel-solid); }
+.roles dt {
+  padding: 9px 12px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--ink-faint);
+  display: flex; align-items: flex-start; gap: 7px;
+  background: rgba(7,21,28,0.45);
+}
+.roles dt::before { content: ""; width: 8px; height: 8px; border-radius: 50%; flex: none; margin-top: 4px; background: currentColor; }
+.role[data-role="mt"] dt { color: var(--aqua); }
+.role[data-role="ot"] dt { color: var(--aqua-dim); }
+.role[data-role="dps"] dt { color: var(--pom); }
+.role[data-role="healer"] dt { color: var(--green); }
+.roles dd { margin: 0; padding: 9px 13px; font-size: 14px; }
+.roles dd b, .roles dd strong { color: #fff; }
+
+/* Picking a role dims the other three rather than hiding them: the other roles
+   are still the context for yours, and a hidden row is a row you forget exists. */
+.is-filtered .role { opacity: .34; }
+.is-filtered .role.is-mine { opacity: 1; }
+.is-filtered .role.is-mine dd { background: rgba(102,237,241,0.06); }
+
+/* ---- diagrams ---- */
+/* Standalone animated SVGs in diagrams/, shared by both guides and embedded with
+   <object> rather than <img>. An <img>-loaded SVG is rendered in secure static
+   mode: the page's prefers-reduced-motion does not reach it and nothing outside
+   can stop it looping. <object> is a real same-origin document, so each file's
+   own reduced-motion rules apply and edens-gate.js can pause the lot. */
+.fig { margin: 0 0 14px; }
+.fig .diagram {
+  display: block; width: 100%; height: auto; max-width: 460px;
+  aspect-ratio: 360 / 250;
+  border: 1px solid var(--rule); border-radius: var(--radius);
+  background: var(--deep);
+}
+/* Fallback content, shown if the embed cannot load at all. */
+.fig .diagram > .empty { padding: 12px 14px; }
+.fig figcaption { margin-top: 7px; font-size: 13px; color: var(--ink-faint); max-width: 62ch; }
+.fig figcaption b { color: var(--ink-dim); }
+
+/* ---- timeline: the cast order, straight off the fight's own clock ---- */
+.tl { list-style: none; margin: 0 0 14px; padding: 0; font-size: 14px; }
+.tl li { display: grid; grid-template-columns: 54px 1fr; gap: 10px; padding: 5px 0; border-bottom: 1px solid rgba(102,237,241,0.08); }
+.tl li:last-child { border-bottom: 0; }
+.tl .at { color: var(--ink-faint); font-size: 12px; font-variant-numeric: tabular-nums; padding-top: 2px; }
+.tl b { color: #fff; }
+.tl .note { display: block; color: var(--ink-faint); font-size: 13px; }
+
+/* ---- motion toggle ---- */
+/* WCAG 2.2.2: the diagrams loop for longer than five seconds, so there has to be
+   a way to stop them that does not involve changing an OS setting. */
+.motion { margin-top: 10px; }
+.motion button {
+  background: transparent; border: 1px solid var(--rule); border-radius: var(--radius);
+  color: var(--ink-dim); font: inherit; font-size: 12px;
+  padding: 4px 11px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 7px;
+}
+.motion button:hover { color: var(--ink); border-color: var(--aqua-dim); }
+.motion button:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+.motion button[aria-pressed="true"] { color: var(--amber); border-color: rgba(240,180,41,0.45); }
+
+/* ---- the solo verdict strip ---- */
+.verdicts { display: grid; gap: 8px; margin: 0 0 14px; }
+.verdict { display: grid; grid-template-columns: 74px 1fr; gap: 12px; align-items: start; background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius); padding: 10px 13px; }
+.verdict .who { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--aqua); }
+.verdict p { margin: 0; font-size: 14px; color: var(--ink-dim); }
+.verdict p b { color: #fff; }
+
+@media (max-width: 620px) {
+  .roles .role { grid-template-columns: 1fr; }
+  .roles dt { padding-bottom: 0; background: transparent; }
+  .roles dd { padding-top: 4px; }
+  .verdict { grid-template-columns: 1fr; gap: 3px; }
+  .tl li { grid-template-columns: 46px 1fr; gap: 8px; }
+}
+
+@media print {
+  .rolebar, .motion { display: none !important; }
+  .is-filtered .role { opacity: 1; }
+  .is-filtered .role.is-mine dd { background: none; }
+  .roles { background: none; border-color: #999; }
+  .roles .role { background: none; border-bottom: 1px solid #ccc; }
+  .roles dt { background: none; color: #000; }
+  .mech .kind { border: 1px solid #999; background: none; color: #000; }
+  .fig .diagram { border-color: #999; }
+  .verdict, .mech { border-color: #999; background: none; }
+}

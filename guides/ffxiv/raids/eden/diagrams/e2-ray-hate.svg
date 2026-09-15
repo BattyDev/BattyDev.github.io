@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" width="360" height="250" role="img" aria-labelledby="ti de">
+<title id="ti">Empty Hate into Punishing Ray</title>
+<desc id="de">The Hand of Erebos knocks the party straight away from it with Empty Hate while five
+  Punishing Ray puddles wait on the floor. Survive the push first by starting close to the Hand so it
+  carries you across the platform rather than off it, then walk one player into each puddle — an unsoaked puddle hurts the whole party.</desc>
+<style>
+  .bg{fill:#0b1d28}
+  .floor{fill:#122a38;stroke:#2b5a6b;stroke-width:1.5}
+  .lbl{font:700 11px 'Arial Narrow',Arial,sans-serif;fill:#9db2c0;letter-spacing:.08em}
+  .tiny{font:700 9px 'Arial Narrow',Arial,sans-serif;fill:#7d94a4;letter-spacing:.1em}
+  .cap{font:700 10px 'Arial Narrow',Arial,sans-serif;fill:#66edf1;letter-spacing:.14em}
+  .hand{fill:#c9a6ff;fill-opacity:.9;stroke:#07151c;stroke-width:1.2}
+  .p{stroke:#07151c;stroke-width:1.3}
+  .mt{fill:#66edf1}.ot{fill:#3aa8ac}.hl{fill:#9bf00b}.dp{fill:#ff6f82}
+  .pool{fill:#9bf00b;fill-opacity:.16;stroke:#9bf00b;stroke-width:1.3;stroke-dasharray:3 3}
+  .arrow{stroke:#f0b429;stroke-width:2;fill:none;marker-end:url(#a)}
+  .edge{fill:none;stroke:#e2564d;stroke-width:2;stroke-dasharray:5 4;stroke-opacity:.7}
+  .cap1,.cap2{opacity:0}
+  .pushed{transform:translate(var(--fx),var(--fy))}
+  @media (prefers-reduced-motion:no-preference){
+    .capstatic{opacity:0}
+    .pushed{animation:push 9s ease-in-out infinite}
+    .arrow{animation:arr 9s linear infinite}
+    .cap1{animation:c1 9s linear infinite}
+    .cap2{animation:c2 9s linear infinite}
+    @keyframes push{
+      0%,16%{transform:translate(0,0)}
+      30%,40%{transform:translate(var(--kx),0)}
+      62%,100%{transform:translate(var(--fx),var(--fy))}
+    }
+    @keyframes arr{0%,14%{opacity:0}22%,42%{opacity:1}52%,100%{opacity:0}}
+    @keyframes c1{0%,14%{opacity:1}44%,100%{opacity:0}}
+    @keyframes c2{0%,50%{opacity:0}60%,100%{opacity:1}}
+  }
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+  <path d="M0 0 L10 5 L0 10 z" fill="#f0b429"/></marker></defs>
+
+<rect class="bg" width="360" height="250" rx="4"/>
+<circle class="floor" cx="180" cy="126" r="100"/>
+<circle class="edge" cx="180" cy="126" r="100"/>
+
+<g class="hand"><rect x="48" y="108" width="26" height="36" rx="6"/></g>
+<text class="tiny" x="61" y="158" text-anchor="middle">HAND OF</text>
+<text class="tiny" x="61" y="168" text-anchor="middle">EREBOS</text>
+
+<line class="arrow" x1="132" y1="102" x2="176" y2="102"/>
+<line class="arrow" x1="132" y1="126" x2="176" y2="126"/>
+<line class="arrow" x1="132" y1="150" x2="176" y2="150"/>
+
+<!-- five puddles, on the far side of the push -->
+<circle class="pool" cx="228" cy="72"  r="16"/>
+<circle class="pool" cx="256" cy="112" r="16"/>
+<circle class="pool" cx="250" cy="160" r="16"/>
+<circle class="pool" cx="208" cy="188" r="16"/>
+<circle class="pool" cx="196" cy="58"  r="16"/>
+
+<g class="pushed" style="--kx:38px;--fx:80px;--fy:-54px"><circle class="p mt" cx="148" cy="112" r="5.5"/></g>
+<g class="pushed" style="--kx:38px;--fx:108px;--fy:-14px"><circle class="p ot" cx="148" cy="126" r="5.5"/></g>
+<g class="pushed" style="--kx:38px;--fx:102px;--fy:34px"><circle class="p hl" cx="148" cy="140" r="5.5"/></g>
+<g class="pushed" style="--kx:38px;--fx:60px;--fy:62px"><circle class="p dp" cx="148" cy="154" r="5.5"/></g>
+<g class="pushed" style="--kx:38px;--fx:48px;--fy:-68px"><circle class="p dp" cx="148" cy="98"  r="5.5"/></g>
+
+<text class="cap capstatic" x="180" y="16" text-anchor="middle">SURVIVE THE PUSH, THEN SOAK ALL FIVE</text>
+<text class="cap cap1" x="180" y="16" text-anchor="middle">1 · STAND NEAR THE HAND, EAT THE PUSH</text>
+<text class="cap cap2" x="180" y="16" text-anchor="middle">2 · ONE BODY IN EVERY PUDDLE</text>
+<text class="lbl" x="180" y="242" text-anchor="middle" textLength="347" lengthAdjust="spacingAndGlyphs">Red ring is a lethal fall — never take Empty Hate near the far edge</text>
+</svg>

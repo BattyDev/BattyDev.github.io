@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" width="360" height="250" role="img" aria-labelledby="ti de">
+<title id="ti">Undersea Quake — two casts, opposite answers</title>
+<desc id="de">Leviathan has two Undersea Quake casts that look alike and mean the opposite. One
+  destroys the outer ring, so the middle is safe. The other destroys the middle, leaving only
+  the east and west shelves, and the party cannot cross between them afterwards.</desc>
+<style>
+  .bg{fill:#0b1d28}
+  .floor{fill:#122a38;stroke:#2b5a6b;stroke-width:1.5}
+  .lbl{font:700 9.5px 'Arial Narrow',Arial,sans-serif;fill:#9db2c0;letter-spacing:.08em}
+  .tiny{font:700 8.5px 'Arial Narrow',Arial,sans-serif;fill:#7d94a4;letter-spacing:.1em}
+  .cap{font:700 9.5px 'Arial Narrow',Arial,sans-serif;fill:#66edf1;letter-spacing:.1em}
+  .p{stroke:#07151c;stroke-width:1.3}
+  .mt{fill:#66edf1}.ot{fill:#3aa8ac}.hl{fill:#9bf00b}.dp{fill:#ff6f82}
+  .gone{fill:#e2564d;fill-opacity:.24;stroke:#e2564d;stroke-width:1.2;stroke-dasharray:4 3}
+  .ok{fill:#9bf00b;fill-opacity:.16;stroke:#9bf00b;stroke-width:1.3}
+  @media (prefers-reduced-motion:no-preference){
+    .gone{animation:crumble 6s ease-in-out infinite}
+    @keyframes crumble{0%,26%{opacity:.35}46%,100%{opacity:1}}
+  }
+</style>
+<rect class="bg" width="360" height="250" rx="4"/>
+
+<!-- outer ring falls away -->
+<text class="cap" x="96" y="26" text-anchor="middle">OUTSIDE FALLS AWAY</text>
+<rect class="floor" x="36" y="40" width="120" height="120" rx="6"/>
+<path class="gone" fill-rule="evenodd" d="M36 40 h120 v120 H36 Z M62 66 h68 v68 H62 Z"/>
+<rect class="ok" x="62" y="66" width="68" height="68" rx="3"/>
+<text class="tiny" x="96" y="152" text-anchor="middle">GET MIDDLE</text>
+<circle class="p mt" cx="82" cy="86" r="4.5"/><circle class="p ot" cx="110" cy="86" r="4.5"/>
+<circle class="p hl" cx="82" cy="116" r="4.5"/><circle class="p hl" cx="110" cy="116" r="4.5"/>
+<circle class="p dp" cx="96" cy="76" r="4.5"/><circle class="p dp" cx="96" cy="126" r="4.5"/>
+<circle class="p dp" cx="70" cy="101" r="4.5"/><circle class="p dp" cx="122" cy="101" r="4.5"/>
+<text class="tiny" x="96" y="180" text-anchor="middle">PARTY STAYS WHOLE</text>
+
+<!-- middle falls away -->
+<text class="cap" x="264" y="26" text-anchor="middle">MIDDLE FALLS AWAY</text>
+<rect class="floor" x="204" y="40" width="120" height="120" rx="6"/>
+<rect class="gone" x="234" y="40" width="60" height="120"/>
+<rect class="ok" x="204" y="40" width="30" height="120" rx="6"/>
+<rect class="ok" x="294" y="40" width="30" height="120" rx="6"/>
+<text class="tiny" x="264" y="104" text-anchor="middle">GO SIDES</text>
+<circle class="p mt" cx="219" cy="72" r="4.5"/><circle class="p hl" cx="219" cy="92" r="4.5"/>
+<circle class="p dp" cx="219" cy="112" r="4.5"/><circle class="p dp" cx="219" cy="132" r="4.5"/>
+<circle class="p ot" cx="309" cy="72" r="4.5"/><circle class="p hl" cx="309" cy="92" r="4.5"/>
+<circle class="p dp" cx="309" cy="112" r="4.5"/><circle class="p dp" cx="309" cy="132" r="4.5"/>
+<text class="tiny" x="264" y="180" text-anchor="middle" textLength="159" lengthAdjust="spacingAndGlyphs">ONE TANK, ONE HEALER EACH SIDE</text>
+
+<text class="lbl" x="180" y="208" text-anchor="middle" textLength="347" lengthAdjust="spacingAndGlyphs">You cannot cross once the middle is gone — split before the cast finishes,</text>
+<text class="lbl" x="180" y="224" text-anchor="middle">not after. A healer stranded alone is a side that dies.</text>
+</svg>

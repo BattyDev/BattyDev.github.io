@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07151c">
+<title>Eden's Gate (Normal): Solo Unsynced · BattyDev Guides</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;700;900&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="../../../guides.css?v=2" rel="stylesheet">
+<link href="edens-gate.css?v=1" rel="stylesheet">
+</head>
+<body>
+
+<div class="wallpaper" aria-hidden="true"></div>
+
+<header class="home-bar">
+  <a class="account" href="./" aria-label="Return to Eden guides">
+    <span class="gamerpic">B</span>
+    <span><b>Eden's Gate</b><small>Solo unsynced · E1–E4</small></span>
+  </a>
+  <nav class="system-icons" aria-label="Sections">
+    <a href="../../../" aria-label="All topics"><i class="bi bi-journals"></i></a>
+    <a href="../../" aria-label="FFXIV guides"><i class="bi bi-shield-shaded"></i></a>
+    <a href="../" aria-label="Raid guides"><i class="bi bi-diagram-3-fill"></i></a>
+  </nav>
+  <div class="system-status">
+    <span class="stamp">Unsynced</span>
+  </div>
+</header>
+
+<main data-guide="ffxiv-edens-gate-solo">
+
+  <div class="section-head">
+    <p class="crumbs"><a href="../../../">Guides</a><span class="sep">/</span><a href="../../">FFXIV</a><span class="sep">/</span><a href="../">Raids</a><span class="sep">/</span><a href="./">Eden</a><span class="sep">/</span>Solo unsynced</p>
+  </div>
+
+  <!-- Same widget as the party guide, different roles: alone, the question is
+       not which of eight jobs you are, it is what your one job can cover for. -->
+  <section class="tracker" aria-labelledby="rolebar-h">
+    <h2 id="rolebar-h">Soloing as</h2>
+    <p class="hint">The mechanics are the same whoever you bring, but the margin is not. Pick
+      what you are going in on and the relevant row is highlighted the rest of the way through.</p>
+    <div class="rolebar" data-rolebar="edens-gate-solo" role="group" aria-labelledby="rolebar-h">
+      <button type="button" data-role="all" aria-pressed="true">Everything</button>
+      <button type="button" data-role="mt" aria-pressed="false"><span class="sw" style="background:var(--aqua)"></span>Tank</button>
+      <button type="button" data-role="healer" aria-pressed="false"><span class="sw" style="background:var(--green)"></span>Healer</button>
+      <button type="button" data-role="dps" aria-pressed="false"><span class="sw" style="background:var(--pom)"></span>DPS</button>
+    </div>
+    <p class="motion">
+      <button type="button" id="motion-toggle" aria-pressed="false">
+        <i class="bi bi-pause-fill" aria-hidden="true"></i><span>Pause diagram animations</span>
+      </button>
+    </p>
+  </section>
+
+  <!-- Diagrams are <object> rather than <img>. An <img>-loaded SVG renders in
+       secure static mode: the page's prefers-reduced-motion never reaches it and
+       nothing outside can stop it looping, which fails WCAG 2.2.2. <object>
+       embeds a real same-origin document, so each diagram's own reduced-motion
+       rules apply and the control below can pause every one of them.
+
+       An embed inside a display:none .phase does not load until the pager shows
+       that phase, which is why edens-gate.js re-applies a stored "paused" choice
+       on each embed's own load event rather than once at startup. .diagram
+       carries an aspect-ratio so the arriving diagram does not shift the page. -->
+
+  <nav class="rail" id="rail" aria-label="Sections"></nav>
+
+  <!-- ============================= OVERVIEW ============================= -->
+  <section class="phase" id="overview" data-label="Overview" aria-labelledby="overview-h">
+    <div class="section-head">
+      <p class="eyebrow">Eden's Gate · alone, at current level</p>
+      <h1 id="overview-h">What unsynced actually changes</h1>
+      <p class="lede">Every number in the tier stops mattering. Almost nothing else does. This
+        guide is about the handful of mechanics that do not care how strong you are — for the
+        eight-player version, read the <a href="edens-gate-full-party.html">full party
+        guide</a>.</p>
+    </div>
+    <div class="prose">
+
+      <div class="callout key">
+        <span class="tag">The whole thing in one line</span>
+        <p>Unsynced deletes the damage, the healing and the damage check. It does not delete
+          <b>gravity</b>. Every fight you can lose solo, you lose by being pushed off an edge or
+          standing on a tile that stopped existing.</p>
+      </div>
+
+      <h2>Getting in</h2>
+      <ol class="steps">
+        <li><strong>Have the duty unlocked</strong>
+          Unsynced does not skip the unlock. Each of the four fights has its own quest in the
+          Eden chain, starting from <b>In the Middle of Nowhere</b> in the Crystarium and
+          <b>Deploy the Core</b> from Ryne in the Empty.</li>
+        <li><strong>Be in a party of one</strong>
+          Duty Finder, on your own or as the leader of a premade. You are not matchmaking —
+          this registers as a private party and will not fill.</li>
+        <li><strong>Tick Unrestricted Party</strong>
+          It is in the duty's settings alongside the level sync and item level options. Leave
+          the rest of the boxes as they are.</li>
+        <li><strong>Join</strong>
+          Level sync and item level sync are lifted, and the party size requirement with them.</li>
+      </ol>
+
+      <h2>What is still true</h2>
+      <ul>
+        <li><b>Reward eligibility is unchanged.</b> One token per fight per week, reset Tuesday,
+          traded at Yhal Yal in Eulmore (X:10.0 Y:11.5) or Ghul Gul in Amh Araeng (X:26.6 Y:16.4).
+          Entering as many times as you like has never been the restriction.</li>
+        <li><b>Nobody is going to raise you.</b> A death is a run. Falling off in E3 or E4 is a
+          death, not a knock and a teleport.</li>
+        <li><b>The bosses still have raid health bars.</b> Expect several minutes each. All four
+          fights loop their mechanics, so you will see the full rotation more than once — the
+          later loops are the same mechanics arriving closer together, not new ones.</li>
+      </ul>
+
+      <h2>The four things that still kill you</h2>
+      <div class="scroll-x">
+        <table class="data">
+          <thead><tr><th>Fight</th><th>What to actually watch for</th><th>Risk</th></tr></thead>
+          <tbody>
+            <tr><td>E1 · Eden Prime</td><td>The platform edge during Pure Light and Delta Attack</td><td>Low</td></tr>
+            <tr><td>E2 · Voidwalker</td><td>Empty Hate pushing you into the void; the five Punishing Ray puddles you cannot all soak</td><td>Low</td></tr>
+            <tr><td>E3 · Leviathan</td><td>Tidal Wave knocking you off, and Undersea Quake removing the ground you are on</td><td class="empty">Highest</td></tr>
+            <tr><td>E4 · Titan</td><td>Geocrush and Fault Zone knockbacks, over a floor that keeps shrinking</td><td>Moderate</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="empty">Diagram colours match the party guide: red is ground that hurts, green is
+        ground that does not, amber is what you are meant to be looking at. Where a mechanic is
+        simply irrelevant alone, this guide says so rather than restating it.</p>
+    </div>
+  </section>
+
+  <!-- ============================== SETUP ============================== -->
+  <section class="phase" id="setup" data-label="What to bring" aria-labelledby="setup-h">
+    <div class="section-head">
+      <p class="eyebrow">Before you queue</p>
+      <h1 id="setup-h">What to bring, and what it buys you</h1>
+      <p class="lede">There is no wrong job for this. There are jobs that make the four
+        dangerous mechanics into non-events.</p>
+    </div>
+    <div class="prose">
+
+      <div class="callout key">
+        <span class="tag">One button matters more than your job</span>
+        <p><b>Arm's Length</b> (tanks and melee) or <b>Surecast</b> (casters) makes you immune to
+          every knockback in the tier. That is Empty Hate in E2, Tidal Wave in E3, and Geocrush
+          and Fault Zone in E4 — four of the five ways to die solo, on one off-global-cooldown
+          button. Healers have Surecast; physical ranged have Arm's Length.</p>
+      </div>
+
+      <div class="verdicts">
+        <div class="verdict">
+          <span class="who">Tank</span>
+          <p><b>The comfortable choice.</b> The health pool absorbs every mistake, self-healing
+            covers the chip damage, and Arm's Length is already on your bar. Slowest kill times
+            of the three, which in a fight with no enrage is not a cost.</p>
+        </div>
+        <div class="verdict">
+          <span class="who">Healer</span>
+          <p><b>The safe choice.</b> Nothing out-damages your own healing at this level gap, and
+            Surecast covers the knockbacks. Kill times are long — expect the mechanic loops to
+            come around several times per fight.</p>
+        </div>
+        <div class="verdict">
+          <span class="who">DPS</span>
+          <p><b>The fast choice.</b> Fewest loops, least margin. Melee and physical ranged have
+            Arm's Length; casters have Surecast. You still have more health than anything in
+            this tier can spend, but you are the one who dies to two mistakes in a row.</p>
+        </div>
+      </div>
+
+      <div class="mech">
+        <h3>What to actually put on the bar <span class="kind">All four fights</span></h3>
+        <p>Nothing exotic. The point is that the buttons that matter are the utility ones, not
+          the rotation.</p>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Tank</dt><dd><b>Arm's Length</b> for the knockbacks, <b>Sprint</b> for Undersea Quake, and an invulnerability you will almost certainly not need. Skip the tank stance question entirely — nothing else is generating enmity.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd><b>Surecast</b> and <b>Sprint</b>. Bring your damage-over-time and your filler; you will be pressing them for a long time and healing yourself roughly never.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd><b>Arm's Length</b> or <b>Surecast</b> depending on your job, plus <b>Sprint</b>. Second Wind or its equivalent covers everything the tier will do to you in one fight.</dd></div>
+        </dl>
+      </div>
+
+      <div class="callout warn">
+        <span class="tag">Worth knowing</span>
+        <p>There is no Duty Support or Trust for raids — Unrestricted Party is the only way in
+          alone, and it means genuinely alone. No NPC is going to soak a puddle for you.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================================ E1 =============================== -->
+  <section class="phase" id="e1" data-label="E1 · Eden Prime" aria-labelledby="e1-h">
+    <div class="section-head">
+      <p class="eyebrow">Eden's Gate: Resurrection</p>
+      <h1 id="e1-h">E1 · Eden Prime</h1>
+      <p class="lede">The easiest of the four alone. Its one damage check evaporates, and
+        everything else is a boss standing still on a square platform.</p>
+    </div>
+    <div class="prose">
+
+      <div class="callout">
+        <span class="tag">What changes</span>
+        <p><b>Delta Attack stops being a mechanic.</b> Eight people have to share four corners;
+          you have one Fire III circle and four empty corners to put it in. The add phase's
+          Unto Dust enrage is a minute-long window to kill two adds that will take you seconds.</p>
+      </div>
+
+      <div class="mech">
+        <h3>Delta Attack <span class="kind dodge">Trivial alone</span></h3>
+        <p>Blizzard III is a circle on the boss, Thunder III is a cross through the middle,
+          Fire III is a spread on you. Walk to a corner. That is the entire mechanic when there
+          is nobody to overlap with.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e1-delta-attack.svg"
+              width="360" height="250" role="img" aria-label="Delta Attack: a circle on the boss, a cross through the centre of the platform, and a spread marker on every player, leaving the four corner quadrants safe.">
+        <p class="empty">Delta Attack: a circle on the boss, a cross through the centre of the platform, and a spread marker on every player, leaving the four corner quadrants safe.</p>
+      </object>
+          <figcaption><b>Any corner.</b> The picture shows the eight-player version — solo, you
+            need one of those four boxes and nobody is contesting it.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Tank</dt><dd>Leave the boss where it is and walk out. Dragging it moves the Blizzard circle with it, which is the only way to make this hard.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Free casting time in the corner. Nothing here threatens you.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Melee lose a few seconds of uptime. Ranged lose none — the corners are in range of a boss parked in the middle.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Pure Light <span class="kind death">Still means it</span></h3>
+        <p>The one cast in E1 with an answer you cannot brute-force: it covers the platform
+          except a wedge behind the boss, and running away from it means running off the edge.
+          The damage will not kill you at level; the edge will.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e1-pure-light.svg"
+              width="360" height="250" role="img" aria-label="Pure Light fills the whole platform except a wedge directly behind Eden Prime; the safe answer is to walk around the boss rather than run outward.">
+        <p class="empty">Pure Light fills the whole platform except a wedge directly behind Eden Prime; the safe answer is to walk around the boss rather than run outward.</p>
+      </object>
+          <figcaption><b>Walk around the boss.</b> Ten seconds of cast — there is no need to
+            hurry, and hurrying is what puts you over the side.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Tank</dt><dd>You control the facing, so you already know where behind is. Turn the boss towards the middle of the platform before the cast and step round.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Move first, cast second. It is a long cast and you will not miss much.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Ranged: resist the instinct to back up. Distance is not the answer to this one and the platform is smaller than it looks.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Vice of Apathy, Eden's Flare, the Guardians <span class="kind">Everything else</span></h3>
+        <p>Drop your puddle somewhere you are not going to stand and get back inside the boss's
+          hitbox for Eden's Flare — the shape still matters, the damage does not. The Guardians
+          land, cleave at you, and die. Eternal Breath is a very large raidwide at level 80 and
+          an inconvenience at yours.</p>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Tank</dt><dd>Grab both Guardians at once; there is nobody else for them to walk to. They will be dead before Mana Burst matters.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>The one place to keep an eye on your own bar is the Guardians' Mana Burst arriving on top of Eden's Gravity. "Keep an eye on" rather than "plan for".</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Burst the adds so the phase ends early — it is the only part of the fight that costs you real time rather than boss health.</dd></div>
+        </dl>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================================ E2 =============================== -->
+  <section class="phase" id="e2" data-label="E2 · Voidwalker" aria-labelledby="e2-h">
+    <div class="section-head">
+      <p class="eyebrow">Eden's Gate: Descent</p>
+      <h1 id="e2-h">E2 · Voidwalker</h1>
+      <p class="lede">Spell-In-Waiting is much easier alone — every delayed marker is yours, so
+        there is never a question of whose. Two things still want attention.</p>
+    </div>
+    <div class="prose">
+
+      <div class="mech">
+        <h3>Punishing Ray <span class="kind death">The one you cannot solve</span></h3>
+        <p>Five puddles appear and each wants a body in it. Any left empty deal damage and apply
+          <b>Diabolic Curse</b>, a damage-taken increase. Alone you can stand in exactly one of
+          them, so <b>plan to eat this</b> — it is the only mechanic in the tier that a single
+          player is structurally unable to complete.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e2-ray-hate.svg"
+              width="360" height="250" role="img" aria-label="Five Punishing Ray puddles on the arena floor with the Hand of Erebos knocking players away from it; solo, only one puddle can be soaked.">
+        <p class="empty">Five Punishing Ray puddles on the arena floor with the Hand of Erebos knocking players away from it; solo, only one puddle can be soaked.</p>
+      </object>
+          <figcaption><b>Soak one, take the rest.</b> Survivable at level — but do not walk into
+            it already hurt, and do not let it stack with a knockback you mistimed.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Tank</dt><dd>Barely register it. Stand in the nearest puddle, take the other four, carry on.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>This is your cue to heal yourself — the only one in the fight. The Curse stacks make the next Entropy noticeably larger.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Soak the closest one anyway; one fewer unsoaked puddle is one fewer stack. Use a personal mitigation if the timing lines up with Entropy.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Empty Hate <span class="kind death">The void is still the void</span></h3>
+        <p>The Hand of Erebos pushes you directly away from it and the arena has no walls. This
+          is the one thing in E2 that ends a run.</p>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Tank</dt><dd>Arm's Length and forget it. Otherwise fight the boss from the Hand's side of the arena so the push has floor to cross.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Surecast. It is off the global cooldown and it turns the mechanic off entirely.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Ranged are the ones who die here, because you naturally stand at the far edge. Move in during the cast even if you are using the immunity.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Spell-In-Waiting, Doomvoid, Shadoweye <span class="kind dodge">Simpler alone</span></h3>
+        <p>The clocks still run, but every clock is yours, so there is no coordination left in
+          the mechanic — read your own icon and solve it. Doomvoid Guillotine means the sides;
+          Doomvoid Slicer means under the boss. Shadoweye marks a player and petrifies anyone
+          facing them, and alone the only player it can mark is you — turn the camera away out of
+          habit, it costs nothing.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e2-doomvoid.svg"
+              width="360" height="250" role="img" aria-label="Doomvoid Guillotine is a band across the arena with the sides safe; Doomvoid Slicer covers everything except a circle under the boss.">
+        <p class="empty">Doomvoid Guillotine is a band across the arena with the sides safe; Doomvoid Slicer covers everything except a circle under the boss.</p>
+      </object>
+          <figcaption><b>Guillotine — sides. Slicer — under.</b> These two arrive delayed later
+            on, which is the only part of Spell-In-Waiting that can still catch you out.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Tank</dt><dd>You are standing under the boss already, so Slicer is free. Guillotine is the one that moves you.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Nothing to manage. Watch your own clock icons and keep casting.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Melee get almost full uptime in this fight. Ranged should stay mid-range rather than max — every knockback in here is measured from the middle.</dd></div>
+        </dl>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================================ E3 =============================== -->
+  <section class="phase" id="e3" data-label="E3 · Leviathan" aria-labelledby="e3-h">
+    <div class="section-head">
+      <p class="eyebrow">Eden's Gate: Inundation</p>
+      <h1 id="e3-h">E3 · Leviathan</h1>
+      <p class="lede">The one to be careful in. Nothing here can out-damage you, and two things
+        here can end the run in a second and a half.</p>
+    </div>
+    <div class="prose">
+
+      <div class="callout warn">
+        <span class="tag">The hardest fight in the tier to solo</span>
+        <p>Not because of anything Leviathan does to your health bar. Because it is the only
+          fight that combines <b>a platform with no walls</b>, <b>a knockback that clears the
+          whole platform</b>, and <b>a cast that deletes the floor you are standing on</b>.</p>
+      </div>
+
+      <div class="mech">
+        <h3>Tidal Wave <span class="kind death">Number one cause of death</span></h3>
+        <p>Water rises on one edge and pushes you directly away from it, far enough to clear the
+          entire platform. Solo there is nobody to raise you.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e3-tidal-wave.svg"
+              width="360" height="250" role="img" aria-label="Tidal Wave rises along one edge of the platform and pushes everyone away from it; walking towards the wave first means the push lands you on the floor.">
+        <p class="empty">Tidal Wave rises along one edge of the platform and pushes everyone away from it; walking towards the wave first means the push lands you on the floor.</p>
+      </object>
+          <figcaption><b>Press the immunity.</b> If you have not got one up, walk towards the
+            water during the cast so the push carries you across the floor instead of past it.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Tank</dt><dd>Arm's Length. Its cooldown is comfortably shorter than the gap between Tidal Waves, so there is no reason to ever take one.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Surecast, every time. Treat it as part of the cast bar rather than a reaction.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Same button, whichever you have. If it is on cooldown, stop attacking and walk into the wave — the uptime is not worth the run.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Undersea Quake <span class="kind death">Two casts, opposite answers</span></h3>
+        <p>One version destroys the outer ring and leaves the middle. The other destroys the
+          middle and leaves the east and west shelves. Alone, the party-splitting problem
+          disappears — but the floor disappearing does not, and guessing wrong is fatal rather
+          than expensive.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e3-undersea-quake.svg"
+              width="360" height="250" role="img" aria-label="Two versions of Undersea Quake: one removes the outer ring leaving a safe middle, the other removes the middle leaving east and west shelves.">
+        <p class="empty">Two versions of Undersea Quake: one removes the outer ring leaving a safe middle, the other removes the middle leaving east and west shelves.</p>
+      </object>
+          <figcaption><b>Solo, just pick a shelf.</b> The reason this is on the list is that the
+            two casts look alike — watch the animation, not the name.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Tank</dt><dd>If the boss ends up on the far shelf, you simply lose it for a while. That is fine — nothing is going to wander off and hit anyone.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Take the shelf the boss is on if you can, so your damage keeps landing. Being stranded is a time cost and nothing worse.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Melee want the boss's shelf. Ranged do not care — you can keep hitting across the gap.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Temporary Current, the Tsunami markers, Maelstrom <span class="kind dodge">Dodge and carry on</span></h3>
+        <p>Temporary Current is a wide line from a corner — take a different corner. The Tsunami
+          markers all land on you alone: the stack becomes a solo hit, the spread becomes a
+          non-event, and only <b>Swirling Tsunami</b>, the donut, has an answer worth knowing,
+          because safe is the ring's inside rather than away from it. Maelstrom is puddles and
+          two dives, both of which are simply dodged.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e3-tsunami-suite.svg"
+              width="360" height="250" role="img" aria-label="Four Tsunami markers: Surging is a knockback, Smothering is a stack, Splashing is a spread, and Swirling is a donut safe only at its centre.">
+        <p class="empty">Four Tsunami markers: Surging is a knockback, Smothering is a stack, Splashing is a spread, and Swirling is a donut safe only at its centre.</p>
+      </object>
+          <figcaption><b>Surging is the one to watch.</b> It is another knockback, and it lands
+            in the middle of a sequence where you are already moving.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Tank</dt><dd>Keep the boss near the middle of the floor for your own sake — every knockback in this fight is measured from where you are standing.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Smothering alone hits harder than it does in a party, since nothing is splitting it. It is still not enough to matter.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Maelstrom is real downtime. Let cooldowns come back rather than dumping them into an untargetable boss.</dd></div>
+        </dl>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================================ E4 =============================== -->
+  <section class="phase" id="e4" data-label="E4 · Titan" aria-labelledby="e4-h">
+    <div class="section-head">
+      <p class="eyebrow">Eden's Gate: Sepulture</p>
+      <h1 id="e4-h">E4 · Titan</h1>
+      <p class="lede">A shrinking floor and two different ways of being thrown off it. Bring the
+        knockback immunity and this becomes a long, safe fight.</p>
+    </div>
+    <div class="prose">
+
+      <div class="mech">
+        <h3>Geocrush <span class="kind death">Hug the landing</span></h3>
+        <p>Arrows mark a tile, Titan lands on it, everything is pushed away. The distance is
+          fixed, so the only thing you control is how much floor is behind you.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e4-geocrush.svg"
+              width="360" height="250" role="img" aria-label="Titan's Geocrush target tile with outward arrows; standing on the inner edge of that tile lands you safely, standing outside it pushes you off the arena.">
+        <p class="empty">Titan's Geocrush target tile with outward arrows; standing on the inner edge of that tile lands you safely, standing outside it pushes you off the arena.</p>
+      </object>
+          <figcaption><b>Stand on the marked tile's inner edge.</b> Or press Arm's Length and
+            stay exactly where you are.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Tank</dt><dd>Arm's Length covers this and Fault Zone both. Between the two mechanics it will roughly line up with its own cooldown.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Surecast, or walk in. Do not try to out-heal being launched into open sky; it does not work that way.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Ranged: this is the one that catches you, every time, because you are always the furthest out. Close the distance during the telegraph.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Fault Zone → Magnitude 5.0 <span class="kind death">Flank, then get in</span></h3>
+        <p>In his wheels form Titan charges down a row three times, taking a new row each pass,
+          and the charge knocks back as well as hitting. Stand on his flank, on the side with
+          more tiles left. Then <b>Magnitude 5.0</b> is a donut and the only safe ground is
+          against his hitbox — the answer flips from "get away" to "get on him" with no gap.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e4-fault-zone.svg"
+              width="360" height="250" role="img" aria-label="Fault Zone: Titan charges along a row of tiles with the safe ground on the wide flank; Magnitude 5.0 is a donut safe only against his hitbox.">
+        <p class="empty">Fault Zone: Titan charges along a row of tiles with the safe ground on the wide flank; Magnitude 5.0 is a donut safe only against his hitbox.</p>
+      </object>
+          <figcaption><b>Three charges, then run in.</b> Solo, the temptation is to stay at
+            range through the whole sequence — that is exactly what Magnitude 5.0 punishes.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Tank</dt><dd>You are not steering him, so treat this as a dodge like anyone else. Being in melee already puts you in the right place for the donut.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Move in on the third charge rather than after it. The donut arrives faster than it reads.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Melee are already inside for Magnitude 5.0. Ranged need to make the trip, and the charges are what tell you it is coming.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Evil Earth, boulders and Landslides <span class="kind dodge">Footwork only</span></h3>
+        <p>Evil Earth chains outward from one tile, so step back onto the tile that already
+          exploded. Bomb Boulders detonate in the order they landed — follow the gaps.
+          <b>Massive Landslide</b> has no telegraph and is safe only in front of Titan;
+          <b>Left</b> or <b>Right Landslide</b> erupts one half, and the name is written from
+          his point of view, so read the arm.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e4-evil-earth.svg"
+              width="360" height="250" role="img" aria-label="Evil Earth marks a tile that explodes first, then the ring of tiles touching it, then the ring beyond; the safe move is stepping back onto the detonated tile.">
+        <p class="empty">Evil Earth marks a tile that explodes first, then the ring of tiles touching it, then the ring beyond; the safe move is stepping back onto the detonated tile.</p>
+      </object>
+          <figcaption><b>The crater is the safe tile.</b> Every one of these mechanics is
+            survivable at level — they are on the list because they push you towards the edge
+            for the next knockback.</figcaption>
+        </figure>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e4-landslide.svg"
+              width="360" height="250" role="img" aria-label="Massive Landslide leaves only the strip in front of Titan safe; Left and Right Landslide erupt one half of the arena.">
+        <p class="empty">Massive Landslide leaves only the strip in front of Titan safe; Left and Right Landslide erupt one half of the arena.</p>
+      </object>
+          <figcaption><b>In front for the first, across for the second.</b> Standing in front of
+            a boss feels wrong and is correct here.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Tank</dt><dd>You still control his facing between form changes, which means you still control where "in front" is for Massive Landslide.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Ranged habits are the danger — behind Titan is the wrong side of Massive Landslide. Stand up front for the gauntlets blocks.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Melee barely move for any of this. If you are ranged, the whole gauntlets sequence wants you closer than feels natural.</dd></div>
+        </dl>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================ CHEAT SHEET =========================== -->
+  <section class="phase" id="cheat-sheet" data-label="Cheat sheet" aria-labelledby="cheat-h">
+    <div class="section-head">
+      <p class="eyebrow">One screen</p>
+      <h1 id="cheat-h">Four fights, five real mechanics</h1>
+      <p class="lede">Everything else in Eden's Gate is damage, and damage is not the problem
+        any more.</p>
+    </div>
+    <div class="prose">
+
+      <div class="scroll-x">
+        <table class="data">
+          <thead><tr><th>Cast</th><th>Fight</th><th>What to do alone</th></tr></thead>
+          <tbody>
+            <tr><td>Pure Light</td><td>E1</td><td>Walk around behind the boss. Do not back up — the edge is closer than the cast</td></tr>
+            <tr><td>Empty Hate</td><td>E2</td><td>Arm's Length or Surecast. Otherwise stand near the Hand</td></tr>
+            <tr><td>Punishing Ray</td><td>E2</td><td>Soak one puddle, accept the other four. The only mechanic you cannot finish</td></tr>
+            <tr><td>Tidal Wave</td><td>E3</td><td>Immunity, or walk into the water. The most common solo death in the tier</td></tr>
+            <tr><td>Undersea Quake</td><td>E3</td><td>Middle or shelves — read which one, then commit early</td></tr>
+            <tr><td>Geocrush</td><td>E4</td><td>Hug the marked tile's inner edge, or immunity</td></tr>
+            <tr><td>Fault Zone</td><td>E4</td><td>Flank, wide side, three times — then run in for Magnitude 5.0</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Everything that stopped mattering</h2>
+      <ul>
+        <li><b>Delta Attack</b> (E1) — one spread marker, four empty corners.</li>
+        <li><b>The Guardians and Unto Dust</b> (E1) — a minute-long enrage window for two adds
+          that die in seconds.</li>
+        <li><b>Eternal Breath</b> (E1) — the biggest hit in the tier, and no longer close.</li>
+        <li><b>Shadowflame</b> (E2) — a tankbuster with only one tank in the room.</li>
+        <li><b>Spell-In-Waiting</b> (E2) — every clock is yours, so there is nothing to
+          coordinate.</li>
+        <li><b>Splitting for Undersea Quake</b> (E3) — no party to split.</li>
+        <li><b>Every stack marker</b> — nothing to share it with, and nothing that needs sharing.</li>
+      </ul>
+
+      <hr>
+      <p class="empty">Cast names and ordering are taken from the encounters' own fight timelines
+        as published in <a href="https://github.com/quisquous/cactbot">cactbot</a>'s raidboss
+        data. The solo notes are reasoning about those mechanics at a large level gap rather
+        than a claim about a specific job's numbers — if something here reads as more dangerous
+        than you find it, trust your run.</p>
+    </div>
+  </section>
+
+  <div class="pager">
+    <button type="button" class="prev"><i class="bi bi-chevron-left" aria-hidden="true"></i> Previous</button>
+    <span class="count" aria-live="polite">—</span>
+    <button type="button" class="next">Next <i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+  </div>
+  <p class="kbd-hint"><kbd>←</kbd> <kbd>→</kbd> to page through</p>
+
+</main>
+
+<script src="../../../guide.js?v=2"></script>
+<script src="edens-gate.js?v=1"></script>
+</body>
+</html>

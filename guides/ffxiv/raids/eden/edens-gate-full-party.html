@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07151c">
+<title>Eden's Gate (Normal): Full Party · BattyDev Guides</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;700;900&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="../../../guides.css?v=2" rel="stylesheet">
+<link href="edens-gate.css?v=1" rel="stylesheet">
+</head>
+<body>
+
+<div class="wallpaper" aria-hidden="true"></div>
+
+<header class="home-bar">
+  <a class="account" href="./" aria-label="Return to Eden guides">
+    <span class="gamerpic">B</span>
+    <span><b>Eden's Gate</b><small>Full party · E1–E4</small></span>
+  </a>
+  <nav class="system-icons" aria-label="Sections">
+    <a href="../../../" aria-label="All topics"><i class="bi bi-journals"></i></a>
+    <a href="../../" aria-label="FFXIV guides"><i class="bi bi-shield-shaded"></i></a>
+    <a href="../" aria-label="Raid guides"><i class="bi bi-diagram-3-fill"></i></a>
+  </nav>
+  <div class="system-status">
+    <span class="stamp">Level 80 · ilvl 425</span>
+  </div>
+</header>
+
+<main data-guide="ffxiv-edens-gate-party">
+
+  <div class="section-head">
+    <p class="crumbs"><a href="../../../">Guides</a><span class="sep">/</span><a href="../../">FFXIV</a><span class="sep">/</span><a href="../">Raids</a><span class="sep">/</span><a href="./">Eden</a><span class="sep">/</span>Eden's Gate</p>
+  </div>
+
+  <!-- Outside the phases on purpose: guide.js only swaps .phase sections, so
+       the role you pick in the overview is still picked eight sections later
+       when you are reading Titan's wheels. -->
+  <section class="tracker" aria-labelledby="rolebar-h">
+    <h2 id="rolebar-h">Reading as</h2>
+    <p class="hint">Every mechanic below breaks down by role. Pick yours and its row is
+      highlighted the rest of the way through — the other three dim rather than vanish,
+      because in this tier the other roles are usually the reason yours matters.</p>
+    <div class="rolebar" data-rolebar="edens-gate-party" role="group" aria-labelledby="rolebar-h">
+      <button type="button" data-role="all" aria-pressed="true">Everything</button>
+      <button type="button" data-role="mt" aria-pressed="false"><span class="sw" style="background:var(--aqua)"></span>Main tank</button>
+      <button type="button" data-role="ot" aria-pressed="false"><span class="sw" style="background:var(--aqua-dim)"></span>Off tank</button>
+      <button type="button" data-role="dps" aria-pressed="false"><span class="sw" style="background:var(--pom)"></span>DPS</button>
+      <button type="button" data-role="healer" aria-pressed="false"><span class="sw" style="background:var(--green)"></span>Healer</button>
+    </div>
+    <p class="motion">
+      <button type="button" id="motion-toggle" aria-pressed="false">
+        <i class="bi bi-pause-fill" aria-hidden="true"></i><span>Pause diagram animations</span>
+      </button>
+    </p>
+  </section>
+
+  <!-- Diagrams are <object> rather than <img>. An <img>-loaded SVG renders in
+       secure static mode: the page's prefers-reduced-motion never reaches it and
+       nothing outside can stop it looping, which fails WCAG 2.2.2. <object>
+       embeds a real same-origin document, so each diagram's own reduced-motion
+       rules apply and the control below can pause every one of them.
+
+       An embed inside a display:none .phase does not load until the pager shows
+       that phase, which is why edens-gate.js re-applies a stored "paused" choice
+       on each embed's own load event rather than once at startup. .diagram
+       carries an aspect-ratio so the arriving diagram does not shift the page. -->
+
+  <nav class="rail" id="rail" aria-label="Sections"></nav>
+
+  <!-- ============================= OVERVIEW ============================= -->
+  <section class="phase" id="overview" data-label="Overview" aria-labelledby="overview-h">
+    <div class="section-head">
+      <p class="eyebrow">Shadowbringers · the first Eden tier</p>
+      <h1 id="overview-h">Eden's Gate, normal, with seven other people</h1>
+      <p class="lede">Four fights at level 80: Eden Prime, Voidwalker, Leviathan and Titan.
+        This is the eight-player version — for running them alone at current level, read the
+        <a href="edens-gate-unsynced.html">unsynced guide</a> instead.</p>
+    </div>
+    <div class="prose">
+
+      <div class="callout key">
+        <span class="tag">The short version</span>
+        <p>Nothing in this tier is a damage check except one add phase in E1. Everything else
+          is a positioning test, and almost every wipe comes from the same three things:
+          standing in a puddle nobody soaked, being on the wrong half of a floor that just
+          split, or getting knocked off an edge.</p>
+      </div>
+
+      <h2>What you are walking into</h2>
+      <div class="scroll-x">
+        <table class="data">
+          <thead><tr><th>Fight</th><th>Boss</th><th>The thing that actually kills people</th></tr></thead>
+          <tbody>
+            <tr><td>E1 · Resurrection</td><td>Eden Prime</td><td>Delta Attack, and letting the Guardians live too long</td></tr>
+            <tr><td>E2 · Descent</td><td>Voidwalker</td><td>Spell-In-Waiting — resolving a mechanic on the wrong beat</td></tr>
+            <tr><td>E3 · Inundation</td><td>Leviathan</td><td>Undersea Quake splitting the party badly, and knockbacks</td></tr>
+            <tr><td>E4 · Sepulture</td><td>Titan</td><td>Geocrush and Fault Zone pushing you off the tiles</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Getting in</h2>
+      <ul>
+        <li>Level 80, minimum item level 425, full light party: two tanks, two healers, four DPS.</li>
+        <li>Unlock the series after the Shadowbringers main scenario, by taking
+          <b>In the Middle of Nowhere</b> from the Anxious Crystarium Guard in the Crystarium
+          (X:9.8 Y:12.4). That leads to Ryne in the Empty, and <b>Deploy the Core</b> opens E1.
+          Each later fight has its own quest in the same chain.</li>
+        <li>Entry is unlimited. <b>Reward</b> eligibility is once per fight per week and resets
+          Tuesday. The fights drop tokens rather than gear — trade them to Yhal Yal in Eulmore
+          (X:10.0 Y:11.5) or Ghul Gul in Amh Araeng (X:26.6 Y:16.4).</li>
+      </ul>
+
+      <h2>How to read the diagrams</h2>
+      <p>Dot colours are consistent across every picture in both guides:
+        <b style="color:var(--aqua)">main tank</b>, <b style="color:var(--aqua-dim)">off tank</b>,
+        <b style="color:var(--green)">healer</b>, <b style="color:var(--pom)">DPS</b>.
+        Red is ground that hurts, green is ground that does not, amber is the thing you are
+        being asked to look at. The diagrams animate; if your system asks for reduced motion
+        they hold still on the resolved position instead.</p>
+
+      <p class="empty">Cast timings quoted in this guide are pulled from the encounters' own
+        timelines, so they are the game's numbers rather than a stopwatch. Treat them as
+        ordering and spacing, not as a countdown to sync to.</p>
+    </div>
+  </section>
+
+  <!-- ============================== ROLES =============================== -->
+  <section class="phase" id="roles" data-label="The four roles" aria-labelledby="roles-h">
+    <div class="section-head">
+      <p class="eyebrow">Before the mechanics</p>
+      <h1 id="roles-h">What each role owns across the tier</h1>
+      <p class="lede">Normal-mode raids flatten a lot of role identity — most mechanics ask
+        everyone to stand somewhere. These are the parts that do not flatten.</p>
+    </div>
+    <div class="prose">
+
+      <div class="mech">
+        <h3>Main tank <span class="kind">Every fight</span></h3>
+        <p>You are the fixed point. Keep the boss still and pointed away from the party, and
+          eat the first half of every tankbuster.</p>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Three of the four bosses want to be parked and left alone — Eden Prime, Voidwalker and Leviathan barely need moving. Titan is the exception and he moves himself. Call your own swaps out loud; nobody else can see your debuff timer.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Your job is mostly <b>Provoke</b> on cue and a second set of cooldowns. The two places you are load-bearing: the second Guardian in E1, and being the tank on the far shelf in E3.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Stay off the tanks' flanks in E1 — the Vice of Vanity lines fire down their tethers. Otherwise the tanks are your reference point for where "behind the boss" and "in the hitbox" are.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Both tanks take a hit in E2 at once. Everywhere else it is one at a time, and the vulnerability stack means the second hit lands on a fresh tank — so the shield goes on the <em>incoming</em> tank, not the one who just took it.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Named raidwides worth pre-mitigating <span class="kind raidwide">Raidwide</span></h3>
+        <p>The tier hits the whole party on a schedule, and the schedule is the same every
+          pull. These are the ones where a cooldown planned in advance is worth more than a
+          heal after.</p>
+        <div class="scroll-x">
+          <table class="data">
+            <thead><tr><th>Fight</th><th>Cast</th><th>Why this one</th></tr></thead>
+            <tbody>
+              <tr><td>E1</td><td>Eden's Gravity</td><td>Cuts everyone to a sliver. It is survivable alone but lethal stacked with anything else.</td></tr>
+              <tr><td>E1</td><td>Fragor Maximus</td><td>Large, and it lands right as the platform changes and people are already moving.</td></tr>
+              <tr><td>E1</td><td>Eternal Breath</td><td>The single biggest hit in the tier. Everyone topped before the last Guardian dies.</td></tr>
+              <tr><td>E2</td><td>Entropy</td><td>Comes back roughly every minute and marks the start of each block of mechanics.</td></tr>
+              <tr><td>E3</td><td>Tidal Roar</td><td>Frequent and often doubled up back-to-back later in the fight.</td></tr>
+              <tr><td>E4</td><td>Earthen Fury</td><td>Raidwide plus a damage-over-time — do not let the tail of it meet the next one.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Party mitigation (Reprisal, and your job's raid tool) belongs on these casts, not on the tankbusters — you have personals for those.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>You are free during most of them. Alternate the party mitigation with the main tank so neither of you is holding it all.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Feint and Addle are worth more here than they look — most of these are magical. Use them on the named casts above rather than on cooldown.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Shield before, not heal after. The dangerous pattern in every one of these fights is a raidwide landing while half the party is still standing in something.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Who carries markers <span class="kind">Every fight</span></h3>
+        <p>Marked mechanics in this tier mostly fall on DPS and healers, and mostly ask for the
+          same two shapes: get away from everyone, or get on top of everyone.</p>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>You rarely carry one, which makes you the anchor. Stay where you are and let the spreads move around you — a boss that walks during a spread breaks four people's positions at once.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>When a stack marker goes out you are the easiest body to find. Be in it; a tank in the stack is free mitigation for it.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>You carry most of them: Vice of Apathy in E1, Dark Fire III in E2, Drenching Pulse and Splashing Tsunami in E3. Fixed spread spots beat improvising every time.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>You get your share, and yours are the ones that go wrong — a healer who runs out for a spread and keeps running is a healer out of range for the raidwide behind it.</dd></div>
+        </dl>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================= E1 · PART 1 ========================== -->
+  <section class="phase" id="e1-open" data-label="E1 · Eden Prime" aria-labelledby="e1-open-h">
+    <div class="section-head">
+      <p class="eyebrow">Eden's Gate: Resurrection</p>
+      <h1 id="e1-open-h">E1 · Eden Prime</h1>
+      <p class="lede">A square platform with a lethal edge, and a boss that stands in the middle
+        of it doing one thing at a time. The opening two minutes teach you every mechanic the
+        fight has.</p>
+    </div>
+    <div class="prose">
+
+      <h2>The opening loop</h2>
+      <ul class="tl">
+        <li><span class="at">0:12</span><span><b>Spear of Paradise</b> → Heavensunder <span class="note">two-part tankbuster</span></span></li>
+        <li><span class="at">0:22</span><span><b>Eden's Gravity</b> <span class="note">raidwide, takes most of your health bar</span></span></li>
+        <li><span class="at">0:34</span><span><b>Vice of Apathy</b> → <b>Eden's Flare</b> <span class="note">puddles out, then everybody in</span></span></li>
+        <li><span class="at">0:56</span><span><b>Vice of Vanity</b> <span class="note">tank tethers</span></span></li>
+        <li><span class="at">1:07</span><span>Spear of Paradise → Heavensunder</span></li>
+        <li><span class="at">1:26</span><span><b>Pure Light</b> <span class="note">get behind</span></span></li>
+        <li><span class="at">1:42</span><span><b>Delta Attack</b> <span class="note">three spells at once</span></span></li>
+        <li><span class="at">1:55</span><span><b>Dimensional Shift</b> <span class="note">raidwide, the floor changes</span></span></li>
+      </ul>
+
+      <div class="mech">
+        <h3>Spear of Paradise → Heavensunder <span class="kind buster">Tankbuster</span></h3>
+        <p>Two hits in sequence on the current target. The first applies a physical
+          vulnerability, and Heavensunder lands a second and a half later — into that
+          vulnerability if the same tank is still holding.</p>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Either take both and burn an invulnerability, or hand it over. The swap is cleaner: it costs nothing and it keeps your invuln for a mistake later.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd><b>Provoke during the cast</b>, not after the first hit — after is already too late for a clean swap. Have a mitigation up when you take it.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Free uptime. The boss does not move and nothing else is happening; this is where positionals get used.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Two separate tanks take one hit each if they swap. Top the outgoing tank on the swap — the vulnerability sticks to them, and the next thing out is a raidwide.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Vice of Apathy → Eden's Flare <span class="kind dodge">Spread, then stack</span></h3>
+        <p>Four players get a puddle marker. The puddle stays where you drop it. Then Eden's
+          Flare burns <b>everything outside Eden Prime's hitbox</b> — so the same four have to
+          drop and come straight back in.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e1-vice-apathy.svg"
+              width="360" height="250" role="img" aria-label="The four DPS carry puddle markers out to the platform corners, drop them, and all eight players return inside Eden Prime's hitbox before Eden's Flare burns the rest of the floor.">
+        <p class="empty">The four DPS carry puddle markers out to the platform corners, drop them, and all eight players return inside Eden Prime's hitbox before Eden's Flare burns the rest of the floor.</p>
+      </object>
+          <figcaption><b>Out, drop, straight back in.</b> The window is short — the flare
+            follows roughly six seconds behind the puddles.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Do not move. You are the hitbox everyone is running back to, and the hitbox is wherever the boss is standing.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Stay in melee. If a DPS panics and drops a puddle short, being already inside makes it obvious to them where inside is.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Take a diagonal, not a cardinal — four puddles on the diagonals leave the cardinals clear for the run back. Melee can drop at max melee range, but agree on that first; a puddle at max melee is one someone else will clip.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>You are not marked, so you do not move. Stay in the hitbox and watch for whoever drops theirs on top of another — that is the one you will be healing.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Vice of Vanity <span class="kind buster">Tank lines</span></h3>
+        <p>Eden Prime tethers both tanks and fires a line down each tether. Whatever is behind
+          the tank is in the line.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e1-vice-vanity.svg"
+              width="360" height="250" role="img" aria-label="Both tanks are tethered to Eden Prime and walk to opposite edges so their line attacks fire outward, away from the six players stacked in the middle.">
+        <p class="empty">Both tanks are tethered to Eden Prime and walk to opposite edges so their line attacks fire outward, away from the six players stacked in the middle.</p>
+      </object>
+          <figcaption><b>Opposite edges.</b> The lines are aimed, not shared — mitigate them
+            rather than looking for bodies.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Take your tether to one edge and keep the boss where it is. Pick a side before the pull so you and the off tank are not both walking the same way.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>The opposite edge. You are tethered even though you are not tanking, so do not assume the marker is a mistake.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Get off the axis the tanks are on. Melee: step to the side of the boss the tanks are not using and keep hitting.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Two tanks take a real hit at the same time from opposite sides of the room. This is the moment in E1 where a single-target heal is not enough.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Pure Light <span class="kind death">Get behind</span></h3>
+        <p>A ten-second cast that covers almost the entire platform in front of Eden Prime. The
+          safe ground is a narrow wedge directly behind it.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e1-pure-light.svg"
+              width="360" height="250" role="img" aria-label="Pure Light fills the whole platform except a wedge directly behind Eden Prime; the party walks around the boss to reach it.">
+        <p class="empty">Pure Light fills the whole platform except a wedge directly behind Eden Prime; the party walks around the boss to reach it.</p>
+      </object>
+          <figcaption><b>Walk around, do not run out.</b> There is no distance that saves you —
+            only the wedge.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>You decide where behind is. Point the boss at a wall you have agreed on and hold it there so seven people do not each pick a different rear.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Go behind with everyone. The cast is long enough that you do not need to sprint — running past the edge is a worse outcome than arriving late.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Ranged should move in, not out. The wedge is narrow at the boss and wider at the edge, but the edge kills, so the safe band is thinner than it looks.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Move early and keep casting from behind. If someone is caught, they are probably dead rather than hurt — hold the resurrection until Delta Attack resolves.</dd></div>
+        </dl>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================= E1 · PART 2 ========================== -->
+  <section class="phase" id="e1-space" data-label="E1 · Delta &amp; space" aria-labelledby="e1-space-h">
+    <div class="section-head">
+      <p class="eyebrow">Eden's Gate: Resurrection</p>
+      <h1 id="e1-space-h">E1 · Delta Attack, and the platform in space</h1>
+      <p class="lede">The back half of E1 has the one mechanic that reliably wipes a first
+        clear, and the one damage check in the tier.</p>
+    </div>
+    <div class="prose">
+
+      <div class="mech">
+        <h3>Delta Attack <span class="kind death">Three at once</span></h3>
+        <p>Three spells resolve together. <b>Eden's Blizzard III</b> is a circle centred on the
+          boss. <b>Eden's Thunder III</b> is a cross through the middle row and column.
+          <b>Eden's Fire III</b> is a spread marker on all eight players. The circle and the
+          cross leave the four corner quadrants, and the spreads mean you cannot all pile into
+          one.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e1-delta-attack.svg"
+              width="360" height="250" role="img" aria-label="Delta Attack: a circle on the boss, a cross through the centre of the platform, and a spread marker on every player. Two players go to each corner quadrant and split apart inside it.">
+        <p class="empty">Delta Attack: a circle on the boss, a cross through the centre of the platform, and a spread marker on every player. Two players go to each corner quadrant and split apart inside it.</p>
+      </object>
+          <figcaption><b>Two to a corner, and split inside it.</b> Assign the four corners
+            before the pull — this is the mechanic that punishes improvising.</figcaption>
+        </figure>
+        <div class="callout warn">
+          <span class="tag">The common wipe</span>
+          <p>Everyone dodges the cross correctly, three people end up in the same corner, and
+            the Fire III circles overlap. Getting out of the cross is half the mechanic.</p>
+        </div>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Leave the boss in the middle and go to a corner yourself. Dragging it out of the centre moves the Blizzard circle onto the quadrant someone else is standing in.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Take the corner diagonally opposite the main tank. Tanks in opposite corners is the easiest pattern for everyone else to fill in around.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>One DPS to each corner, paired with a tank or healer, and stand at opposite ends of your quadrant. Your Fire III circle is bigger than the gap you think you have left.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Split up — both healers in the same corner is two spreads in one box. Heal on the move; the Fire III damage lands on everyone at once and Dimensional Shift is thirteen seconds behind it.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Dimensional Shift, Pure Beam, Paradise Lost <span class="kind raidwide">Raidwide, then dodging</span></h3>
+        <p>Dimensional Shift is a raidwide that changes the floor. Orbs then fire line attacks
+          across the platform with <b>Pure Beam</b>, each aimed at whoever is nearest to it,
+          while <b>Paradise Lost</b> drops circles under players three times over.</p>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Keep the boss central. The beams come from the outside, so a boss parked near an edge pins the melee against one.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Nothing specific — dodge with the party. Save your party mitigation for Fragor Maximus, which is close behind.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Each orb picks the closest player, so spreading out evenly around the middle gives everyone a short line to sidestep rather than one person eating several.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Paradise Lost circles chase — keep moving and do not stop to hard-cast on top of one. The damage here is chip damage; the next cast is not.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Fragor Maximus → the Guardians <span class="kind raidwide">Damage check</span></h3>
+        <p>Fragor Maximus is a heavy raidwide, the boss goes untargetable, and the platform
+          ends up in open space. Two <b>Guardians of Paradise</b> land and open with
+          <b>Paradisal Dive</b>. They cleave with <b>Mana Slice</b>, hit the raid with
+          <b>Mana Burst</b>, and about a minute after they appear they cast <b>Unto Dust</b>,
+          which is the enrage. This is the only real damage requirement in the tier.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e1-space-adds.svg"
+              width="360" height="250" role="img" aria-label="Two Guardians of Paradise are tanked at opposite sides of the platform facing outward, with the rest of the party stacked in the middle clear of both cleaves, above a bar counting down to the Unto Dust enrage.">
+        <p class="empty">Two Guardians of Paradise are tanked at opposite sides of the platform facing outward, with the rest of the party stacked in the middle clear of both cleaves, above a bar counting down to the Unto Dust enrage.</p>
+      </object>
+          <figcaption><b>One each, both facing out.</b> Kill them close together — a lone
+            surviving Guardian still reaches Unto Dust.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Grab one immediately and turn it outward. Both adds land at once, so the pickup has to be instant — hold Provoke for whichever one strays.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>The other one, on the opposite side. This is the moment in E1 you exist for; a second Guardian loose in the party is a wipe on its own.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Split evenly or focus one then the other — either works, but decide. Burst goes here, not on the boss. Stay out of both cleave arcs while you do it.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Mana Burst hits the raid repeatedly on top of two tanks taking cleaves. Get everyone to full <em>before</em> the second Guardian dies, because Eternal Breath follows and it is the biggest hit in the tier.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Eternal Breath <span class="kind raidwide">The big one</span></h3>
+        <p>After the adds, a long scripted wind-up — Primeval Stasis — leads into Eden Prime's
+          limit break. It is unavoidable and very large. Then the boss becomes targetable again
+          and the whole fight from Vice of Vanity onward repeats until it dies.</p>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Party mitigation here, without question. Re-establish your grip the moment the boss is targetable — it re-opens with Vice of Vanity, then a tankbuster.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Your mitigation too. Neither of you needs it for the adds, and both of you have it available.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Nothing to dodge. Use the downtime to get your cooldowns lined up for the next burst window rather than holding them through it.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Everything you have. Full party, shields up, and a heal queued for immediately after. Anyone below full when it lands will not be alive after it.</dd></div>
+        </dl>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================= E2 · PART 1 ========================== -->
+  <section class="phase" id="e2-open" data-label="E2 · Voidwalker" aria-labelledby="e2-open-h">
+    <div class="section-head">
+      <p class="eyebrow">Eden's Gate: Descent</p>
+      <h1 id="e2-open-h">E2 · Voidwalker</h1>
+      <p class="lede">A round arena over nothing, a boss with four or five simple attacks, and
+        one mechanic that takes those simple attacks and makes you solve them out of order.</p>
+    </div>
+    <div class="prose">
+
+      <h2>The opening loop</h2>
+      <ul class="tl">
+        <li><span class="at">0:11</span><span><b>Doomvoid Guillotine</b> <span class="note">band across the room — go to the sides</span></span></li>
+        <li><span class="at">0:28</span><span><b>Doomvoid Slicer</b> <span class="note">everything but the boss — get under</span></span></li>
+        <li><span class="at">0:47</span><span><b>Shadowflame</b> <span class="note">hits both tanks at once</span></span></li>
+        <li><span class="at">0:59</span><span><b>Dark Fire III</b> <span class="note">spread</span></span></li>
+        <li><span class="at">1:07</span><span><b>Unholy Darkness</b> <span class="note">stack</span></span></li>
+        <li><span class="at">1:13</span><span><b>Spell-In-Waiting</b> <span class="note">and from here nothing lands when it is cast</span></span></li>
+        <li><span class="at">2:37</span><span><b>Entropy</b> <span class="note">raidwide — marks the top of each block from now on</span></span></li>
+      </ul>
+
+      <div class="mech">
+        <h3>Doomvoid Guillotine and Doomvoid Slicer <span class="kind death">Opposite answers</span></h3>
+        <p>Two casts with almost the same name and exactly opposite safe spots. Guillotine is a
+          band across the whole arena, so you go to the sides. Slicer covers the whole room
+          <em>except</em> a circle under Voidwalker, so you get underneath it. Each also leaves
+          untargetable adds walking across the floor — Guillotine's march outward from the band,
+          Slicer's march in from the edge.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e2-doomvoid.svg"
+              width="360" height="250" role="img" aria-label="Side by side: Doomvoid Guillotine is a band across the middle of the arena with the sides safe, and Doomvoid Slicer covers everything except a circle under the boss.">
+        <p class="empty">Side by side: Doomvoid Guillotine is a band across the middle of the arena with the sides safe, and Doomvoid Slicer covers everything except a circle under the boss.</p>
+      </object>
+          <figcaption><b>Read the last word of the cast bar.</b> Guillotine — sides. Slicer —
+            under. They come back all fight, and later they come back delayed.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>On Slicer you are already standing in the safe spot, so keep the boss still and let people come to you. On Guillotine, walking the boss is what pushes the safe sides out of shape — stay put.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Follow the main tank's side on Guillotine so the party has one obvious half to fill rather than two.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Melee barely move for Slicer, which makes it free uptime. Ranged: Guillotine is the one that costs you, so pick your side early and finish the cast there.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>The adds do not need to be dodged carefully, but they do chip. Watch for the player who reads "Doomvoid" and guesses — that is who takes the whole band.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Shadowflame <span class="kind buster">Both tanks</span></h3>
+        <p>Not a single-target buster. Shadowflame hits the top two on the enmity list at the
+          same time, which in practice means both tanks.</p>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Personal mitigation every time. There is no swap that helps here — the off tank is being hit as well.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Mitigate too, and stay on the enmity list. Dropping to third means a DPS takes a tankbuster instead of you.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Nothing to do, but do not open on the boss so hard at the pull that you climb above the off tank.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Two tanks, one cast. Plan a party shield or a pair of single-target mitigations rather than reacting to two health bars dropping together.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Dark Fire III, Unholy Darkness, Shadoweye <span class="kind dodge">The three markers</span></h3>
+        <p>The whole fight is built out of these three, cast plainly at first and delayed later.
+          <b>Dark Fire III</b> is a spread. <b>Unholy Darkness</b> is a stack on one player.
+          <b>Shadoweye</b> is a gaze — everyone facing the marked player is petrified.</p>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>On Shadoweye, turn your camera rather than your character if you can — the boss still needs facing away from the party.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Be in the Unholy Darkness stack. A tank in a stack is the cheapest mitigation the party has for it.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Spread spots should be fixed, not chosen. Dark Fire III lands on several people at once and two spreads touching costs both of them.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Petrification from a missed gaze is not something you can heal through, and the person petrified will eat whatever lands next. Call the eye target out loud.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Empty Hate into Punishing Ray <span class="kind death">Knockback, then soak</span></h3>
+        <p>The Hand of Erebos pushes everyone straight away from it with <b>Empty Hate</b>, and
+          the arena edge is a fall. <b>Punishing Ray</b> puts five puddles on the floor that each
+          need a body in them; any left empty deal damage and stack a
+          <b>Diabolic Curse</b> damage-taken debuff on the party. The two come together, and the
+          order is fixed: survive the push first, then soak.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e2-ray-hate.svg"
+              width="360" height="250" role="img" aria-label="The Hand of Erebos knocks players away from it across the arena while five Punishing Ray puddles wait on the floor; the party takes the push first and then walks one player into each puddle.">
+        <p class="empty">The Hand of Erebos knocks players away from it across the arena while five Punishing Ray puddles wait on the floor; the party takes the push first and then walks one player into each puddle.</p>
+      </object>
+          <figcaption><b>Start near the Hand.</b> The push is a fixed distance, so being close
+            to it means landing on the floor rather than past the far edge.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>You choose where the party stands by where you put the boss. Keep it on the Hand's side of the arena so the push has the whole floor to travel across.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Take a puddle. There are five and eight of you — the three spare bodies should be the ones with the least to lose from standing in a bleed.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Take the puddles the knockback drops you nearest to. Do not fight the push to reach a specific one; the puddles are interchangeable.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>A soaked puddle applies a small bleed, which is fine. An unsoaked one applies Diabolic Curse to everyone, and the next raidwide is what kills them. Count the puddles, not the health bars.</dd></div>
+        </dl>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================= E2 · PART 2 ========================== -->
+  <section class="phase" id="e2-waiting" data-label="E2 · Spell-In-Waiting" aria-labelledby="e2-waiting-h">
+    <div class="section-head">
+      <p class="eyebrow">Eden's Gate: Descent</p>
+      <h1 id="e2-waiting-h">E2 · Spell-In-Waiting</h1>
+      <p class="lede">The mechanic the fight is actually about, and the only genuinely
+        unusual thing in the tier.</p>
+    </div>
+    <div class="prose">
+
+      <div class="callout key">
+        <span class="tag">The whole idea</span>
+        <p>After Spell-In-Waiting, Voidwalker's spells stop resolving when they are cast. A
+          clock appears over the marked player instead, and the spell lands up to thirty
+          seconds later — on top of whatever the boss is doing by then. <b>Read the clock, not
+          the cast bar.</b></p>
+      </div>
+
+      <figure class="fig">
+        <object class="diagram" type="image/svg+xml" data="diagrams/e2-spell-in-waiting.svg"
+              width="360" height="250" role="img" aria-label="A two-lane timeline: Dark Fire III, Unholy Darkness and Shadoweye are cast in the top lane, each connected by a clock to where it actually resolves in the bottom lane about thirty seconds later.">
+        <p class="empty">A two-lane timeline: Dark Fire III, Unholy Darkness and Shadoweye are cast in the top lane, each connected by a clock to where it actually resolves in the bottom lane about thirty seconds later.</p>
+      </object>
+        <figcaption><b>What is cast and what lands are different rows.</b> The clock over your
+          head is the only honest timer.</figcaption>
+      </figure>
+
+      <h2>How it actually plays</h2>
+      <ol class="steps">
+        <li><strong>A spell goes on the clock</strong>
+          You get a countdown icon instead of the usual marker. Nothing happens yet.</li>
+        <li><strong>The fight carries on</strong>
+          Doomvoid casts, Entropy, Empty Hate and Punishing Ray all keep coming, live.</li>
+        <li><strong>The clock runs out</strong>
+          The delayed spell resolves now — spread, stack or gaze — usually while you are
+          already solving something else.</li>
+        <li><strong>Two land together</strong>
+          Later blocks put a delayed stack and a delayed spread on the clock at the same time.
+          The stack and the spread have to happen in the same second, on different people.</li>
+      </ol>
+
+      <div class="mech">
+        <h3>Solving a delayed spell on top of a live one <span class="kind death">The whole fight</span></h3>
+        <p>Every wipe in E2 is some version of this: somebody solved the cast bar and forgot
+          the clock, or solved the clock and stood in the cast bar.</p>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Keep the boss parked in the middle. When a delayed stack lands during a Doomvoid cast, the party needs the boss where it has always been to know where "under" is.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Be the stack point when a delayed Unholy Darkness is due. A predictable body to run to is worth more than anything else you could be doing in that second.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>If you are holding a delayed spread, pre-position: drift to your spread spot early and keep attacking from there rather than sprinting when the clock hits zero.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Call the delayed gaze. Everyone is watching their own icon and nobody is watching whose eye is about to go off — that call is the single most useful thing said in this fight.</dd></div>
+        </dl>
+      </div>
+
+      <div class="callout warn">
+        <span class="tag">One awkward overlap</span>
+        <p>There is a point where a delayed stack resolves at the same moment as a spread. The
+          spread markers <em>must not</em> be in the stack — if you are holding fire, get out
+          even though everyone else is running in.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================= E3 · PART 1 ========================== -->
+  <section class="phase" id="e3-open" data-label="E3 · Leviathan" aria-labelledby="e3-open-h">
+    <div class="section-head">
+      <p class="eyebrow">Eden's Gate: Inundation</p>
+      <h1 id="e3-open-h">E3 · Leviathan</h1>
+      <p class="lede">A floating platform with no walls, a boss that spends the fight trying to
+        push you off it, and one cast that takes the platform apart underneath you.</p>
+    </div>
+    <div class="prose">
+
+      <div class="callout">
+        <span class="tag">Assign this before you pull</span>
+        <p>Undersea Quake can cut the arena in half and leave the two halves unreachable from
+          each other. Decide now: <b>one tank and one healer on each side</b>, and two DPS with
+          each of them. Sorting it out after the floor is gone is not possible.</p>
+      </div>
+
+      <h2>The opening loop</h2>
+      <ul class="tl">
+        <li><span class="at">0:13</span><span><b>Tidal Roar</b> <span class="note">raidwide, and it recurs constantly</span></span></li>
+        <li><span class="at">0:24</span><span><b>Rip Current</b> <span class="note">tankbuster, on a head marker</span></span></li>
+        <li><span class="at">0:38</span><span><b>Temporary Current</b> <span class="note">huge line across the platform from a corner</span></span></li>
+        <li><span class="at">0:47</span><span><b>Drenching Pulse</b> → Monster Wave → Freak Wave <span class="note">spread</span></span></li>
+        <li><span class="at">1:39</span><span><b>Tidal Wave</b> <span class="note">knockback from one edge</span></span></li>
+        <li><span class="at">1:46</span><span><b>Undersea Quake</b> <span class="note">the outer ring falls away</span></span></li>
+        <li><span class="at">1:55</span><span><b>Crashing Pulse</b> → Monster Wave → Killer Wave <span class="note">stack, on the smaller floor</span></span></li>
+      </ul>
+
+      <div class="mech">
+        <h3>Undersea Quake <span class="kind death">Two casts, opposite answers</span></h3>
+        <p>The same name, twice, meaning opposite things. One version destroys the outer ring
+          and leaves the middle — get in. The other destroys the middle and leaves the east and
+          west shelves — go out, and pick a side, because you cannot cross afterwards.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e3-undersea-quake.svg"
+              width="360" height="250" role="img" aria-label="Two versions of Undersea Quake: one removes the outer ring leaving a safe middle, the other removes the middle leaving east and west shelves with the party split four and four.">
+        <p class="empty">Two versions of Undersea Quake: one removes the outer ring leaving a safe middle, the other removes the middle leaving east and west shelves with the party split four and four.</p>
+      </object>
+          <figcaption><b>Split before the cast finishes, not after.</b> A healer stranded alone
+            on a shelf is a shelf that dies.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>On the split version you take one shelf with the boss if it is on your side, and the party follows the boss. Say which side you are taking.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>The other shelf, every time. Your shelf has no boss and no tankbuster — it has two DPS and a healer who need someone calling the dodges.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Two per shelf, decided before the pull. Ranged can keep hitting across the gap; melee on the far shelf simply lose uptime, and that is fine.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>One of you per shelf, no exceptions. Tidal Roar keeps landing while the floor is split and four people with no healer will not survive two of them.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Tidal Wave <span class="kind death">Knockback off the edge</span></h3>
+        <p>Water rises on one edge of the platform and, a few seconds later, shoves everyone
+          directly away from it. There is no wall to stop you.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e3-tidal-wave.svg"
+              width="360" height="250" role="img" aria-label="Tidal Wave rises along one edge of the platform and pushes everyone away from it; the party walks towards the wave first so the push lands them on the floor rather than off the far edge.">
+        <p class="empty">Tidal Wave rises along one edge of the platform and pushes everyone away from it; the party walks towards the wave first so the push lands them on the floor rather than off the far edge.</p>
+      </object>
+          <figcaption><b>Walk into it.</b> Or hold Arm's Length or Surecast and ignore the push
+            entirely — this is the cast those buttons exist for.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Arm's Length covers you and lets you keep the boss exactly where it was, which is worth more than the button.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Same. Between the two of you there is no reason for either tank to ever be moved by this.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Arm's Length or Surecast if your job has it, otherwise walk towards the water during the cast. Do not stand in the middle and hope — the push clears the whole platform.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Surecast, and watch where the party ends up rather than where it started. Anyone who goes off the edge can be raised, but not quickly.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Temporary Current, Rip Current, and the Pulses <span class="kind dodge">The regular beats</span></h3>
+        <p><b>Temporary Current</b> is a very wide line fired across the platform from one of
+          the front corners — find the corner it is not covering. <b>Rip Current</b> is the
+          tankbuster, on a head marker. <b>Drenching Pulse</b> drops a circle under every
+          player and then sends a travelling circle after each of them;
+          <b>Crashing Pulse</b> does the same and follows with a stack marker.</p>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Rip Current is yours. It is a plain single-target hit — mitigate and hold, there is no vulnerability forcing a swap here.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Free. Be in the Crashing Pulse stack and keep an eye on which corner Temporary Current leaves open, because the party will look at you for it.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>On Drenching Pulse, bunch up during the cast so the first set of circles lands in one clump, then spread wide for the travelling ones. Spreading first leaves circles everywhere you need to run.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>These land on an already-shrunken floor later in the fight. Keep the party's positions tight enough that a stack is reachable and loose enough that spreads do not overlap — that balance is mostly you calling it.</dd></div>
+        </dl>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================= E3 · PART 2 ========================== -->
+  <section class="phase" id="e3-tsunami" data-label="E3 · Tsunami &amp; Maelstrom" aria-labelledby="e3-tsunami-h">
+    <div class="section-head">
+      <p class="eyebrow">Eden's Gate: Inundation</p>
+      <h1 id="e3-tsunami-h">E3 · The Tsunami suite and Maelstrom</h1>
+      <p class="lede">Four markers in a row, then the only part of the fight where Leviathan
+        leaves the platform and comes back through it.</p>
+    </div>
+    <div class="prose">
+
+      <div class="mech">
+        <h3>The four Tsunami markers <span class="kind dodge">Back to back</span></h3>
+        <p>Leviathan casts Tsunami and then throws four different markers out in quick
+          succession. They are all simple; the difficulty is that they arrive faster than you
+          can read them, so learn the shapes rather than the names.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e3-tsunami-suite.svg"
+              width="360" height="250" role="img" aria-label="Four panels: Surging Tsunami is a knockback on one player, Smothering Tsunami is a stack, Splashing Tsunami is a spread, and Swirling Tsunami is a donut that is safe only next to the marked player.">
+        <p class="empty">Four panels: Surging Tsunami is a knockback on one player, Smothering Tsunami is a stack, Splashing Tsunami is a spread, and Swirling Tsunami is a donut that is safe only next to the marked player.</p>
+      </object>
+          <figcaption><b>Surging pushes, Smothering stacks, Splashing spreads, Swirling is a
+            donut.</b> The donut is the one people get wrong — safe is <em>next to</em> the
+            marked player, not away from them.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Hold the boss still through all four. Everyone is reading markers off each other's positions and a boss that walks moves the whole reference frame.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Be findable. You are the default body for Smothering, and if you are carrying Surging, take the push towards the middle of the floor.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>If you get Swirling, stay still and let people come to you — running with a donut on your head drags the safe spot away from everyone trying to reach it.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Call the donut. It is the only one of the four where the correct answer is counter-intuitive, and it is the only one that reliably kills someone.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Maelstrom and Spinning Dive <span class="kind death">Boss off the field</span></h3>
+        <p>Leviathan goes untargetable, the floor fills with circles, and it dives back across
+          the platform twice. Avoid the puddles and avoid the dive line — the two are laid out
+          so that the obvious dodge for one puts you in the other.</p>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Nothing to hold. Pick up the boss the instant it is targetable again — Tidal Roar and Rip Current come straight after.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Stay on the enmity list so the boss does not come back facing the party.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Real downtime. Do not waste a burst window on nothing — let cooldowns come back for when the boss returns.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Top everyone during the dives. The fight restarts its whole opening sequence the moment Leviathan lands.</dd></div>
+        </dl>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================= E4 · PART 1 ========================== -->
+  <section class="phase" id="e4-open" data-label="E4 · Titan" aria-labelledby="e4-open-h">
+    <div class="section-head">
+      <p class="eyebrow">Eden's Gate: Sepulture</p>
+      <h1 id="e4-open-h">E4 · Titan</h1>
+      <p class="lede">A four-by-four grid of tiles and a boss who spends the fight deleting them
+        or throwing you past them. Almost nothing here is damage — it is all footwork.</p>
+    </div>
+    <div class="prose">
+
+      <div class="callout key">
+        <span class="tag">The one habit that clears this fight</span>
+        <p>Always know which tile you would step to next, and prefer the tile that just
+          exploded. Ground that has already gone off is the safest ground on the floor.</p>
+      </div>
+
+      <h2>The opening loop</h2>
+      <ul class="tl">
+        <li><span class="at">0:13</span><span><b>Voice of the Land</b> <span class="note">raidwide</span></span></li>
+        <li><span class="at">0:21</span><span><b>Evil Earth</b> <span class="note">chain of tiles</span></span></li>
+        <li><span class="at">0:31</span><span><b>Weight of the Land</b> <span class="note">circles under players</span></span></li>
+        <li><span class="at">0:42</span><span><b>Stonecrusher</b> <span class="note">tankbuster</span></span></li>
+        <li><span class="at">0:54</span><span><b>Crumbling Down</b> → <b>Seismic Wave</b> <span class="note">hide behind the boulder</span></span></li>
+        <li><span class="at">1:19</span><span><b>Geocrush</b> <span class="note">he lands, everyone flies</span></span></li>
+        <li><span class="at">1:23</span><span><b>Earthen Gauntlets</b> <span class="note">form change — see the next section</span></span></li>
+      </ul>
+
+      <div class="mech">
+        <h3>Evil Earth <span class="kind death">Chain reaction</span></h3>
+        <p>One tile is marked and explodes. Then every tile touching it explodes. Then the ring
+          beyond that. The wave moves outward, and a tile that has already gone off does not go
+          off again.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e4-evil-earth.svg"
+              width="360" height="250" role="img" aria-label="Evil Earth marks one tile of Titan's four-by-four floor; it explodes first, then the ring of tiles touching it, then the ring beyond, while a player steps back onto the tile that already detonated.">
+        <p class="empty">Evil Earth marks one tile of Titan's four-by-four floor; it explodes first, then the ring of tiles touching it, then the ring beyond, while a player steps back onto the tile that already detonated.</p>
+      </object>
+          <figcaption><b>Step back into the crater.</b> Running ahead of the wave means running
+            into the next ring of it.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>You are choosing where the melee stand, so keep the boss near the middle where there are tiles in every direction. A boss in a corner gives melee one escape route.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Nothing specific — move with the melee and be visible. On the later loops this overlaps with the boulders and the party follows whoever moves first.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>One step, not three. Melee lose almost no uptime here if they move onto the detonated tile instead of running to the edge.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Later in the fight Evil Earth arrives layered with Bomb Boulders and Weight of the Land. Do not try to heal through it — nobody should be taking it at all, and the ones who do are usually stuck in a corner.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Geocrush <span class="kind death">Knockback off the tiles</span></h3>
+        <p>Arrows appear on one tile pointing outward, Titan jumps onto it, and everyone is
+          pushed directly away. The distance is fixed, so the only variable is how much floor
+          you have behind you.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e4-geocrush.svg"
+              width="360" height="250" role="img" aria-label="Titan's Geocrush target tile with outward arrows; a player standing on the inner edge of that tile lands safely on the floor while a player standing outside it is pushed off the arena.">
+        <p class="empty">Titan's Geocrush target tile with outward arrows; a player standing on the inner edge of that tile lands safely on the floor while a player standing outside it is pushed off the arena.</p>
+      </object>
+          <figcaption><b>Close to the landing, with the arena behind you.</b> Standing far away
+            does not shorten the push — it just means you start closer to the edge.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>You are being pushed too, and you lose the boss position when it lands anyway — Titan moves himself. Take it from the inner side and re-establish after.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Arm's Length works here. A tank who does not move is a landmark for everyone who did.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Get next to the marked tile on the side facing the rest of the arena. Ranged are the ones who die to this, because they start furthest out.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Geocrush is immediately followed by a form change, so be in position for that before you start healing the push damage.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Boulders, bombs and Seismic Wave <span class="kind dodge">Cover and order</span></h3>
+        <p><b>Crumbling Down</b> drops a Massive Boulder on the floor and <b>Seismic Wave</b>
+          follows — the boulder is cover, so put it between you and Titan.
+          <b>Bomb Boulders</b> scatter smaller rocks that explode <em>in the order they
+          landed</em>, and <b>Cobalt Bomb</b> enlarges the one Titan is tethered to. Stand at
+          the edge between two bombs, and once one has gone off, move onto the ground it left.</p>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Park Titan so there is boulder-shaped cover between him and the party. This is the one mechanic where where you put the boss decides whether the mechanic is easy.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Stonecrusher opens this block. Take the swap if your group swaps, then get behind the same boulder as everyone else.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Melee: uptime is not worth it here — Seismic Wave is a wipe-shaped mistake and the boulder is not next to the boss. Take the loss.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Stay behind cover with the party. Being the one person still in the open because you were topping someone off is how this goes wrong.</dd></div>
+        </dl>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================= E4 · PART 2 ========================== -->
+  <section class="phase" id="e4-forms" data-label="E4 · Gauntlets &amp; wheels" aria-labelledby="e4-forms-h">
+    <div class="section-head">
+      <p class="eyebrow">Eden's Gate: Sepulture</p>
+      <h1 id="e4-forms-h">E4 · Gauntlets and wheels</h1>
+      <p class="lede">After each Geocrush, Titan puts something on. Which thing decides the next
+        forty seconds, and the fight alternates between the two for the rest of its length.</p>
+    </div>
+    <div class="prose">
+
+      <div class="callout">
+        <span class="tag">Read the form, not the timer</span>
+        <p><b>Earthen Gauntlets</b> means Landslides are coming. <b>Earthen Wheels</b> means
+          Fault Zone is coming. The fight branches after the first pair and the order stops
+          being predictable, so the form change is your only reliable cue. <b>Earthen Armor</b>
+          at the end of each block is him taking it off again.</p>
+      </div>
+
+      <div class="mech">
+        <h3>Earthen Gauntlets → Massive Landslide → Left / Right Landslide <span class="kind death">Front, then across</span></h3>
+        <p><b>Massive Landslide</b> has no telegraph — Titan swings behind and to both sides, so
+          the safe ground is the strip in front of him. He follows with <b>Left</b> or
+          <b>Right Landslide</b>, which erupts one half of the arena. The cast name is written
+          from Titan's point of view, so watch the arm he winds up rather than the word.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e4-landslide.svg"
+              width="360" height="250" role="img" aria-label="Massive Landslide leaves only the strip in front of Titan safe; Left and Right Landslide erupt one half of the arena and the party crosses to the other half.">
+        <p class="empty">Massive Landslide leaves only the strip in front of Titan safe; Left and Right Landslide erupt one half of the arena and the party crosses to the other half.</p>
+      </object>
+          <figcaption><b>In front for the first, across for the second.</b> Two of these come
+            back to back before he takes the gauntlets off.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Your facing <em>is</em> the safe spot for Massive Landslide. Keep him pointed at a half of the arena with room in it and do not turn him mid-cast.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Stand in front with the party. If you are swapping around Stonecrusher, do it before the gauntlets go on, not during.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>In front of a boss is an odd place to be and it feels wrong — do it anyway. Melee keep full uptime through Massive Landslide.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Ranged habits kill you here: standing behind Titan is exactly the wrong side. Move up with the melee for this one.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Earthen Wheels → Fault Zone ×3 → Magnitude 5.0 <span class="kind death">Charges, then a donut</span></h3>
+        <p>Titan lines up on a row and charges down it, three times, taking a new row each pass
+          — and the charge knocks back as well as hitting. Stand on his flank, on the side with
+          more tiles left. The block finishes with <b>Magnitude 5.0</b>, a donut whose only safe
+          ground is against his hitbox.</p>
+        <figure class="fig">
+          <object class="diagram" type="image/svg+xml" data="diagrams/e4-fault-zone.svg"
+              width="360" height="250" role="img" aria-label="Fault Zone: Titan charges along a row of tiles with the party standing on the wide flank; then Magnitude 5.0 is a donut whose safe ground is right against his hitbox.">
+        <p class="empty">Fault Zone: Titan charges along a row of tiles with the party standing on the wide flank; then Magnitude 5.0 is a donut whose safe ground is right against his hitbox.</p>
+      </object>
+          <figcaption><b>Flank for the charges, hitbox for the donut.</b> The switch from "get
+            away from him" to "get on him" is immediate.</figcaption>
+        </figure>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Titan drives himself, so you are not steering. Your job is to be on the correct flank first — people will follow you into the charge lane if you are wrong.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Same flank, and do not be the one caught over open air when the knockback lands. The tiles are already thinner by this point in the fight.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Three passes means three repositions. Ranged: do not drift outward between them — Magnitude 5.0 is coming and you want to already be close.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>Move in for Magnitude 5.0 early. It follows the third charge closely and a healer caught in the donut takes the party with them.</dd></div>
+        </dl>
+      </div>
+
+      <div class="mech">
+        <h3>Earthen Fury <span class="kind raidwide">Block break</span></h3>
+        <p>A large raidwide with a damage-over-time attached, cast at the end of a full rotation
+          of forms. It is the marker that the fight is looping rather than escalating.</p>
+        <dl class="roles">
+          <div class="role" data-role="mt"><dt>Main tank</dt><dd>Party mitigation. Stonecrusher follows a few seconds later, so have a personal ready as well.</dd></div>
+          <div class="role" data-role="ot"><dt>Off tank</dt><dd>Take the Stonecrusher swap after it if your group swaps — it is a clean, quiet window.</dd></div>
+          <div class="role" data-role="dps"><dt>DPS</dt><dd>Feint or Addle it. Nothing needs dodging during the cast, which makes it the cheapest mitigation you will spend all fight.</dd></div>
+          <div class="role" data-role="healer"><dt>Healer</dt><dd>The tail damage is what catches people — heal through the dot, not just the hit, because Bomb Boulders and Evil Earth start again on top of it.</dd></div>
+        </dl>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================ CHEAT SHEET =========================== -->
+  <section class="phase" id="cheat-sheet" data-label="Cheat sheet" aria-labelledby="cheat-h">
+    <div class="section-head">
+      <p class="eyebrow">One screen</p>
+      <h1 id="cheat-h">The whole tier, in calls</h1>
+      <p class="lede">What you would actually say out loud, in order.</p>
+    </div>
+    <div class="prose">
+
+      <h2>E1 · Eden Prime</h2>
+      <div class="scroll-x">
+        <table class="data">
+          <thead><tr><th>Cast</th><th>Call</th></tr></thead>
+          <tbody>
+            <tr><td>Spear of Paradise</td><td>Buster — swap on the cast</td></tr>
+            <tr><td>Vice of Apathy</td><td>Puddles out on the diagonals, then everyone in</td></tr>
+            <tr><td>Vice of Vanity</td><td>Tanks to opposite edges</td></tr>
+            <tr><td>Pure Light</td><td>Behind</td></tr>
+            <tr><td>Delta Attack</td><td>Corners, two each, split inside</td></tr>
+            <tr><td>Fragor Maximus</td><td>Adds — one per tank, kill before Unto Dust</td></tr>
+            <tr><td>Eternal Breath</td><td>Everything, everyone topped</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>E2 · Voidwalker</h2>
+      <div class="scroll-x">
+        <table class="data">
+          <thead><tr><th>Cast</th><th>Call</th></tr></thead>
+          <tbody>
+            <tr><td>Doomvoid Guillotine</td><td>Sides</td></tr>
+            <tr><td>Doomvoid Slicer</td><td>Under the boss</td></tr>
+            <tr><td>Shadowflame</td><td>Both tanks — mitigate</td></tr>
+            <tr><td>Spell-In-Waiting</td><td>Clocks. Nothing lands when it is cast</td></tr>
+            <tr><td>Empty Hate</td><td>Near the Hand, take the push</td></tr>
+            <tr><td>Punishing Ray</td><td>One body per puddle, five of them</td></tr>
+            <tr><td>Shadoweye</td><td>Look away — and call who has it</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>E3 · Leviathan</h2>
+      <div class="scroll-x">
+        <table class="data">
+          <thead><tr><th>Cast</th><th>Call</th></tr></thead>
+          <tbody>
+            <tr><td>Temporary Current</td><td>Clear corner</td></tr>
+            <tr><td>Drenching Pulse</td><td>Together, then wide</td></tr>
+            <tr><td>Tidal Wave</td><td>Walk into the water, or Arm's Length</td></tr>
+            <tr><td>Undersea Quake (outer)</td><td>Middle</td></tr>
+            <tr><td>Undersea Quake (inner)</td><td>Sides — tank and healer each</td></tr>
+            <tr><td>Swirling Tsunami</td><td>Donut — get <em>next to</em> them</td></tr>
+            <tr><td>Maelstrom</td><td>Dodge puddles and both dives</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>E4 · Titan</h2>
+      <div class="scroll-x">
+        <table class="data">
+          <thead><tr><th>Cast</th><th>Call</th></tr></thead>
+          <tbody>
+            <tr><td>Evil Earth</td><td>Step back onto the tile that blew</td></tr>
+            <tr><td>Seismic Wave</td><td>Behind the boulder</td></tr>
+            <tr><td>Bomb Boulders</td><td>They go in landing order — follow the gaps</td></tr>
+            <tr><td>Geocrush</td><td>Hug the tile, arena behind you</td></tr>
+            <tr><td>Massive Landslide</td><td>In front of him</td></tr>
+            <tr><td>Left / Right Landslide</td><td>Opposite the arm he winds up</td></tr>
+            <tr><td>Fault Zone</td><td>Flank, wide side, three times</td></tr>
+            <tr><td>Magnitude 5.0</td><td>Get in — hitbox only</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <hr>
+      <p class="empty">Cast names, ordering and timings are taken from the encounters' own
+        fight timelines as published in
+        <a href="https://github.com/quisquous/cactbot">cactbot</a>'s raidboss data, and
+        cross-checked against community write-ups of each fight. Handling advice is the
+        common normal-mode approach rather than a savage strategy.</p>
+    </div>
+  </section>
+
+  <div class="pager">
+    <button type="button" class="prev"><i class="bi bi-chevron-left" aria-hidden="true"></i> Previous</button>
+    <span class="count" aria-live="polite">—</span>
+    <button type="button" class="next">Next <i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+  </div>
+  <p class="kbd-hint"><kbd>←</kbd> <kbd>→</kbd> to page through</p>
+
+</main>
+
+<script src="../../../guide.js?v=2"></script>
+<script src="edens-gate.js?v=1"></script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" width="360" height="250" role="img" aria-labelledby="ti de">
+<title id="ti">Evil Earth — the chain of tiles</title>
+<desc id="de">Evil Earth marks one tile of Titan's four-by-four floor. That tile explodes, then every
+  tile touching it, then the ring beyond. The tile that has already gone off never goes off
+  again, so the safest move is one step back onto the ground you just dodged.</desc>
+<style>
+  .bg{fill:#0b1d28}
+  .tile{fill:#122a38;stroke:#2b5a6b;stroke-width:1}
+  .lbl{font:700 9.5px 'Arial Narrow',Arial,sans-serif;fill:#9db2c0;letter-spacing:.08em}
+  .tiny{font:700 8.5px 'Arial Narrow',Arial,sans-serif;fill:#7d94a4;letter-spacing:.1em}
+  .cap{font:700 9.5px 'Arial Narrow',Arial,sans-serif;fill:#66edf1;letter-spacing:.14em}
+  .seed{fill:#f0b429;fill-opacity:.4;stroke:#f0b429;stroke-width:1.4}
+  .r1{fill:#e2564d;fill-opacity:.3;stroke:#e2564d;stroke-width:1.2}
+  .r2{fill:#e2564d;fill-opacity:.3;stroke:#e2564d;stroke-width:1.2}
+  .ok{fill:#9bf00b;fill-opacity:.2;stroke:#9bf00b;stroke-width:1.4}
+  .p{fill:#e8eef2;stroke:#07151c;stroke-width:1.4}
+  .titan{fill:#c98b3c;fill-opacity:.9}
+  .r1,.r2,.ok{opacity:1}
+  .you{transform:translate(-44px,-44px)}
+  @media (prefers-reduced-motion:no-preference){
+    .seed{animation:s1 8s linear infinite}
+    .r1{animation:s2 8s linear infinite}
+    .r2{animation:s3 8s linear infinite}
+    .ok{animation:s4 8s linear infinite}
+    .you{animation:step 8s ease-in-out infinite}
+    @keyframes s1{0%,8%{opacity:.35}18%,40%{opacity:1}52%,100%{opacity:.2}}
+    @keyframes s2{0%,40%{opacity:0}50%,72%{opacity:1}84%,100%{opacity:0}}
+    @keyframes s3{0%,72%{opacity:0}82%,96%{opacity:1}100%{opacity:0}}
+    @keyframes s4{0%,44%{opacity:0}54%,100%{opacity:1}}
+    @keyframes step{0%,42%{transform:translate(0,0)}56%,100%{transform:translate(-44px,-44px)}}
+  }
+</style>
+<rect class="bg" width="360" height="250" rx="4"/>
+<text class="cap" x="180" y="20" text-anchor="middle" textLength="347" lengthAdjust="spacingAndGlyphs">EVIL EARTH · STEP BACK ONTO THE TILE THAT ALREADY BLEW</text>
+
+<g class="tile">
+  <rect x="92"  y="40"  width="44" height="44"/><rect x="136" y="40"  width="44" height="44"/>
+  <rect x="180" y="40"  width="44" height="44"/><rect x="224" y="40"  width="44" height="44"/>
+  <rect x="92"  y="84"  width="44" height="44"/><rect x="136" y="84"  width="44" height="44"/>
+  <rect x="180" y="84"  width="44" height="44"/><rect x="224" y="84"  width="44" height="44"/>
+  <rect x="92"  y="128" width="44" height="44"/><rect x="136" y="128" width="44" height="44"/>
+  <rect x="180" y="128" width="44" height="44"/><rect x="224" y="128" width="44" height="44"/>
+  <rect x="92"  y="172" width="44" height="44"/><rect x="136" y="172" width="44" height="44"/>
+  <rect x="180" y="172" width="44" height="44"/><rect x="224" y="172" width="44" height="44"/>
+</g>
+
+<!-- ring 2: the far tiles, last to go -->
+<g class="r2">
+  <rect x="92" y="40" width="44" height="44"/><rect x="224" y="40" width="44" height="44"/>
+  <rect x="92" y="172" width="44" height="44"/><rect x="224" y="172" width="44" height="44"/>
+  <rect x="92" y="84" width="44" height="44"/><rect x="224" y="128" width="44" height="44"/>
+</g>
+<!-- ring 1: everything touching the seed -->
+<g class="r1">
+  <rect x="136" y="40" width="44" height="44"/><rect x="180" y="40" width="44" height="44"/>
+  <rect x="136" y="128" width="44" height="44"/><rect x="180" y="128" width="44" height="44"/>
+  <rect x="180" y="84" width="44" height="44"/><rect x="92" y="128" width="44" height="44"/>
+</g>
+<!-- the seed, and what it becomes: the one square guaranteed clear next -->
+<rect class="seed" x="136" y="84" width="44" height="44"/>
+<rect class="ok"   x="136" y="84" width="44" height="44"/>
+
+<circle class="titan" cx="246" cy="62" r="11"/>
+<text class="tiny" x="246" y="34" text-anchor="middle">TITAN</text>
+
+<g class="you"><circle class="p" cx="202" cy="150" r="6"/></g>
+
+<text class="tiny" x="158" y="110" text-anchor="middle" fill="#07151c">1st</text>
+<text class="lbl" x="180" y="236" text-anchor="middle" textLength="347" lengthAdjust="spacingAndGlyphs">Amber goes first, red follows outwards — stand on the amber square</text>
+</svg>

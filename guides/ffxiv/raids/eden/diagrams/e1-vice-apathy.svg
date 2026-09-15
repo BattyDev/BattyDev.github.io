@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" width="360" height="250" role="img" aria-labelledby="ti de">
+<title id="ti">Vice of Apathy into Eden's Flare</title>
+<desc id="de">The four DPS carry puddle markers out to the edge of the platform, drop them, and every
+  one of the eight runs back inside Eden Prime's hitbox before Eden's Flare burns everything
+  outside it.</desc>
+<style>
+  .bg{fill:#0b1d28}
+  .floor{fill:#122a38;stroke:#2b5a6b;stroke-width:1.5}
+  .lbl{font:700 11px 'Arial Narrow',Arial,sans-serif;fill:#9db2c0;letter-spacing:.08em}
+  .tiny{font:700 9px 'Arial Narrow',Arial,sans-serif;fill:#7d94a4;letter-spacing:.1em}
+  .boss{fill:#66edf1;fill-opacity:.85}
+  .hit{fill:none;stroke:#66edf1;stroke-width:1;stroke-dasharray:3 3;stroke-opacity:.55}
+  .p{stroke:#07151c;stroke-width:1.4}
+  .mt{fill:#66edf1}.ot{fill:#3aa8ac}.hl{fill:#9bf00b}.dp{fill:#ff6f82}
+  .pud{fill:#e2564d;fill-opacity:.3;stroke:#e2564d;stroke-width:1.2;opacity:0}
+  .flare{fill:#f0b429;fill-opacity:.2;stroke:#f0b429;stroke-width:1.5;opacity:0}
+  .safe{fill:#9bf00b;fill-opacity:.16;stroke:#9bf00b;stroke-width:1.4;opacity:0}
+  .cap{font:700 10px 'Arial Narrow',Arial,sans-serif;fill:#66edf1;letter-spacing:.14em}
+
+  /* Static frame is the resolved state: puddles down, party stacked, flare lit.
+     Motion is added only where the reader has not asked for it to stop. */
+  .pud,.flare,.safe{opacity:1}
+  .cap1,.cap2{opacity:0}
+  @media (prefers-reduced-motion:no-preference){
+    .capstatic{opacity:0}
+    .out{animation:out 9s ease-in-out infinite}
+    .stay{animation:stay 9s ease-in-out infinite}
+    .pud{animation:pud 9s linear infinite}
+    .flare,.safe{animation:lit 9s linear infinite}
+    .cap1{animation:c1 9s linear infinite}
+    .cap2{animation:c2 9s linear infinite}
+    /* 0-22% carry out, 22-30% drop, 30-55% run back in, 55-100% flare */
+    @keyframes out{
+      0%,4%{transform:translate(0,0)}
+      24%,52%{transform:translate(var(--dx),var(--dy))}
+      70%,100%{transform:translate(0,0)}
+    }
+    @keyframes stay{0%,100%{transform:translate(0,0)}}
+    @keyframes pud{0%,24%{opacity:0}30%,100%{opacity:1}}
+    @keyframes lit{0%,60%{opacity:0}68%,92%{opacity:1}100%{opacity:0}}
+    @keyframes c1{0%,4%{opacity:1}26%,100%{opacity:0}}
+    @keyframes c2{0%,56%{opacity:0}64%,100%{opacity:1}}
+  }
+</style>
+
+<rect class="bg" width="360" height="250" rx="4"/>
+<rect class="floor" x="72" y="24" width="216" height="208" rx="26"/>
+
+<!-- puddles land where the DPS drop them, at the four diagonals -->
+<circle class="pud" cx="118" cy="66"  r="21"/>
+<circle class="pud" cx="242" cy="66"  r="21"/>
+<circle class="pud" cx="118" cy="190" r="21"/>
+<circle class="pud" cx="242" cy="190" r="21"/>
+
+<!-- Eden's Flare: everything outside the hitbox burns, the hitbox itself is the safe spot -->
+<path class="flare" d="M72 50a26 26 0 0 1 26-26h164a26 26 0 0 1 26 26v156a26 26 0 0 1-26 26H98a26 26 0 0 1-26-26z
+  M180 128m-34 0a34 34 0 1 0 68 0a34 34 0 1 0-68 0" fill-rule="evenodd"/>
+<circle class="safe" cx="180" cy="128" r="34"/>
+
+<circle class="hit" cx="180" cy="128" r="34"/>
+<circle class="boss" cx="180" cy="128" r="13"/>
+<text class="tiny" x="180" y="176" text-anchor="middle">EDEN PRIME</text>
+
+<!-- tanks and healers never leave the hitbox; only the four DPS travel -->
+<g class="stay"><circle class="p mt" cx="166" cy="112" r="5.5"/></g>
+<g class="stay"><circle class="p ot" cx="194" cy="112" r="5.5"/></g>
+<g class="stay"><circle class="p hl" cx="166" cy="144" r="5.5"/></g>
+<g class="stay"><circle class="p hl" cx="194" cy="144" r="5.5"/></g>
+<g class="out" style="--dx:-56px;--dy:-52px"><circle class="p dp" cx="174" cy="118" r="5.5"/></g>
+<g class="out" style="--dx:56px;--dy:-52px"><circle class="p dp" cx="186" cy="118" r="5.5"/></g>
+<g class="out" style="--dx:-56px;--dy:52px"><circle class="p dp" cx="174" cy="138" r="5.5"/></g>
+<g class="out" style="--dx:56px;--dy:52px"><circle class="p dp" cx="186" cy="138" r="5.5"/></g>
+
+<text class="cap capstatic" x="180" y="16" text-anchor="middle">DROP OUTSIDE, THEN STACK IN THE HITBOX</text>
+<text class="cap cap1" x="180" y="16" text-anchor="middle">1 · DPS CARRY THE PUDDLES OUT</text>
+<text class="cap cap2" x="180" y="16" text-anchor="middle">2 · EVERYONE BACK INSIDE THE HITBOX</text>
+<text class="lbl" x="180" y="246" text-anchor="middle">Eden's Flare is safe only inside the hitbox</text>
+</svg>

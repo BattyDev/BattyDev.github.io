@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" width="360" height="250" role="img" aria-labelledby="ti de">
+<title id="ti">Tidal Wave — knocked away from the water</title>
+<desc id="de">Tidal Wave rises on one edge of the platform and pushes everyone directly away from it.
+  Walk towards the wave before it breaks so the push carries you across the floor instead of off
+  the far edge, or hold Arm's Length or Surecast and ignore it.</desc>
+<style>
+  .bg{fill:#0b1d28}
+  .floor{fill:#122a38;stroke:#2b5a6b;stroke-width:1.5}
+  .lbl{font:700 9.5px 'Arial Narrow',Arial,sans-serif;fill:#9db2c0;letter-spacing:.08em}
+  .tiny{font:700 8.5px 'Arial Narrow',Arial,sans-serif;fill:#7d94a4;letter-spacing:.1em}
+  .cap{font:700 9.5px 'Arial Narrow',Arial,sans-serif;fill:#66edf1;letter-spacing:.14em}
+  .p{stroke:#07151c;stroke-width:1.3}
+  .mt{fill:#66edf1}.ot{fill:#3aa8ac}.hl{fill:#9bf00b}.dp{fill:#ff6f82}
+  .wave{fill:#3aa8ac;fill-opacity:.55;stroke:#66edf1;stroke-width:1.4}
+  .arrow{stroke:#f0b429;stroke-width:2;fill:none;marker-end:url(#a)}
+  .drop{fill:none;stroke:#e2564d;stroke-width:2.5;stroke-dasharray:6 4}
+  .cap1,.cap2{opacity:0}
+  .mv{transform:translate(0,44px)}
+  @media (prefers-reduced-motion:no-preference){
+    .capstatic{opacity:0}
+    .mv{animation:mv 9s ease-in-out infinite}
+    .wave{animation:rise 9s ease-in-out infinite}
+    .arrow{animation:arr 9s linear infinite}
+    .cap1{animation:c1 9s linear infinite}
+    .cap2{animation:c2 9s linear infinite}
+    @keyframes mv{0%,10%{transform:translate(0,0)}30%,46%{transform:translate(0,-46px)}66%,100%{transform:translate(0,44px)}}
+    @keyframes rise{0%,12%{transform:scaleY(.25);opacity:.4}40%,100%{transform:scaleY(1);opacity:1}}
+    @keyframes arr{0%,50%{opacity:0}60%,100%{opacity:1}}
+    @keyframes c1{0%,10%{opacity:1}44%,100%{opacity:0}}
+    @keyframes c2{0%,50%{opacity:0}60%,100%{opacity:1}}
+  }
+  .wave{transform-origin:180px 68px}
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+  <path d="M0 0 L10 5 L0 10 z" fill="#f0b429"/></marker></defs>
+
+<rect class="bg" width="360" height="250" rx="4"/>
+<rect class="floor" x="80" y="40" width="200" height="176" rx="8"/>
+<rect class="drop" x="80" y="40" width="200" height="176" rx="8"/>
+
+<rect class="wave" x="80" y="40" width="200" height="28" rx="6"/>
+<text class="tiny" x="180" y="59" text-anchor="middle" fill="#07151c">TIDAL WAVE RISES HERE</text>
+
+<line class="arrow" x1="120" y1="104" x2="120" y2="164"/>
+<line class="arrow" x1="180" y1="104" x2="180" y2="164"/>
+<line class="arrow" x1="240" y1="104" x2="240" y2="164"/>
+
+<g class="mv">
+  <circle class="p mt" cx="146" cy="150" r="5.5"/><circle class="p ot" cx="166" cy="150" r="5.5"/>
+  <circle class="p hl" cx="186" cy="150" r="5.5"/><circle class="p hl" cx="206" cy="150" r="5.5"/>
+  <circle class="p dp" cx="146" cy="168" r="5.5"/><circle class="p dp" cx="166" cy="168" r="5.5"/>
+  <circle class="p dp" cx="186" cy="168" r="5.5"/><circle class="p dp" cx="206" cy="168" r="5.5"/>
+</g>
+
+<text class="cap capstatic" x="180" y="20" text-anchor="middle">WALK INTO THE WAVE BEFORE IT BREAKS</text>
+<text class="cap cap1" x="180" y="20" text-anchor="middle">1 · MOVE TOWARDS THE WATER</text>
+<text class="cap cap2" x="180" y="20" text-anchor="middle">2 · THE PUSH LANDS YOU ON THE FLOOR, NOT OFF IT</text>
+<text class="lbl" x="180" y="236" text-anchor="middle">Red border is open water — the push clears the whole platform</text>
+</svg>

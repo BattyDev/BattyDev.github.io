@@ -19,7 +19,23 @@ guides/
     beastmaster.html      a guide
     treasure-trove.html   a guide
     treasure-trove.js     one guide's own widgets
+    raids/
+      index.html          /guides/ffxiv/raids     a sub-shelf
+      eden/
+        index.html        /guides/ffxiv/raids/eden
+        edens-gate-full-party.html
+        edens-gate-unsynced.html
+        edens-gate.css    styles for this pair of guides
+        edens-gate.js     their shared widgets
+        diagrams/*.svg    animated mechanic diagrams
 ```
+
+A topic can nest. `raids/` is a shelf of shelves because one raid series holds
+several write-ups and flattening them onto `ffxiv/index.html` would bury the job
+and grind guides under a wall of fight names. A nested shelf is the same
+`index.html` + cards pattern, one `../` deeper, with the extra level added to the
+breadcrumb. Do not nest for the sake of it -- two guides on a subject is a card,
+not a shelf.
 
 Unindexed, not private. The landing page links here, and every page carries
 `<meta name="robots" content="noindex, nofollow">` — reachable by anyone on the
@@ -61,6 +77,44 @@ A thing the reader returns to is not part of any one section.
 Write the prose in HTML, not in a JSON blob rendered by script. It stays
 diffable, printable, and — because `guide.js` only hides sections once it has
 wired itself up — readable with script off, where the sections simply stack.
+
+### Per-guide styles
+
+Same rule as scripts. Anything that is one guide's shape rather than the
+section's skin goes in a sibling `.css` loaded **after** `guides.css`, so the
+custom properties are in scope and nothing restates a colour by value.
+`edens-gate.css` is the worked example: a role matrix and a diagram figure, used
+by two guides and by nothing else in the section. Putting it in `guides.css`
+would mean every page in the section carrying raid furniture, and a `?v=` bump
+across the whole shelf every time a raid guide is edited.
+
+### Diagrams
+
+A picture of a mechanic belongs in a `diagrams/` folder beside the guide, as a
+standalone `.svg` -- one file, shared by every guide that needs it, diffable and
+openable on its own. Three things were learned the hard way building the Eden's
+Gate pair, and all three are invisible in the markup:
+
+- **Embed with `<object type="image/svg+xml">`, not `<img>`.** An `<img>`-loaded
+  SVG renders in secure static mode: the page's `prefers-reduced-motion` never
+  reaches it, and nothing outside it can stop it looping, which fails WCAG 2.2.2
+  on its own. `<object>` is a real same-origin document, so the file's own
+  reduced-motion rules apply and the page can reach in and pause it. Give it
+  `role="img"`, an `aria-label`, and fallback content.
+- **Author the resolved state, animate towards it.** Without animation an element
+  sits where the markup puts it. If that is the *start* of the motion, the still
+  frame teaches the wrong thing -- eight players stacked in the middle of the
+  attack they are supposed to be spread out for. Put the end position in the base
+  rule and let the keyframes travel to it.
+- **Pin caption widths with `textLength`.** The section's font does not exist
+  inside the image and the fallback is about a third wider, so text sized by eye
+  clips at the viewBox or collides across a two-panel diagram. `textLength` with
+  `lengthAdjust="spacingAndGlyphs"` makes the box the contract instead of the
+  font.
+
+An `<object>` inside a `display:none` `.phase` does not load until the pager
+shows that phase, so any script that reaches into one must do it on that embed's
+own `load` event rather than once at startup.
 
 ### Per-guide scripts
 
@@ -104,6 +158,8 @@ Check, at minimum:
 - 360px wide: no horizontal page scroll (wide tables scroll inside
   `.scroll-x`, not the body)
 - any saved state survives a reload, and a fresh profile starts clean
+- the home bar's `stamp` is short. "Unrestricted party" overflowed 360px; the
+  bar has no room for a phrase
 
 Both bugs this section has actually shipped were invisible to a glance at the
 markup: a deep link landing 46px under the sticky header, and a focus ring

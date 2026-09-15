@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" width="360" height="250" role="img" aria-labelledby="ti de">
+<title id="ti">Geocrush — hug the landing, keep floor behind you</title>
+<desc id="de">Titan marks one tile with outward arrows and leaps onto it, knocking everyone straight
+  away from that tile. The push is fixed, so the closer you stand the shorter it travels — and
+  you want the long side of the arena behind you, not the edge.</desc>
+<style>
+  .bg{fill:#0b1d28}
+  .tile{fill:#122a38;stroke:#2b5a6b;stroke-width:1}
+  .lbl{font:700 11px 'Arial Narrow',Arial,sans-serif;fill:#9db2c0;letter-spacing:.08em}
+  .tiny{font:700 9px 'Arial Narrow',Arial,sans-serif;fill:#7d94a4;letter-spacing:.1em}
+  .cap{font:700 10px 'Arial Narrow',Arial,sans-serif;fill:#66edf1;letter-spacing:.14em}
+  .mark{fill:#f0b429;fill-opacity:.32;stroke:#f0b429;stroke-width:1.6}
+  .arrow{stroke:#f0b429;stroke-width:1.8;fill:none;marker-end:url(#a)}
+  .good{fill:#9bf00b;stroke:#07151c;stroke-width:1.4}
+  .bad{fill:#e2564d;stroke:#07151c;stroke-width:1.4}
+  .titan{fill:#c98b3c;fill-opacity:.95}
+  .void{fill:none;stroke:#e2564d;stroke-width:2.5;stroke-dasharray:6 4;stroke-opacity:.75}
+  @media (prefers-reduced-motion:no-preference){
+    .gmv{animation:g 7s ease-in-out infinite}
+    .bmv{animation:b 7s ease-in-out infinite}
+    .arrow{animation:a 7s linear infinite}
+    @keyframes g{0%,34%{transform:translate(0,0)}56%,100%{transform:translate(38px,38px)}}
+    @keyframes b{0%,34%{transform:translate(0,0)}56%,90%{transform:translate(34px,34px);opacity:1}100%{opacity:0}}
+    @keyframes a{0%,26%{opacity:.35}40%,100%{opacity:1}}
+  }
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto">
+  <path d="M0 0 L10 5 L0 10 z" fill="#f0b429"/></marker></defs>
+<rect class="bg" width="360" height="250" rx="4"/>
+<text class="cap" x="180" y="20" text-anchor="middle">GEOCRUSH · STAND ON THE LANDING'S INNER EDGE</text>
+
+<g class="tile">
+  <rect x="92"  y="40"  width="44" height="44"/><rect x="136" y="40"  width="44" height="44"/>
+  <rect x="180" y="40"  width="44" height="44"/><rect x="224" y="40"  width="44" height="44"/>
+  <rect x="92"  y="84"  width="44" height="44"/><rect x="136" y="84"  width="44" height="44"/>
+  <rect x="180" y="84"  width="44" height="44"/><rect x="224" y="84"  width="44" height="44"/>
+  <rect x="92"  y="128" width="44" height="44"/><rect x="136" y="128" width="44" height="44"/>
+  <rect x="180" y="128" width="44" height="44"/><rect x="224" y="128" width="44" height="44"/>
+  <rect x="92"  y="172" width="44" height="44"/><rect x="136" y="172" width="44" height="44"/>
+  <rect x="180" y="172" width="44" height="44"/><rect x="224" y="172" width="44" height="44"/>
+</g>
+<rect class="void" x="92" y="40" width="176" height="176"/>
+
+<rect class="mark" x="92" y="40" width="44" height="44"/>
+<circle class="titan" cx="114" cy="62" r="12"/>
+<line class="arrow" x1="128" y1="76" x2="176" y2="124"/>
+<line class="arrow" x1="114" y1="90" x2="114" y2="140"/>
+<line class="arrow" x1="140" y1="62" x2="190" y2="62"/>
+<line class="arrow" x1="100" y1="48" x2="78"  y2="26"/>
+
+<g class="gmv"><circle class="good" cx="150" cy="98" r="6.5"/></g>
+<text class="tiny" x="182" y="112" text-anchor="start" fill="#9bf00b">CLOSE · LANDS ON FLOOR</text>
+
+<g class="bmv"><circle class="bad" cx="108" cy="34" r="6.5"/></g>
+<text class="tiny" x="108" y="26" text-anchor="middle" fill="#e2564d">TOO FAR OUT</text>
+
+<text class="lbl" x="180" y="238" text-anchor="middle">Push distance is fixed — only your runway differs</text>
+</svg>

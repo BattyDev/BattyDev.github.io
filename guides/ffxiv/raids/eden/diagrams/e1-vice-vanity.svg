@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" width="360" height="250" role="img" aria-labelledby="ti de">
+<title id="ti">Vice of Vanity — the tank lasers</title>
+<desc id="de">Eden Prime tethers both tanks and fires a line down each tether. The tanks walk to
+  opposite edges so the two lines point away from the six players stacked in the middle.</desc>
+<style>
+  .bg{fill:#0b1d28}
+  .floor{fill:#122a38;stroke:#2b5a6b;stroke-width:1.5}
+  .lbl{font:700 11px 'Arial Narrow',Arial,sans-serif;fill:#9db2c0;letter-spacing:.08em}
+  .tiny{font:700 9px 'Arial Narrow',Arial,sans-serif;fill:#7d94a4;letter-spacing:.1em}
+  .cap{font:700 10px 'Arial Narrow',Arial,sans-serif;fill:#66edf1;letter-spacing:.14em}
+  .boss{fill:#66edf1;fill-opacity:.85}
+  .p{stroke:#07151c;stroke-width:1.4}
+  .mt{fill:#66edf1}.ot{fill:#3aa8ac}.hl{fill:#9bf00b}.dp{fill:#ff6f82}
+  .teth{stroke:#f0b429;stroke-width:1.6;stroke-dasharray:4 3;stroke-opacity:.85;fill:none}
+  .beam{fill:#e2564d;fill-opacity:.3;stroke:#e2564d;stroke-width:1.2}
+  .cap1,.cap2{opacity:0}
+  .tankL{transform:translate(-62px,0)}
+  .tankR{transform:translate(62px,0)}
+  @media (prefers-reduced-motion:no-preference){
+    .capstatic{opacity:0}
+    .tankL{animation:tl 8s ease-in-out infinite}
+    .tankR{animation:tr 8s ease-in-out infinite}
+    .beam{animation:fire 8s linear infinite}
+    .cap1{animation:c1 8s linear infinite}
+    .cap2{animation:c2 8s linear infinite}
+    @keyframes tl{0%,6%{transform:translate(0,0)}34%,100%{transform:translate(-62px,0)}}
+    @keyframes tr{0%,6%{transform:translate(0,0)}34%,100%{transform:translate(62px,0)}}
+    @keyframes fire{0%,42%{opacity:0}52%,88%{opacity:1}100%{opacity:0}}
+    @keyframes c1{0%,6%{opacity:1}30%,100%{opacity:0}}
+    @keyframes c2{0%,40%{opacity:0}50%,100%{opacity:1}}
+  }
+</style>
+<rect class="bg" width="360" height="250" rx="4"/>
+<rect class="floor" x="72" y="24" width="216" height="208" rx="26"/>
+
+<!-- the lines run outward from each tank, away from the stack -->
+<rect class="beam" x="72" y="112" width="46" height="32"/>
+<rect class="beam" x="242" y="112" width="46" height="32"/>
+
+<path class="teth" d="M180 128 H118"/>
+<path class="teth" d="M180 128 H242"/>
+
+<circle class="boss" cx="180" cy="128" r="13"/>
+<text class="tiny" x="180" y="152" text-anchor="middle">EDEN PRIME</text>
+
+<!-- the six who are not tethered never move -->
+<g><circle class="p hl" cx="166" cy="102" r="5.5"/><circle class="p hl" cx="194" cy="102" r="5.5"/>
+   <circle class="p dp" cx="160" cy="88" r="5.5"/><circle class="p dp" cx="180" cy="86" r="5.5"/>
+   <circle class="p dp" cx="200" cy="88" r="5.5"/><circle class="p dp" cx="180" cy="70" r="5.5"/></g>
+<text class="tiny" x="180" y="60" text-anchor="middle">EVERYONE ELSE — OFF THE LINES</text>
+
+<g class="tankL"><circle class="p mt" cx="164" cy="128" r="6"/></g>
+<g class="tankR"><circle class="p ot" cx="196" cy="128" r="6"/></g>
+<text class="tiny" x="96" y="170" text-anchor="middle">MT</text>
+<text class="tiny" x="264" y="170" text-anchor="middle">OT</text>
+
+<text class="cap capstatic" x="180" y="16" text-anchor="middle">TANKS TAKE THE TETHERS TO OPPOSITE EDGES</text>
+<text class="cap cap1" x="180" y="16" text-anchor="middle">1 · BOTH TANKS ARE TETHERED</text>
+<text class="cap cap2" x="180" y="16" text-anchor="middle">2 · LINES FIRE OUTWARD, PARTY IS CLEAR</text>
+<text class="lbl" x="180" y="246" text-anchor="middle">Mitigate it — this one is aimed at you, not shared</text>
+</svg>

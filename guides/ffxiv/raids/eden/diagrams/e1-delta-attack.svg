@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" width="360" height="250" role="img" aria-labelledby="ti de">
+<title id="ti">Delta Attack — three spells at once</title>
+<desc id="de">Delta Attack fires Eden's Blizzard III as a circle centred on the boss, Eden's Thunder III
+  as a cross through the middle of the platform, and Eden's Fire III as a spread marker on all
+  eight players. The cross and the circle leave only the four corner quadrants, so the party
+  takes two players per corner and the pair spreads inside it.</desc>
+<style>
+  .bg{fill:#0b1d28}
+  .floor{fill:#122a38;stroke:#2b5a6b;stroke-width:1.5}
+  .lbl{font:700 11px 'Arial Narrow',Arial,sans-serif;fill:#9db2c0;letter-spacing:.08em}
+  .tiny{font:700 9px 'Arial Narrow',Arial,sans-serif;fill:#7d94a4;letter-spacing:.1em}
+  .cap{font:700 10px 'Arial Narrow',Arial,sans-serif;fill:#66edf1;letter-spacing:.14em}
+  .key{font:700 9px 'Arial Narrow',Arial,sans-serif;letter-spacing:.06em}
+  .boss{fill:#66edf1;fill-opacity:.85}
+  .p{stroke:#07151c;stroke-width:1.4}
+  .mt{fill:#66edf1}.ot{fill:#3aa8ac}.hl{fill:#9bf00b}.dp{fill:#ff6f82}
+  .ice{fill:#7fd8ff;fill-opacity:.22;stroke:#7fd8ff;stroke-width:1.2}
+  .thun{fill:#c9a6ff;fill-opacity:.24;stroke:#c9a6ff;stroke-width:1.1}
+  .fire{fill:#f0843c;fill-opacity:.24;stroke:#f0843c;stroke-width:1.1}
+  .quad{fill:#9bf00b;fill-opacity:.09;stroke:#9bf00b;stroke-width:1;stroke-dasharray:3 3}
+  .cap1,.cap2{opacity:0}
+  .mv{transform:translate(var(--dx),var(--dy))}
+  @media (prefers-reduced-motion:no-preference){
+    .capstatic{opacity:0}
+    .mv{animation:mv 10s ease-in-out infinite}
+    .ice,.thun{animation:tell 10s linear infinite}
+    .fire{animation:pop 10s linear infinite}
+    .cap1{animation:c1 10s linear infinite}
+    .cap2{animation:c2 10s linear infinite}
+    @keyframes mv{0%,12%{transform:translate(0,0)}40%,100%{transform:translate(var(--dx),var(--dy))}}
+    @keyframes tell{0%,14%{opacity:.25}44%,100%{opacity:1}}
+    @keyframes pop{0%,58%{opacity:0}68%,100%{opacity:1}}
+    @keyframes c1{0%,10%{opacity:1}34%,100%{opacity:0}}
+    @keyframes c2{0%,44%{opacity:0}54%,100%{opacity:1}}
+  }
+</style>
+<rect class="bg" width="360" height="250" rx="4"/>
+<rect class="floor" x="72" y="24" width="216" height="208" rx="26"/>
+
+<!-- the four corner quadrants the cross leaves behind -->
+<rect class="quad" x="78"  y="30"  width="74" height="70"/>
+<rect class="quad" x="208" y="30"  width="74" height="70"/>
+<rect class="quad" x="78"  y="156" width="74" height="70"/>
+<rect class="quad" x="208" y="156" width="74" height="70"/>
+
+<!-- Thunder III: a cross through the middle row and column -->
+<rect class="thun" x="72"  y="104" width="216" height="48"/>
+<rect class="thun" x="156" y="24"  width="48"  height="208"/>
+<!-- Blizzard III: centred on Eden Prime -->
+<circle class="ice" cx="180" cy="128" r="60"/>
+
+<circle class="boss" cx="180" cy="128" r="12"/>
+
+<!-- two per corner, and the pair splits so the Fire spreads do not touch -->
+<g class="mv" style="--dx:-72px;--dy:-84px"><circle class="fire" cx="180" cy="128" r="17"/><circle class="p mt" cx="180" cy="128" r="5.5"/></g>
+<g class="mv" style="--dx:-38px;--dy:-52px"><circle class="fire" cx="180" cy="128" r="17"/><circle class="p dp" cx="180" cy="128" r="5.5"/></g>
+<g class="mv" style="--dx:72px;--dy:-84px"><circle class="fire" cx="180" cy="128" r="17"/><circle class="p ot" cx="180" cy="128" r="5.5"/></g>
+<g class="mv" style="--dx:38px;--dy:-52px"><circle class="fire" cx="180" cy="128" r="17"/><circle class="p dp" cx="180" cy="128" r="5.5"/></g>
+<g class="mv" style="--dx:-72px;--dy:84px"><circle class="fire" cx="180" cy="128" r="17"/><circle class="p hl" cx="180" cy="128" r="5.5"/></g>
+<g class="mv" style="--dx:-38px;--dy:52px"><circle class="fire" cx="180" cy="128" r="17"/><circle class="p dp" cx="180" cy="128" r="5.5"/></g>
+<g class="mv" style="--dx:72px;--dy:84px"><circle class="fire" cx="180" cy="128" r="17"/><circle class="p hl" cx="180" cy="128" r="5.5"/></g>
+<g class="mv" style="--dx:38px;--dy:52px"><circle class="fire" cx="180" cy="128" r="17"/><circle class="p dp" cx="180" cy="128" r="5.5"/></g>
+
+<text class="cap capstatic" x="180" y="16" text-anchor="middle">TWO TO A CORNER, AND SPLIT INSIDE IT</text>
+<text class="cap cap1" x="180" y="16" text-anchor="middle">1 · CROSS AND CIRCLE — RUN FOR A CORNER</text>
+<text class="cap cap2" x="180" y="16" text-anchor="middle">2 · FIRE III LANDS ON ALL EIGHT — STAY SPLIT</text>
+
+<g transform="translate(74,244)">
+  <circle cx="4" cy="-4" r="4" class="ice"/><text class="key" x="12" y="-1" fill="#7fd8ff">BLIZZARD III</text>
+  <circle cx="82" cy="-4" r="4" class="thun"/><text class="key" x="90" y="-1" fill="#c9a6ff">THUNDER III</text>
+  <circle cx="158" cy="-4" r="4" class="fire"/><text class="key" x="166" y="-1" fill="#f0843c">FIRE III</text>
+</g>
+</svg>

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" width="360" height="250" role="img" aria-labelledby="ti de">
+<title id="ti">Guardians of Paradise — the add phase</title>
+<desc id="de">After Fragor Maximus two Guardians of Paradise land. Each tank takes one and turns it
+  outward so its Mana Slice cleave misses the party. Both must die before Unto Dust, the enrage
+  cast about a minute after they appear.</desc>
+<style>
+  .bg{fill:#0b1d28}
+  .floor{fill:#122a38;stroke:#2b5a6b;stroke-width:1.5}
+  .lbl{font:700 11px 'Arial Narrow',Arial,sans-serif;fill:#9db2c0;letter-spacing:.08em}
+  .tiny{font:700 9px 'Arial Narrow',Arial,sans-serif;fill:#7d94a4;letter-spacing:.1em}
+  .cap{font:700 10px 'Arial Narrow',Arial,sans-serif;fill:#66edf1;letter-spacing:.14em}
+  .p{stroke:#07151c;stroke-width:1.4}
+  .mt{fill:#66edf1}.ot{fill:#3aa8ac}.hl{fill:#9bf00b}.dp{fill:#ff6f82}
+  .add{fill:#ff6f82;fill-opacity:.85;stroke:#07151c;stroke-width:1.4}
+  .cleave{fill:#e2564d;fill-opacity:.26;stroke:#e2564d;stroke-width:1.1}
+  .bar{fill:#122a38;stroke:#2b5a6b;stroke-width:1}
+  .fill{fill:#f0b429}
+  @media (prefers-reduced-motion:no-preference){
+    .fill{animation:burn 11s linear infinite}
+    .cleave{animation:sweep 11s ease-in-out infinite}
+    @keyframes burn{0%{width:0}94%,100%{width:196px}}
+    @keyframes sweep{0%,20%{opacity:.25}34%,54%{opacity:1}68%,100%{opacity:.25}}
+  }
+</style>
+<rect class="bg" width="360" height="250" rx="4"/>
+<rect class="floor" x="52" y="24" width="256" height="170" rx="18"/>
+<text class="tiny" x="180" y="44" text-anchor="middle">THE PLATFORM, NOW IN OPEN SPACE</text>
+
+<!-- each cleave points off the platform, not across it -->
+<path class="cleave" d="M96 110 L52 78 L52 142 Z"/>
+<path class="cleave" d="M264 110 L308 78 L308 142 Z"/>
+
+<circle class="add" cx="96" cy="110" r="12"/>
+<circle class="add" cx="264" cy="110" r="12"/>
+<text class="tiny" x="96" y="136" text-anchor="middle">GUARDIAN</text>
+<text class="tiny" x="264" y="136" text-anchor="middle">GUARDIAN</text>
+
+<circle class="p mt" cx="116" cy="110" r="6"/>
+<circle class="p ot" cx="244" cy="110" r="6"/>
+<text class="tiny" x="116" y="94" text-anchor="middle">MT</text>
+<text class="tiny" x="244" y="94" text-anchor="middle">OT</text>
+
+<g>
+  <circle class="p hl" cx="166" cy="102" r="5.5"/><circle class="p hl" cx="194" cy="102" r="5.5"/>
+  <circle class="p dp" cx="166" cy="122" r="5.5"/><circle class="p dp" cx="194" cy="122" r="5.5"/>
+  <circle class="p dp" cx="180" cy="86"  r="5.5"/><circle class="p dp" cx="180" cy="138" r="5.5"/>
+</g>
+<text class="tiny" x="180" y="164" text-anchor="middle">EVERYONE ELSE IN THE MIDDLE — CLEAR OF BOTH CLEAVES</text>
+
+<rect class="bar" x="82" y="212" width="196" height="12" rx="6"/>
+<rect class="fill" x="82" y="212" width="196" height="12" rx="6"/>
+<text class="tiny" x="82" y="206">ADDS LAND</text>
+<text class="tiny" x="278" y="206" text-anchor="end">UNTO DUST · ENRAGE</text>
+<text class="lbl" x="180" y="242" text-anchor="middle" textLength="347" lengthAdjust="spacingAndGlyphs">Roughly a minute to kill both, then Eternal Breath hits the raid</text>
+</svg>
