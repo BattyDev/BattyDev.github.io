@@ -21,10 +21,10 @@ guides/
     treasure-trove.js     one guide's own widgets
 ```
 
-Unlisted, not private. Nothing links here from the landing page and every page
-carries `<meta name="robots" content="noindex, nofollow">`, but there is no
-gate and nothing secret behind it. Do not add a login; if something needs one,
-it belongs in `/health`, not here.
+Unindexed, not private. The landing page links here, and every page carries
+`<meta name="robots" content="noindex, nofollow">` — reachable by anyone on the
+site, not surfaced in search. There is no gate and nothing secret behind it. Do
+not add a login; if something needs one, it belongs in `/health`, not here.
 
 No build step. Vanilla HTML, one stylesheet, one script. The deployed thing is
 the source, and a guide must stay readable as a file.
