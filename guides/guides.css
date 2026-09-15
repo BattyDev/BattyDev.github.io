@@ -19,6 +19,7 @@
   --green: #9bf00b;
   --amber: #f0b429;
   --red: #e2564d;
+  --pom: #ff6f82;      /* moogle pink -- a highlight, not an error state */
   --ink: #e8eef2;
   --ink-dim: #9db2c0;
   --ink-faint: #7d94a4;
@@ -332,6 +333,96 @@ table.data tr:last-child td { border-bottom: 0; }
   .phase.is-active { animation: none; }
 }
 
+/* ---- persistent widgets ----
+   Anything a guide puts outside its .phase sections stays on screen across
+   every phase, because the pager only toggles the phases themselves. That is
+   where a guide's live state belongs -- a tracker you keep coming back to is
+   not part of any one phase. */
+.tracker {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.tracker h2 {
+  margin: 0 0 4px;
+  font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.16em;
+  color: var(--aqua);
+}
+.tracker .hint { margin: 0 0 12px; color: var(--ink-dim); font-size: 13px; max-width: 74ch; }
+
+/* Ten pom buttons. auto-fit with a max keeps them pom-sized on a wide screen
+   instead of stretching into lozenges. */
+.poms { display: grid; grid-template-columns: repeat(10, minmax(0, 34px)); gap: 7px; margin-bottom: 12px; }
+.pom { appearance: none; border: 0; padding: 0; background: none; cursor: pointer; display: grid; place-items: center; }
+.pom i {
+  width: 100%; aspect-ratio: 1; display: block; border-radius: 50%;
+  border: 2px dashed var(--ink-faint);
+  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+.pom[aria-pressed="true"] i {
+  background: radial-gradient(circle at 35% 30%, #ffb3bd, var(--pom) 62%);
+  border: 2px solid var(--pom);
+  transform: scale(1.06);
+}
+/* Striped: a token that exists but is gated behind content you cannot reach
+   yet. Distinct from "not yet earned" on purpose. */
+.pom.locked i { border-style: solid; border-color: var(--rule); background: repeating-linear-gradient(45deg, transparent 0 4px, var(--rule) 4px 6px); }
+.pom:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; border-radius: 50%; }
+
+.tally { display: flex; flex-wrap: wrap; gap: 6px 20px; align-items: center; font-size: 13px; color: var(--ink-dim); }
+.tally b { font-size: 18px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.tally button {
+  background: transparent; border: 1px solid var(--rule); color: var(--ink-dim);
+  border-radius: var(--radius); font: inherit; font-size: 12px;
+  padding: 2px 9px; margin-left: 4px; cursor: pointer;
+}
+.tally button:hover { color: var(--ink); border-color: var(--aqua-dim); }
+.tally button:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 0; font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.08em; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+
+/* ---- numbered steps ---- */
+ol.steps { list-style: none; counter-reset: s; padding: 0; margin: 0 0 12px; }
+ol.steps > li { counter-increment: s; position: relative; padding: 0 0 16px 42px; margin: 0; }
+ol.steps > li::before {
+  content: counter(s);
+  position: absolute; left: 0; top: 0;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--aqua); color: var(--void);
+  font-weight: 700; font-size: 14px; line-height: 28px; text-align: center;
+}
+/* The rail between markers reads as one sequence rather than a plain list. */
+ol.steps > li:not(:last-child)::after { content: ""; position: absolute; left: 13px; top: 32px; bottom: 2px; width: 2px; background: var(--rule); }
+ol.steps strong { display: block; color: #fff; font-size: 15px; margin-bottom: 2px; }
+
+/* ---- week cards ---- */
+.weeks { display: grid; gap: 10px; margin-bottom: 14px; }
+.week { background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius); padding: 12px 14px; }
+.week.now { border-color: var(--aqua); box-shadow: inset 0 0 0 1px var(--aqua); }
+.week header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.week h3 { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: 0.02em; }
+.week .badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; padding: 2px 9px; border-radius: 999px; background: var(--aqua); color: var(--void); }
+
+.opt { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; padding: 8px 0; border-top: 1px dashed var(--rule); font-size: 14px; }
+.opt:first-of-type { border-top: 0; }
+.opt p { margin: 0; }
+.pill { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; padding: 2px 9px; border-radius: 999px; white-space: nowrap; align-self: start; margin-top: 3px; }
+.pill.yes { background: rgba(155,240,11,0.14); color: var(--green); }
+.pill.maybe { background: rgba(240,180,41,0.14); color: var(--amber); }
+.pill.nope { background: rgba(226,86,77,0.14); color: var(--red); }
+
+/* ---- checklist ---- */
+ul.check { list-style: none; padding: 0; margin: 0 0 12px; }
+ul.check li { display: flex; gap: 10px; align-items: flex-start; padding: 5px 0; }
+ul.check input { width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--aqua); flex: none; cursor: pointer; }
+ul.check input:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+ul.check label { cursor: pointer; font-size: 14px; }
+
 /* Printing is how a guide gets read away from the browser, so print every
    phase rather than only the one on screen, and drop the navigation. */
 @media print {
@@ -344,5 +435,8 @@ table.data tr:last-child td { border-bottom: 0; }
   .callout { border-color: #999; background: none; }
   table.data th, table.data td { border-color: #999; }
   .eyebrow, .crumbs { color: #555; }
-  .prose h2 { color: #000; }
+  .prose h2, .tracker h2 { color: #000; }
+  .tracker, .week { border-color: #999; background: none; }
+  ol.steps > li::before { background: #000; color: #fff; }
+  .pill { border: 1px solid #999; }
 }
