@@ -1,0 +1,75 @@
+# Builds battydev.com from two repositories.
+#
+# The site lives here; brackets/ lives in BattyDev/batty-brackets and is
+# assembled into place at build time, so battydev.com/brackets keeps working
+# after the split. A push here rebuilds; a push there sends a
+# repository_dispatch (see that repo's publish workflow) which also rebuilds.
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+  # Sent by batty-brackets after a green run on main. Needs a PAT over there.
+  repository_dispatch:
+    types: [brackets-updated]
+  # Fallback so a brackets change still goes live without that PAT — it just
+  # waits for the hour instead of landing immediately. Safe to delete once the
+  # dispatch is wired up.
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race. Don't cancel a run in progress, though — a
+# half-applied deploy is worse than a slow one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the site
+        uses: actions/checkout@v4
+
+      # Until the folder is deleted from this repository, a checked-in copy
+      # would collide with the checkout below. Harmless no-op once it's gone.
+      - name: Clear the brackets directory
+        run: rm -rf brackets
+
+      - name: Check out brackets
+        uses: actions/checkout@v4
+        with:
+          repository: BattyDev/batty-brackets
+          ref: main
+          path: brackets
+
+      # upload-pages-artifact already excludes .git and .github, but the
+      # nested checkout is the kind of thing worth being explicit about:
+      # publishing a .git directory exposes the whole history.
+      - name: Strip non-published files from brackets
+        run: rm -rf brackets/.git brackets/.github brackets/test/node_modules
+
+      - name: Fail if brackets did not land
+        run: test -f brackets/index.html
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
