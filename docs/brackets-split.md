@@ -45,12 +45,17 @@ installs Playwright and runs all 19 suites, and it asserts Playwright actually
 resolved — `run.mjs` skips the 16 browser suites and still exits 0 when it is
 missing, which would otherwise show as a green run covering 3 suites.
 
-**5. Add the dispatch token.** In `batty-brackets` → Settings → Secrets and
-variables → Actions, add `SITE_DISPATCH_TOKEN`: a fine-grained PAT scoped to
-`BattyDev.github.io` with **Contents: read and write**. The built-in
-`GITHUB_TOKEN` cannot dispatch across repositories. Without it, pushes to
-brackets won't reach the site and `publish.yml` fails with a clear message
-rather than silently doing nothing.
+**5. Add the dispatch token — optional.** In `batty-brackets` → Settings →
+Secrets and variables → Actions, add `SITE_DISPATCH_TOKEN`: a fine-grained PAT
+scoped to `BattyDev.github.io` with **Contents: read and write**. The built-in
+`GITHUB_TOKEN` cannot dispatch across repositories, and a PAT can only be
+created by hand at github.com — no API mints one.
+
+Skipping this does not break anything. `pages.yml` also runs hourly, so a
+brackets change goes live within the hour regardless; the token only makes it
+immediate. `publish.yml` will fail visibly on each push until the secret
+exists, which is the intended signal rather than silence. If you'd rather not
+have a PAT at all, delete `publish.yml` and keep the schedule.
 
 **6. Merge this branch into `main` here.** `pages.yml` runs and builds. The
 deploy step **will fail**, because Pages is still set to deploy from a branch.
@@ -83,7 +88,8 @@ After step 9: revert the deletion commit first, then flip the source back.
 ## Afterwards
 
 - A change to brackets goes: push → Tests → `publish.yml` dispatches →
-  `pages.yml` rebuilds the site. A minute or two, not instant.
+  `pages.yml` rebuilds the site. A minute or two, not instant. Without the
+  token, the hourly schedule picks it up instead.
 - `brackets/AGENTS.md` says Pages serves `main` directly with no CI step. True
   today, wrong after step 7 — update its **Deploying** section as part of the
   cutover.

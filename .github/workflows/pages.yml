@@ -9,8 +9,14 @@ name: Deploy site
 on:
   push:
     branches: [main]
+  # Sent by batty-brackets after a green run on main. Needs a PAT over there.
   repository_dispatch:
     types: [brackets-updated]
+  # Fallback so a brackets change still goes live without that PAT — it just
+  # waits for the hour instead of landing immediately. Safe to delete once the
+  # dispatch is wired up.
+  schedule:
+    - cron: '17 * * * *'
   workflow_dispatch:
 
 permissions:
