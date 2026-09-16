@@ -28,7 +28,7 @@ current docs:
 git subtree split --prefix=brackets -b brackets-split
 ```
 
-Produces a 14-commit branch whose root is the contents of `brackets/`.
+Produces a history-preserving branch whose root is the contents of `brackets/`.
 
 **2. Create `BattyDev/batty-brackets` on GitHub.** Empty — no README, no
 `.gitignore`, no licence. An initial commit means a merge conflict on the next
@@ -41,9 +41,10 @@ git push https://github.com/BattyDev/batty-brackets.git brackets-split:main
 ```
 
 **4. Confirm the Tests workflow is green there** before going further. It
-installs Playwright and runs all 19 suites, and it asserts Playwright actually
-resolved — `run.mjs` skips the 16 browser suites and still exits 0 when it is
-missing, which would otherwise show as a green run covering 3 suites.
+installs Playwright, runs all 20 runner suites plus the static backend contract
+check, and asserts Playwright actually resolved — `run.mjs` skips the 17
+browser suites and still exits 0 when it is missing, which would otherwise show
+as a green run covering only the 3 Node suites.
 
 **5. Add the dispatch token — optional.** In `batty-brackets` → Settings →
 Secrets and variables → Actions, add `SITE_DISPATCH_TOKEN`: a fine-grained PAT
