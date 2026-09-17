@@ -1,0 +1,160 @@
+/* Present view — a presentation, not a page that scrolls.
+   Everything here is scoped to body.presenting, which assets/lesson.js toggles,
+   so the outline styles are untouched when the deck is not up.
+
+   Type is sized in vmin so one slide reads across a classroom on a TV and
+   still reads in the hand on a phone, without a second set of breakpoints. */
+
+/* Without this, a right-swipe on the stage overscrolls to the viewport and
+   Chromium runs its history-back gesture: the deck is replaced by the outline
+   mid-lesson. `contain` on the stage stops the chaining, `none` on the root
+   stops any remaining overscroll affordance. */
+html.presenting,body.presenting{overscroll-behavior:none}
+
+body.presenting{
+  overflow:hidden;
+  /* No system font stack on the slides: the section's condensed face is too
+     narrow at 6vmin across a room. */
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:#05090c;
+}
+body.presenting::before{display:none}
+body.presenting #chrome{display:none}
+body.presenting main{
+  max-width:none;margin:0;padding:0;
+  width:100vw;height:100vh;height:100dvh;
+}
+
+.deck{
+  position:relative;
+  width:100%;height:100%;
+  overflow:hidden;
+  cursor:pointer;
+  /* The whole stage is a nav target; let the swipe handler own horizontal drag
+     while a slide that overflows can still be panned vertically. */
+  touch-action:pan-y;
+  overscroll-behavior:contain;
+}
+.deck:focus{outline:none}
+.deck:focus-visible{outline:2px solid #66edf1;outline-offset:-4px}
+
+.slide{
+  position:absolute;inset:0;
+  display:none;
+  place-items:center;
+  padding:clamp(24px,7vmin,88px);
+  /* A slide that overflows is a slide with too much on it, but scroll rather
+     than clip so nothing becomes unreadable mid-lesson. */
+  overflow:auto;
+  background:#05090c;
+  opacity:0;
+  transition:opacity .22s ease;
+}
+.slide.is-active{display:grid;opacity:1}
+
+.slide-inner{
+  width:100%;max-width:26ch;
+  margin:auto;
+  text-align:center;
+  text-wrap:balance;
+}
+.slide-question .slide-inner,.slide-scripture .slide-inner{max-width:24ch}
+.slide-activity .slide-inner{max-width:32ch;text-align:left}
+
+.slide p,.slide h2,.slide ul{margin:0}
+.slide-inner>*+*{margin-top:1em}
+
+.slide-kicker{
+  margin-bottom:.6em;
+  color:#66edf1;
+  font-size:clamp(.8rem,2.2vmin,1.5rem);
+  font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+}
+.slide-title{
+  font-size:clamp(1.9rem,6.4vmin,5rem);
+  font-weight:800;line-height:1.05;letter-spacing:-.02em;color:#fff;
+}
+.slide-foot{
+  margin-top:1.1em;color:#8fa3ac;
+  font-size:clamp(.85rem,2.3vmin,1.6rem);
+}
+
+/* the question slides: the question and nothing else, as large as it fits */
+.slide-q{
+  font-size:clamp(1.9rem,6.6vmin,5.2rem);
+  font-weight:700;line-height:1.14;color:#fff;
+}
+.slide-lead{
+  font-size:clamp(1.5rem,5.2vmin,4rem);
+  font-weight:600;line-height:1.2;color:#fff;
+}
+
+/* scripture: reference big, excerpt short */
+.slide-ref{
+  font-size:clamp(1.8rem,7vmin,5.4rem);
+  font-weight:800;line-height:1.05;color:#9bf00b;letter-spacing:-.01em;
+}
+.slide-excerpt{
+  margin-top:.8em;
+  font-size:clamp(1.1rem,3.4vmin,2.4rem);
+  font-weight:400;line-height:1.35;color:#dbe6ea;font-style:italic;
+}
+
+.slide-rows{
+  padding-left:1.2em;
+  font-size:clamp(1.1rem,3.4vmin,2.4rem);
+  line-height:1.35;color:#dbe6ea;
+}
+.slide-rows li+li{margin-top:.45em}
+.slide-rows li::marker{color:#9bf00b}
+
+.slide-invite .slide-kicker{color:#9bf00b}
+.slide-closing{background:#060d11}
+.slide-closing .slide-kicker{
+  color:#9bf00b;
+  font-size:clamp(1.1rem,3.4vmin,2.4rem);letter-spacing:.14em;
+}
+.slide-closing .slide-lead{color:#fff}
+
+.slide-origin{
+  margin-top:1.6em;
+  color:#5f7178;
+  font-size:clamp(.7rem,1.8vmin,1.1rem);
+  letter-spacing:.14em;text-transform:uppercase;
+}
+
+/* ---------- chrome ---------- */
+
+.deck-chrome{
+  position:fixed;z-index:10;inset:auto 0 0 0;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:clamp(10px,2vmin,22px) clamp(14px,3vmin,32px);
+  padding-bottom:calc(clamp(10px,2vmin,22px) + env(safe-area-inset-bottom));
+  pointer-events:none;
+}
+.deck-chrome>*{pointer-events:auto}
+body.presenting .toggle{
+  padding:8px 16px;
+  background:#132430;color:#cfe0e6;
+  border:1px solid #27424f;
+  font-size:.78rem;opacity:.55;
+  transition:opacity .16s ease;
+}
+body.presenting .toggle:hover,body.presenting .toggle:focus-visible{opacity:1}
+.deck-counter{
+  margin:0;
+  color:#6f8189;
+  font-size:clamp(.8rem,2vmin,1.2rem);
+  font-variant-numeric:tabular-nums;letter-spacing:.1em;
+}
+
+@media (prefers-reduced-motion:reduce){
+  .slide{transition:none}
+}
+
+/* Landscape on a phone is a real presenting case — short viewport, so trim the
+   padding rather than shrinking the type further. */
+@media (max-height:420px){
+  .slide{padding:clamp(14px,4vmin,32px)}
+  .slide-foot,.slide-origin{display:none}
+}

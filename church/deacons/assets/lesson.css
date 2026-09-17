@@ -1,0 +1,265 @@
+/* Outline view + the shell both church pages share.
+   The landing page's aqua and green, because this section sits on that site —
+   but quieter type and more line height than the game dashboards, since these
+   pages get read on a phone in the middle of a lesson. */
+
+:root{
+  color-scheme:dark;
+  --void:#07151c;
+  --panel:#0e1f28;
+  --panel-2:#12262f;
+  --line:#1e3a46;
+  --ink:#fff;
+  --ink-dim:#9fb0b7;
+  --ink-dimmer:#6f8189;
+  --aqua:#66edf1;
+  --green:#9bf00b;
+  --amber:#ffc74d;
+  font-family:"Roboto Condensed","Arial Narrow",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  min-width:320px;margin:0;min-height:100vh;
+  background:var(--void);color:var(--ink);
+  font-size:17px;line-height:1.5;
+}
+body::before{
+  content:"";position:fixed;z-index:-1;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 90% 55% at 50% 0%,#66edf114,transparent 70%);
+}
+a{color:var(--aqua)}
+main{
+  width:100%;max-width:820px;margin:0 auto;
+  padding:clamp(20px,4vw,40px) 16px 96px;
+}
+
+/* ---------- shell ---------- */
+
+.home-bar{
+  position:sticky;top:0;z-index:20;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:10px clamp(12px,3vw,20px);
+  background:#07151ce8;backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.home-bar .account{
+  display:flex;align-items:center;gap:10px;
+  color:var(--ink);text-decoration:none;
+}
+.home-bar .gamerpic{
+  display:grid;place-items:center;
+  width:34px;height:34px;border-radius:50%;
+  background:var(--aqua);color:#04222b;font-weight:900;
+}
+.home-bar .account b{display:block;font-size:1rem;line-height:1.1}
+.home-bar .account small{display:block;color:var(--ink-dim);font-size:.75rem}
+
+.section-head{margin:0 0 clamp(20px,4vw,32px)}
+.eyebrow{
+  margin:0 0 4px;color:var(--green);
+  font-size:.75rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+}
+.section-head h1{
+  margin:0 0 10px;font-size:clamp(2rem,6vw,2.8rem);font-weight:900;
+  line-height:1;letter-spacing:-.02em;text-transform:uppercase;
+}
+.lede{margin:0;color:var(--ink-dim);font-size:.95rem;max-width:60ch}
+
+/* card grid, used by church/index.html */
+.cards{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.card{
+  display:flex;gap:14px;padding:18px;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  color:var(--ink);text-decoration:none;
+  transition:border-color .16s ease,transform .16s ease;
+}
+.card:hover{border-color:var(--aqua);transform:translateY(-2px)}
+.card .icon{color:var(--aqua);font-size:1.6rem;line-height:1}
+.card b{display:block;font-size:1.15rem}
+.card .desc{display:block;margin-top:4px;color:var(--ink-dim);font-size:.88rem}
+.card .meta{display:block;margin-top:8px;color:var(--ink-dimmer);font-size:.75rem;text-transform:uppercase;letter-spacing:.1em}
+
+/* ---------- badges and origin marks ---------- */
+
+.badge{
+  display:inline-block;padding:2px 8px;border-radius:999px;
+  border:1px solid var(--line);
+  font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  white-space:nowrap;
+}
+.badge-complete{color:#04222b;background:var(--green);border-color:var(--green)}
+.badge-guide-draft{color:var(--amber);border-color:#5a4718;background:#2a2113}
+.badge-awaiting-source{color:var(--ink-dimmer);background:#11202a}
+
+/* Anything the advisor wrote rather than the curriculum. Muted on purpose:
+   it should be findable at a glance without competing with the material. */
+.origin{
+  display:inline-block;padding:1px 7px;border-radius:999px;
+  border:1px dashed #3d5a66;color:var(--ink-dimmer);
+  font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;
+  white-space:nowrap;vertical-align:2px;
+}
+
+/* ---------- index list ---------- */
+
+.lesson-list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.row-link{
+  display:block;padding:16px 18px;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  color:var(--ink);text-decoration:none;
+  transition:border-color .16s ease,transform .16s ease;
+}
+a.row-link:hover{border-color:var(--aqua);transform:translateY(-2px)}
+.row-link.is-pending{opacity:.6;cursor:default}
+.row-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.row-date{color:var(--aqua);font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.row-title{display:block;font-size:1.2rem;line-height:1.2}
+.row-meta{display:block;margin-top:3px;color:var(--ink-dimmer);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em}
+.row-truth{display:block;margin-top:8px;color:var(--ink-dim);font-size:.9rem}
+.empty{color:var(--ink-dim)}
+
+/* ---------- lesson header ---------- */
+
+.lesson-head{margin:0 0 clamp(22px,4vw,34px);padding-bottom:18px;border-bottom:1px solid var(--line)}
+.lesson-kicker{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.lesson-kicker>span:not(.badge){color:var(--aqua);font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.lesson-head h1{
+  margin:0 0 8px;font-size:clamp(1.8rem,5.5vw,2.5rem);font-weight:900;
+  line-height:1.05;letter-spacing:-.02em;
+}
+.chapter-line{margin:0;display:flex;gap:12px;flex-wrap:wrap;align-items:baseline;font-size:.88rem}
+.chapter-line .total{color:var(--green);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:.78rem}
+.actions{margin-top:16px}
+.toggle{
+  appearance:none;cursor:pointer;
+  padding:10px 22px;border:0;border-radius:8px;
+  background:var(--aqua);color:#04222b;
+  font-family:inherit;font-size:.95rem;font-weight:900;
+  letter-spacing:.08em;text-transform:uppercase;
+}
+.toggle:hover{background:#8ff5f8}
+.toggle:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+
+.notice{
+  margin:0 0 24px;padding:12px 14px;
+  background:#2a2113;border:1px solid #5a4718;border-radius:8px;
+  color:var(--amber);font-size:.9rem;
+}
+
+/* ---------- lesson sections ---------- */
+
+.block{margin:0 0 clamp(26px,5vw,40px)}
+.sec{
+  display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+  margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line);
+  font-size:1.05rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+}
+.sec-n{
+  display:grid;place-items:center;flex:none;
+  width:24px;height:24px;border-radius:6px;
+  background:var(--panel-2);color:var(--aqua);
+  font-size:.8rem;letter-spacing:0;
+}
+.sec-t{flex:1 1 auto}
+.mins{
+  color:var(--green);font-size:.74rem;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;
+}
+
+.glance{margin:0 0 14px;font-size:1.02rem}
+.pair{margin:0;display:grid;gap:4px 14px;grid-template-columns:auto 1fr}
+.pair dt{
+  color:var(--ink-dimmer);font-size:.72rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;padding-top:5px;
+}
+.pair dd{margin:0}
+
+.glance-scriptures{margin:12px 0 0;font-size:.92rem}
+
+.bullets{margin:0;padding-left:20px;display:grid;gap:7px}
+.bullets li::marker{color:var(--aqua)}
+.bullets li.hard{color:var(--ink)}
+.flag{
+  display:inline-block;margin-right:6px;padding:1px 7px;border-radius:999px;
+  background:#3a2a10;color:var(--amber);
+  font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+}
+
+.hook{margin:0 0 8px;font-size:1.08rem;font-weight:700}
+.how,.materials{margin:0 0 6px;color:var(--ink-dim);font-size:.92rem}
+.label{
+  display:inline-block;margin-right:7px;
+  color:var(--ink-dimmer);font-size:.7rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+}
+p.label{display:block;margin:0 0 4px}
+
+/* questions — the spine of the lesson, so they get the most room */
+.questions{list-style:none;margin:0;padding:0;display:grid;gap:14px;counter-reset:q}
+.q{
+  position:relative;padding:16px 18px 16px 46px;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  counter-increment:q;
+}
+.q::before{
+  content:counter(q);
+  position:absolute;left:14px;top:16px;
+  display:grid;place-items:center;width:22px;height:22px;border-radius:6px;
+  background:var(--panel-2);color:var(--green);font-size:.8rem;font-weight:700;
+}
+.q-text{margin:0 0 8px;font-size:1.08rem;font-weight:700;line-height:1.35}
+.q-scriptures{margin:0 0 8px;font-size:.92rem}
+.scripture{font-weight:700}
+.scripture-unlinked{color:var(--amber);border-bottom:1px dotted var(--amber)}
+.q-follow,.q-hope{margin:0 0 6px;color:var(--ink-dim);font-size:.92rem}
+.q-hope{color:var(--ink-dimmer);font-style:italic}
+
+.activity{
+  margin:12px 0 0;padding:12px 14px;
+  background:var(--panel-2);border-left:3px solid var(--green);border-radius:0 8px 8px 0;
+  font-size:.92rem;
+}
+.activity-title{margin:0 0 4px;font-weight:700}
+.activity p{margin:0 0 6px}
+
+.ask{margin:0 0 10px;font-size:1.08rem;font-weight:700}
+.christ{margin:0 0 12px;padding:10px 14px;background:var(--panel);border-left:3px solid var(--aqua);border-radius:0 8px 8px 0;font-size:.95rem}
+.blessings{margin:0}
+
+.pocket{margin:0 0 14px;font-size:.94rem}
+.pocket>p:last-child{margin:0;color:var(--ink-dim)}
+.hardq{padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:8px}
+.hardq-q{margin:0 0 6px;font-weight:700;color:var(--ink)}
+.hardq-a{margin:0;color:var(--ink-dim)}
+
+.sources{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:.9rem}
+.src{display:flex;gap:9px;flex-wrap:wrap;align-items:baseline}
+.src-kind{
+  flex:none;min-width:74px;
+  color:var(--ink-dimmer);font-size:.68rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+}
+.src-meta{color:var(--ink-dimmer);font-size:.74rem}
+
+.oops{padding:clamp(24px,6vw,48px) 0}
+.oops h1{margin:0 0 10px;font-size:clamp(1.5rem,5vw,2.1rem);line-height:1.1}
+.oops-detail{margin:0 0 18px;color:var(--ink-dim);font-size:.92rem}
+.back{font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:.85rem}
+
+/* Reading a lesson off paper: flatten it, drop the chrome. */
+@media print{
+  body{background:#fff;color:#000}
+  body::before,.home-bar,.actions,.toggle{display:none!important}
+  .q,.card,.row-link,.hardq{border-color:#bbb;background:#fff}
+  .activity,.christ{background:#f4f4f4}
+  a{color:#000}
+  .origin,.badge{border-color:#888;color:#333;background:#fff}
+}
+
+@media (max-width:420px){
+  body{font-size:16px}
+  .pair{grid-template-columns:1fr}
+  .pair dt{padding-top:8px}
+  .q{padding:14px 14px 14px 42px}
+}
