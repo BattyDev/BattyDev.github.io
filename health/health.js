@@ -57,10 +57,11 @@ const todayISO = () => {
    The targets table mixes directions and getting this wrong inverts the meaning:
    kcal is a ceiling, carbs is a midpoint to sit near, and protein, fat, fibre and
    sodium are floors. Sodium especially — it is a floor for POTS, so falling short
-   is the problem, not exceeding it. */
+   is the problem, not exceeding it. Protein also carries a stretch goal: the
+   floor is the hard minimum, the bar is scaled to the goal above it. */
 const GOALS = [
   { key: 'kcal',      label: 'Calories', target: 'kcal_ceiling',  dir: 'ceiling', unit: 'kcal', digits: 0 },
-  { key: 'protein_g', label: 'Protein',  target: 'protein_floor', dir: 'floor',   unit: 'g',    digits: 0 },
+  { key: 'protein_g', label: 'Protein',  target: 'protein_floor', dir: 'floor',   unit: 'g',    digits: 0, stretch: 'protein_target' },
   { key: 'fat_g',     label: 'Fat',      target: 'fat_floor',     dir: 'floor',   unit: 'g',    digits: 0 },
   { key: 'carbs_g',   label: 'Carbs',    target: 'carbs_target',  dir: 'target',  unit: 'g',    digits: 0 },
   { key: 'fiber_g',   label: 'Fibre',    target: 'fiber_target',  dir: 'floor',   unit: 'g',    digits: 0 },
@@ -84,11 +85,14 @@ function goalsHTML(totals, targets) {
   return GOALS.map((g) => {
     const value = Number(totals[g.key] ?? 0);
     const target = targets ? Number(targets[g.target]) : null;
-    const state = goalState(value, target, g.dir);
-    const pct = target ? Math.min(100, (value / target) * 100) : 0;
-    const targetText = target
+    const stretch = targets && g.stretch ? Number(targets[g.stretch]) : null;
+    const state = stretch && value >= stretch ? 'is-good' : goalState(value, target, g.dir);
+    const scale = stretch || target;
+    const pct = scale ? Math.min(100, (value / scale) * 100) : 0;
+    let targetText = target
       ? `${num(target, g.digits)} ${esc(g.unit)} ${DIR_WORD[g.dir]}`
       : 'no target set';
+    if (target && stretch) targetText += ` · ${num(stretch, g.digits)} ${esc(g.unit)} goal`;
     return `
       <div>
         <div class="goal-label">
@@ -103,6 +107,14 @@ function goalsHTML(totals, targets) {
 
 function renderGoals(el, totals, targets) {
   el.innerHTML = goalsHTML(totals, targets);
+}
+
+/* Targets are versioned by effective_from, so a day is judged against the row
+   in effect on that day rather than whatever is current. Rows arrive newest
+   first; the oldest row covers days logged before any target existed. */
+function targetsFor(iso) {
+  const rows = (DATA && DATA.targetRows) || [];
+  return rows.find((r) => !iso || r.effective_from <= iso) || rows[rows.length - 1] || null;
 }
 
 /* ---------- nutrition ---------- */
@@ -130,7 +142,7 @@ function itemsTableHTML(items) {
     </table></div>`;
 }
 
-function renderDays(el, totals, entries, targets) {
+function renderDays(el, totals, entries) {
   if (!totals.length) {
     el.innerHTML = '<p class="empty">No days logged yet.</p>';
     return;
@@ -143,6 +155,7 @@ function renderDays(el, totals, entries, targets) {
 
   el.innerHTML = totals.map((t, i) => {
     const items = byDate.get(t.log_date) || [];
+    const targets = targetsFor(t.log_date);
     const kcalState = goalState(Number(t.kcal ?? 0), targets && Number(targets.kcal_ceiling), 'ceiling');
     const rows = itemsTableHTML(items);
 
@@ -241,7 +254,7 @@ async function loadAll() {
     await Promise.all([
       q('daily_totals', db.from('daily_totals').select('*').order('log_date', { ascending: false }).limit(1000)),
       q('entries', db.from('entries').select('*').order('log_date', { ascending: false }).order('id', { ascending: true }).limit(5000)),
-      q('targets', db.from('targets').select('*').order('effective_from', { ascending: false }).limit(1)),
+      q('targets', db.from('targets').select('*').order('effective_from', { ascending: false })),
       q('weight_trend', db.from('weight_trend').select('*').order('log_date', { ascending: false }).limit(1000)),
       q('inbody', db.from('inbody').select('*').order('scan_date', { ascending: false })),
       q('cardio_estimate', db.from('cardio_estimate').select('*').order('session_date', { ascending: false }).limit(500)),
@@ -255,12 +268,12 @@ async function loadAll() {
         .order('id', { ascending: true }).limit(5000)),
     ]);
 
-  return { daily, entries, targets: targetRows[0] || null, weights, inbody,
+  return { daily, entries, targetRows, weights, inbody,
            cardio, sessions, progression, symptoms, sets };
 }
 
 function renderAll(data) {
-  const { daily, entries, targets, weights, inbody, cardio, sessions, progression, symptoms, sets } = data;
+  const { daily, entries, weights, inbody, cardio, sessions, progression, symptoms, sets } = data;
 
   DATA = data;
   BY_DATE = indexByDate(data);
@@ -271,12 +284,12 @@ function renderAll(data) {
   const latest = daily[0] || null;
   const isToday = latest && latest.log_date === todayISO();
   $('today-heading').textContent = isToday ? 'Today' : `Latest logged · ${fmtDate(latest ? latest.log_date : null)}`;
-  renderGoals($('today-goals'), latest, targets);
+  renderGoals($('today-goals'), latest, targetsFor(latest ? latest.log_date : todayISO()));
   /* targets.note is clinical shorthand kept for the log, not a page subtitle --
      it was surfacing a doctor's name and a pending question at the top of the
      view. The static lede in the markup stands instead; the row is untouched. */
 
-  renderDays($('days'), daily, entries, targets);
+  renderDays($('days'), daily, entries);
 
   renderInbodyLatest($('inbody-latest'), inbody);
 
@@ -475,7 +488,7 @@ function shiftMonth(by) {
 
 function renderDayDetail(iso) {
   const rec = BY_DATE.get(iso);
-  const targets = DATA && DATA.targets;
+  const targets = targetsFor(iso);
   $('cal-detail-heading').textContent =
     fmtDate(iso, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
