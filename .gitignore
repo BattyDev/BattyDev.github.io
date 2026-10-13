@@ -1,0 +1,2 @@
+# /baby plaintext: only data.enc.json is ever committed. See baby/tools/seal.mjs.
+baby/data.json

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07151c">
+<title>Progress · Baby · BattyDev</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;700;900&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="../shared/baby.css?v=2" rel="stylesheet">
+<link href="progress.css?v=1" rel="stylesheet">
+</head>
+<body>
+
+<div class="wallpaper" aria-hidden="true"></div>
+
+<div id="app" hidden>
+  <header class="home-bar">
+    <a class="account" href="../" aria-label="Back to Baby">
+      <span class="gamerpic">B</span>
+      <span><b>Progress</b><small>Baby</small></span>
+    </a>
+    <nav class="system-icons" aria-label="Views">
+      <button type="button" data-view-target="now" aria-label="This week"><i class="bi bi-heart-pulse"></i></button>
+      <button type="button" data-view-target="weeks" aria-label="Week by week"><i class="bi bi-list-ol"></i></button>
+      <button type="button" data-view-target="months" aria-label="Month by month"><i class="bi bi-calendar3"></i></button>
+      <button type="button" data-view-target="visits" aria-label="Appointments and milestones"><i class="bi bi-clipboard2-pulse"></i></button>
+    </nav>
+    <div class="system-status">
+      <span id="updated" class="stamp">—</span>
+      <button type="button" class="signout" id="lock">Lock</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="banner" class="notice" hidden></div>
+    <div id="sample" class="notice is-info" hidden>
+      Showing <b>sample data</b>: the appointments, moments and checklist ticks are placeholders.
+    </div>
+
+    <section id="view-now" class="view" aria-labelledby="now-heading">
+      <div class="section-head">
+        <p class="eyebrow" id="now-eyebrow">Progress</p>
+        <h1 id="now-heading">—</h1>
+        <p class="lede" id="now-lede"></p>
+      </div>
+
+      <div class="panel">
+        <div class="stat-grid" id="now-stats"></div>
+        <div class="timeline" id="timeline" aria-hidden="true"></div>
+      </div>
+
+      <div class="panel">
+        <h2 id="now-week-title">This week</h2>
+        <div id="now-week"></div>
+      </div>
+
+      <div class="now-pair">
+        <div class="panel">
+          <h2>Your to-do list</h2>
+          <div id="now-tasks"></div>
+          <p class="fine"><a href="#months">All of it, month by month</a></p>
+        </div>
+        <div class="panel">
+          <h2>Coming up</h2>
+          <div id="now-next"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-weeks" class="view" aria-labelledby="weeks-heading" hidden>
+      <div class="section-head">
+        <p class="eyebrow">Week by week</p>
+        <h1 id="weeks-heading">Every week</h1>
+        <p class="lede">What is happening with the baby, with mom, and what you can do, mapped onto real dates.</p>
+      </div>
+      <div class="panel"><div id="weeks"></div></div>
+    </section>
+
+    <section id="view-months" class="view" aria-labelledby="months-heading" hidden>
+      <div class="section-head">
+        <p class="eyebrow">Month by month</p>
+        <h1 id="months-heading">Nine months</h1>
+        <p class="lede" id="months-lede">The big picture, and the prep list for each stretch.</p>
+      </div>
+      <div id="months"></div>
+    </section>
+
+    <section id="view-visits" class="view" aria-labelledby="visits-heading" hidden>
+      <div class="section-head">
+        <p class="eyebrow">Appointments</p>
+        <h1 id="visits-heading">Visits &amp; milestones</h1>
+        <p class="lede">Booked appointments, and the typical schedule around them.</p>
+      </div>
+      <div class="panel">
+        <h2>Appointments</h2>
+        <div id="appointments"></div>
+      </div>
+      <div class="panel">
+        <h2>Typical milestones</h2>
+        <ol class="milestones" id="milestones"></ol>
+        <p class="fine">Typical US schedule, for orientation only. The OB's plan wins.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="../shared/weeks.js?v=2"></script>
+<script src="../shared/lock.js?v=2"></script>
+<script src="progress.js?v=1"></script>
+</body>
+</html>
