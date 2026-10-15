@@ -87,10 +87,14 @@ const BB = (() => {
   const SUPABASE_KEY = 'sb_publishable_0wB8tbr7yclMFE3uXqJblg_-etHxkiL';
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  /* OAuth comes back to the page it left from. That URL must be on the
-     project's redirect allow-list (battydev.com/baby/**), or Supabase sends
-     the browser to the Site URL instead. */
-  const here = () => location.origin + location.pathname;
+  /* Same arrangement as /health: the gate asks for a PIN alone, so the
+     account is named here and the PIN is that account's password. This is
+     only a shortcut through the form. The PIN is still checked by Supabase,
+     never by this file, so reading it out of the page source gets an attacker
+     no further than knowing the email does. Do not be tempted to compare a
+     PIN in JavaScript instead: that would move the check to the client and
+     mean opening the tables to anonymous reads. */
+  const ACCOUNT_EMAIL = 'codyadcock10@gmail.com';
 
   function gateHTML(state, who) {
     if (state === 'denied') {
@@ -101,21 +105,37 @@ const BB = (() => {
           <button type="button" id="gate-signout">Sign out</button>
         </div>`;
     }
+    /* Password managers key a credential to an identity, so a lone password
+       field gives them nothing to match on. The visually hidden username
+       supplies it; display:none or type=hidden would be skipped. */
     return `
-      <div class="gate-card">
+      <form id="login-form" class="gate-card" autocomplete="on">
         <h2>Baby</h2>
-        <p>Sign in to continue.</p>
-        <button type="button" id="gate-discord"><i class="bi bi-discord"></i> Sign in with Discord</button>
-        <form id="gate-email" class="gate-email">
-          <label for="gate-addr">Or get a sign-in link by email</label>
-          <input type="email" id="gate-addr" autocomplete="email" required placeholder="you@example.com">
-          <button type="submit" class="ghost">Email me a link</button>
-        </form>
-        <p class="err" id="gate-msg" role="status"></p>
-      </div>`;
+        <p>Enter your PIN to view this page.</p>
+        <label for="account" class="visually-hidden">Account</label>
+        <input type="email" id="account" name="username" autocomplete="username"
+               value="${esc(ACCOUNT_EMAIL)}" readonly tabindex="-1" class="visually-hidden">
+        <label for="pin">PIN</label>
+        <input type="password" id="pin" name="password" autocomplete="current-password"
+               enterkeyhint="go" required autofocus>
+        <p class="err" id="login-error" role="alert"></p>
+        <button type="submit" id="login-button">Unlock</button>
+      </form>`;
   }
 
-  function showGate(state, who) {
+  /* This form signs in over XHR and never navigates, so Chrome's save-password
+     heuristic never fires. Asking outright is what gets the credential stored
+     and autofilled next time. Chromium-only; others use their own heuristics. */
+  async function rememberCredential(form) {
+    if (!window.PasswordCredential || !navigator.credentials) return;
+    try {
+      await navigator.credentials.store(new PasswordCredential(form));
+    } catch {
+      /* Declined, blocked, or an insecure context. Never worth interrupting over. */
+    }
+  }
+
+  function showGate(state, who, onData) {
     let gate = $('gate');
     if (!gate) {
       gate = document.createElement('div');
@@ -131,22 +151,32 @@ const BB = (() => {
       $('gate-signout').addEventListener('click', lock);
       return;
     }
-    $('gate-discord').addEventListener('click', async () => {
-      const { error } = await db.auth.signInWithOAuth({ provider: 'discord', options: { redirectTo: here() } });
-      if (error) $('gate-msg').textContent = error.message;
-    });
-    $('gate-email').addEventListener('submit', async (ev) => {
+    $('pin').focus();
+    $('login-form').addEventListener('submit', async (ev) => {
       ev.preventDefault();
-      /* shouldCreateUser: false: this form can only sign in an account that
-         already exists. It must never become a sign-up form for the shared
-         project. */
-      const { error } = await db.auth.signInWithOtp({
-        email: $('gate-addr').value.trim(),
-        options: { emailRedirectTo: here(), shouldCreateUser: false },
+      const button = $('login-button');
+      const errorEl = $('login-error');
+      errorEl.textContent = '';
+      button.disabled = true;
+      button.textContent = 'Unlocking…';
+
+      const { data, error } = await db.auth.signInWithPassword({
+        email: ACCOUNT_EMAIL,
+        password: $('pin').value,
       });
-      $('gate-msg').textContent = error
-        ? 'Could not send a link to that address.'
-        : 'Check your email for the sign-in link.';
+      if (!error) await rememberCredential(ev.target);
+
+      button.disabled = false;
+      button.textContent = 'Unlock';
+      if (error) {
+        /* Supabase says "Invalid login credentials" for a wrong password,
+           which reads oddly when the form only asked for a PIN. */
+        errorEl.textContent = /invalid login/i.test(error.message) ? 'Incorrect PIN.' : error.message;
+        $('pin').value = '';
+        $('pin').focus();
+        return;
+      }
+      load(data.session, onData);
     });
   }
 
@@ -176,19 +206,26 @@ const BB = (() => {
   }
 
   /* supabase-js keeps the session in localStorage, so a return visit (or a
-     hop between /baby pages) goes straight through. It is the same project
-     as /fcevents, so signing in there signs in here too, and vice versa. */
+     hop between /baby pages) goes straight through, as on /health. It is the
+     same project as /fcevents, so a session from there counts here too, and
+     signing out here signs out there. */
   async function unlock(onData) {
-    db.auth.onAuthStateChange((evt, session) => {
-      if (session && (evt === 'SIGNED_IN' || evt === 'INITIAL_SESSION')) load(session, onData);
-    });
     const { data } = await db.auth.getSession();
     if (data.session) await load(data.session, onData);
-    else showGate('signin');
+    else showGate('signin', null, onData);
   }
 
   async function lock() {
     await db.auth.signOut();
+    /* Without this the browser may hand the credential straight back, so
+       "sign out" would bounce into a signed-in page. Capped, because in some
+       browsers the promise never settles and signing out must not hang. */
+    if (navigator.credentials && navigator.credentials.preventSilentAccess) {
+      await Promise.race([
+        navigator.credentials.preventSilentAccess().catch(() => {}),
+        new Promise((done) => setTimeout(done, 500)),
+      ]);
+    }
     location.reload();
   }
 

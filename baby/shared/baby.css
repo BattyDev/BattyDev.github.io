@@ -175,13 +175,8 @@ h1 { margin: 2px 0 4px; font-size: 30px; font-weight: 700; letter-spacing: 0.01e
   font: inherit; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
 }
 .gate button:disabled { opacity: .55; cursor: progress; }
-.gate .err { color: var(--ink-dim); font-size: 13px; min-height: 20px; margin: 10px 0 0; }
+.gate .err { color: var(--red); font-size: 13px; min-height: 20px; margin: 0 0 6px; }
 .gate p b { color: var(--ink); }
-#gate-discord { background: #5865f2; color: #fff; display: flex; align-items: center; justify-content: center; gap: 8px; }
-#gate-discord:hover { background: #4752c4; }
-.gate-email { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--rule); }
-.gate button.ghost { background: transparent; color: var(--aqua); border: 1px solid var(--rule); }
-.gate button.ghost:hover { border-color: var(--aqua-dim); }
 .gate button:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 
 /* ---- goal bars ---- */

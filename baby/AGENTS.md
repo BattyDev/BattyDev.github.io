@@ -37,10 +37,11 @@ brackets (`bkt_`). `/health` uses a different project; don't confuse them.
   the Supabase MCP or the SQL editor, which run as `postgres`. That is how
   logging works: the owner tells Claude or ChatGPT in plain language, and the
   agent runs the SQL below.
-- **Sign-in:** Discord (the owner's account is already a Discord user on
-  this project), or an emailed link for an account that already exists. The
-  email form passes `shouldCreateUser: false`: it must never become a
-  sign-up form for the shared project.
+- **Sign-in:** the same as `/health`, by the owner's choice. The gate asks
+  for a PIN only; `ACCOUNT_EMAIL` in `shared/auth.js` names the account, and
+  the PIN is that account's password on `battydevsite`, checked by Supabase
+  (`signInWithPassword`). Do not add Discord, email links, or any other sign-in
+  method without being asked, and never compare the PIN in JavaScript.
 
 The publishable key in `shared/auth.js` is public by design. Never put a
 service-role key or the database password anywhere in this repository.
@@ -123,17 +124,25 @@ Ledger rules (`shared/savings-model.js` implements them):
 
 No real money moves through any of this. It is a notebook.
 
-### Giving someone access
+### Access and the PIN
 
-They sign in once (Discord, or an email-link account the owner invites from
-the Supabase dashboard: Authentication → Users → Invite), then:
+The allow-list holds the owner's account only. Adding someone means giving
+them an account of their own and a sign-in path on the gate, which is a
+design change: ask the owner first. The SQL side is one row:
 
 ```sql
 insert into baby_members (user_id, label)
 select id, 'Name' from auth.users where email = '<their email>';
 ```
 
-Removing access is the matching `delete`.
+Changing the PIN changes that account's password for the whole `battydevsite`
+project. The owner does it in the Supabase SQL editor, never through an AI
+chat, so the PIN does not end up in a transcript:
+
+```sql
+update auth.users set encrypted_password = extensions.crypt('<new PIN>', extensions.gen_salt('bf'))
+where email = '<owner email>';
+```
 
 ## Snapshot shape (what `baby_snapshot()` returns)
 
@@ -167,12 +176,6 @@ A folder with an `index.html` that loads `../shared/baby.css`, supabase-js,
 `BB.unlock((data) => { BB.chrome(data); ...; BB.views(); })`. Then add a tile
 to `baby/index.html`. Copy `progress/` as the pattern: a home-bar header whose
 icon buttons switch `.view` sections (and set `#hash`), plus a Sign out button.
-
-## Setup still owed (dashboard only)
-
-- Supabase → Authentication → URL Configuration → Redirect URLs: add
-  `https://battydev.com/baby/**`. Without it, Discord sign-in from /baby
-  lands on the project's Site URL instead of coming back here.
 
 ## Later: the spare laptop
 
