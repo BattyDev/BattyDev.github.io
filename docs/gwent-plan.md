@@ -27,13 +27,17 @@ repo exists. This session couldn't create repositories (GitHub returned 403).
 
 | Milestone | State |
 |---|---|
-| M0 Repo, CI, deploy | CI and publish workflows written; waiting on the repo (steps below) |
-| M1 Rules engine | Done. Every ability, leader and perk, plus 145 tests including 1,000 random games checked for lost cards. Rules that card text can't settle are listed in `docs/VERIFY.md` on that branch |
-| M2 Playable board | Done. Official art; prompts for every choice; log; whole-turn undo; works on a phone held sideways |
-| M3 NPC opponents | **Blocked on data.** No reliable source for in-game decklists could be reached from here, and they shouldn't be guessed. In the meantime, the deck builder can save "opponent" decks rebuilt from a match |
-| M4 Strong AI + coach | Done. ISMCTS bots that never see hidden cards (35–5 against the simple bot); coach with win chances, top moves and pass advice; opponent card tracker; post-match review with "replay from here" |
+| M0 Repo, CI, deploy | CI, publish and benchmark workflows written; waiting on the repo (steps below) |
+| M1 Rules engine | Done. Every ability, leader and perk, with 157 tests including 1,000 random games checked for lost cards. Rules that card text can't settle are listed in `docs/VERIFY.md` on that branch |
+| M2 Playable board | Done. Official art; prompts for every choice; log; whole-turn undo; resume after reload; works on a phone held sideways |
+| M3 NPC opponents | **Blocked on data.** No reliable source for the in-game decklists could be reached, and they shouldn't be guessed. Meanwhile, rebuild an opponent's deck in the deck builder and practise against it |
+| M4 Strong AI + coach | Done. ISMCTS bots that never see hidden cards (35–5 against the simple bot); coach with win chances, top moves and pass advice; opponent card tracker; post-match review with "replay from here"; exam mode |
 | M5 Deck builder | Done. Legality checks, filters, collection checklist, `GW1.` share codes, 100-game quick tests |
+| Extra: scenarios | Done. Lay out any position, play it out against the AI or ask the coach, and share it as a `GS1.` link |
 | M6 Launch | This branch adds the deploy step (skipped until the build exists) and the home tile. Still to do: fan-content wording, the `VERIFY.md` checks |
+
+The full to-do list, grouped by what each item waits on, is
+`docs/TODO.md` on the `gwent-dev` branch.
 
 ### Launch steps
 
