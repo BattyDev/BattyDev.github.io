@@ -2,10 +2,11 @@
 
 import { BOTS, type BotLevel } from '../ai/bots';
 import { CARDS, FACTION_INFO, FACTIONS, LEADER_TEXT, STARTER_DECKS } from '../classic/cards';
-import { deckStats } from '../classic/deck';
+import { deckStats, validateDeck } from '../classic/deck';
 import type { DeckList, Faction } from '../classic/types';
 import { artSm, shield } from './assets';
 import { clear, h } from './dom';
+import { getDeck, listDecks } from './library';
 import type { MatchSetup } from './match';
 import { load, save } from './storage';
 
@@ -13,9 +14,15 @@ interface Choice {
   faction: Faction;
   deck: number;
   leader: string;
+  /** A saved deck of yours, used instead of a starter deck. */
+  saved: string | null;
   opponent: Faction | 'any';
+  /** A saved opponent deck, used instead of a random starter. */
+  opponentSaved: string | null;
   level: BotLevel;
 }
+
+const playable = (role: 'mine' | 'opponent') => listDecks(role).filter((d) => validateDeck(d).length === 0);
 
 const decksFor = (f: Faction) => STARTER_DECKS.filter((d) => d.faction === f);
 const leadersFor = (f: Faction) => CARDS.filter((c) => c.type === 'leader' && c.faction === f);
@@ -30,7 +37,9 @@ function defaults(): Choice {
     faction,
     deck,
     leader,
+    saved: saved.saved && playable('mine').some((d) => d.id === saved.saved) ? saved.saved : null,
     opponent: saved.opponent ?? 'any',
+    opponentSaved: saved.opponentSaved && playable('opponent').some((d) => d.id === saved.opponentSaved) ? saved.opponentSaved : null,
     level: saved.level && saved.level in BOTS ? saved.level : 'simple',
   };
 }
@@ -41,10 +50,30 @@ export function renderMenu(host: HTMLElement, start: (setup: MatchSetup) => void
   const draw = () => {
     save('menu', choice);
     const decks = decksFor(choice.faction);
-    const deck = { ...(decks[choice.deck] as DeckList), leader: choice.leader };
+    const savedDeck = choice.saved ? getDeck(choice.saved) : undefined;
+    const deck: DeckList = savedDeck ?? { ...(decks[choice.deck] as DeckList), leader: choice.leader };
     const st = deckStats(deck);
+    const mine = playable('mine');
+    const theirs = playable('opponent');
+    const oppSaved = choice.opponentSaved ? getDeck(choice.opponentSaved) : undefined;
 
-    const factionButtons = (selected: Faction | 'any', pick: (f: Faction | 'any') => void, allowAny: boolean) =>
+    const savedChips = (list: typeof mine, selected: string | null, pick: (id: string | null) => void) =>
+      list.length
+        ? h(
+            'div',
+            { class: 'deck-picker' },
+            ...list.map((d) =>
+              h(
+                'button',
+                { class: `chip saved${selected === d.id ? ' on' : ''}`, type: 'button', on: { click: () => pick(selected === d.id ? null : d.id) } },
+                h('img', { src: shield(d.faction), alt: '' }),
+                d.name,
+              ),
+            ),
+          )
+        : null;
+
+    const factionButtons = (selected: Faction | 'any' | null, pick: (f: Faction | 'any') => void, allowAny: boolean) =>
       h(
         'div',
         { class: 'faction-picker', role: 'radiogroup' },
@@ -100,10 +129,11 @@ export function renderMenu(host: HTMLElement, start: (setup: MatchSetup) => void
               h(
                 'button',
                 {
-                  class: `chip${choice.deck === i ? ' on' : ''}`,
+                  class: `chip${choice.deck === i && !choice.saved ? ' on' : ''}`,
                   type: 'button',
                   on: {
                     click: () => {
+                      choice.saved = null;
                       choice.deck = i;
                       draw();
                     },
@@ -138,15 +168,19 @@ export function renderMenu(host: HTMLElement, start: (setup: MatchSetup) => void
     );
 
     const go = () => {
-      const oppFaction = choice.opponent === 'any' ? (FACTIONS[Math.floor(Math.random() * FACTIONS.length)] as Faction) : choice.opponent;
-      const oppDecks = decksFor(oppFaction);
-      const oppDeck = oppDecks[Math.floor(Math.random() * oppDecks.length)] as DeckList;
+      let oppDeck: DeckList;
+      if (oppSaved) oppDeck = oppSaved;
+      else {
+        const oppFaction = choice.opponent === 'any' ? (FACTIONS[Math.floor(Math.random() * FACTIONS.length)] as Faction) : choice.opponent;
+        const oppDecks = decksFor(oppFaction);
+        oppDeck = oppDecks[Math.floor(Math.random() * oppDecks.length)] as DeckList;
+      }
       start({
         you: deck,
         opponent: oppDeck,
         level: choice.level,
         youName: 'You',
-        opponentName: BOTS[choice.level].name,
+        opponentName: oppSaved ? oppSaved.name : BOTS[choice.level].name,
       });
     };
 
@@ -155,15 +189,22 @@ export function renderMenu(host: HTMLElement, start: (setup: MatchSetup) => void
       h(
         'div',
         { class: 'menu' },
-        h('header', { class: 'menu-head' }, h('h1', null, 'Gwent'), h('p', null, 'A practice table for The Witcher 3’s card game')),
+        h(
+          'header',
+          { class: 'menu-head' },
+          h('h1', null, 'Gwent'),
+          h('p', null, 'A practice table for The Witcher 3’s card game'),
+          h('nav', { class: 'menu-nav' }, h('a', { href: '#/decks' }, 'Decks'), h('a', { href: '#/collection' }, 'Collection'), h('a', { href: '#/about' }, 'About')),
+        ),
         h(
           'section',
           { class: 'panel' },
           h('h2', null, 'Your deck'),
           factionButtons(
-            choice.faction,
+            savedDeck ? null : choice.faction,
             (f) => {
               if (f === 'any') return;
+              choice.saved = null;
               choice.faction = f;
               choice.deck = 0;
               choice.leader = (decksFor(f)[0] as DeckList).leader;
@@ -171,24 +212,36 @@ export function renderMenu(host: HTMLElement, start: (setup: MatchSetup) => void
             },
             false,
           ),
-          h('p', { class: 'perk' }, FACTION_INFO[choice.faction].perk),
+          h('p', { class: 'perk' }, FACTION_INFO[savedDeck?.faction ?? choice.faction].perk),
           deckPicker,
-          h('p', { class: 'deck-stats' }, `${st.units} units · ${st.specials} specials · ${st.heroes} heroes · ${st.strength} total strength`),
-          h('h3', null, 'Leader'),
-          leaders,
+          mine.length ? h('h3', null, 'Your saved decks') : null,
+          savedChips(mine, choice.saved, (id) => {
+            choice.saved = id;
+            draw();
+          }),
+          h('p', { class: 'deck-stats' }, `${savedDeck ? `${savedDeck.name}: ` : ''}${st.units} units · ${st.specials} specials · ${st.heroes} heroes · ${st.strength} total strength`),
+          savedDeck ? null : h('h3', null, 'Leader'),
+          savedDeck ? null : leaders,
+          h('p', { class: 'muted small' }, h('a', { href: '#/decks' }, 'Build or import a deck →')),
         ),
         h(
           'section',
           { class: 'panel' },
           h('h2', null, 'Opponent'),
           factionButtons(
-            choice.opponent,
+            oppSaved ? null : choice.opponent,
             (f) => {
+              choice.opponentSaved = null;
               choice.opponent = f;
               draw();
             },
             true,
           ),
+          theirs.length ? h('h3', null, 'Practice opponents') : null,
+          savedChips(theirs, choice.opponentSaved, (id) => {
+            choice.opponentSaved = id;
+            draw();
+          }),
           h('h3', null, 'Who'),
           bots,
           h('button', { class: 'btn primary big', type: 'button', on: { click: go } }, 'Start match'),

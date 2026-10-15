@@ -1,5 +1,6 @@
 import './styles.css';
 import { icon } from './assets';
+import { renderBuilder, renderCollection, renderDeckList } from './builder';
 import { clear, h } from './dom';
 import { Match, type MatchSetup } from './match';
 import { renderMenu } from './menu';
@@ -9,6 +10,7 @@ const app = document.getElementById('app') as HTMLElement;
 // The game's weather overlays, referenced from CSS.
 for (const w of ['frost', 'fog', 'rain']) document.documentElement.style.setProperty(`--ov-${w}`, `url(${icon(`overlay_${w}`)})`);
 let match: Match | null = null;
+let cleanup: (() => void) | null = null;
 
 function about(): void {
   clear(app);
@@ -63,10 +65,19 @@ function play(setup: MatchSetup): void {
 }
 
 function route(): void {
-  if (location.hash === '#/about') {
+  cleanup?.();
+  cleanup = null;
+  const hash = location.hash || '#/';
+  if (hash !== '#/' && hash !== '') {
     match?.destroy();
     match = null;
-    about();
+  }
+  window.scrollTo(0, 0);
+  if (hash === '#/about') return about();
+  if (hash === '#/decks') return renderDeckList(app);
+  if (hash === '#/collection') return renderCollection(app);
+  if (hash.startsWith('#/decks/')) {
+    cleanup = renderBuilder(app, decodeURIComponent(hash.slice('#/decks/'.length)));
     return;
   }
   if (match) return;

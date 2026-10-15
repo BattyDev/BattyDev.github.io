@@ -125,3 +125,44 @@ export function narrate(e: GameEvent, me: PlayerId, opName: string): Line | null
       return { who: 'game', text: e.winner === 'draw' ? 'The match is a draw.' : e.winner === me ? 'You win the match!' : `${opName} wins the match.` };
   }
 }
+
+/** An action in a few words, for the coach: "Ves → close combat", "Pass". */
+export function describeAction(s: import('../classic/types').GameState, a: import('../classic/types').Action): string {
+  const find = (uid: number): Card | undefined => {
+    for (const P of s.players) {
+      const c = P.hand.find((x) => x.uid === uid) ?? P.discard.find((x) => x.uid === uid) ?? P.deck.find((x) => x.uid === uid);
+      if (c) return c;
+      for (const r of Object.values(P.rows)) {
+        const u = r.units.find((x) => x.uid === uid);
+        if (u) return u;
+      }
+    }
+    return undefined;
+  };
+  const nameOf = (uid: number) => {
+    const c = find(uid);
+    return c ? cardName(c) : 'a card';
+  };
+  switch (a.type) {
+    case 'pass':
+      return 'Pass';
+    case 'leader':
+      return 'Use your leader';
+    case 'play': {
+      const n = nameOf(a.uid);
+      if (a.target !== undefined) return `${n} → take back ${nameOf(a.target)}`;
+      const c = find(a.uid);
+      const d = c && def(c.id);
+      if (a.row && d && (d.type === 'special' || (d.type === 'unit' && d.rows.length > 1))) return `${n} → ${ROW_NAME[a.row]}`;
+      return n;
+    }
+    case 'choose':
+      return `${nameOf(a.uid)}${a.row ? ` → ${ROW_NAME[a.row]}` : ''}`;
+    case 'redraw':
+      return `Redraw ${nameOf(a.uid)}`;
+    case 'endRedraw':
+      return 'Keep hand';
+    case 'chooseFirst':
+      return a.first === 0 ? 'Go first' : 'Go second';
+  }
+}

@@ -5,6 +5,8 @@
 
 import { AiClient } from '../ai/client';
 import type { BotLevel } from '../ai/bots';
+import type { SearchResult } from '../ai/ismcts';
+import { actionKey } from '../ai/keys';
 import { def, FACTION_INFO, LEADER_TEXT } from '../classic/cards';
 import { apply, canUseLeader, legalActions, newGame, other, toAct } from '../classic/engine';
 import { cardStrength, rowScore, totalScore, weatherOn } from '../classic/score';
@@ -13,6 +15,7 @@ import { redactEvent, view } from '../classic/view';
 import { seedFrom } from '../core/rng';
 import { cardBack, icon, shield } from './assets';
 import { inspector, tile } from './cards';
+import { coachPanel, hintTarget, judge, reviewBody, trackerBody, type Decision, type Verdict } from './coach';
 import { clear, h, sleep } from './dom';
 import { narrate, type Line } from './narrate';
 import { load, save } from './storage';
@@ -47,7 +50,7 @@ const BOT: PlayerId = 1;
 
 export class Match {
   private state!: GameState;
-  private history: { state: GameState; log: number }[] = [];
+  private history: { state: GameState; log: number; action: Action }[] = [];
   private log: Line[] = [];
   private selection: Selection = null;
   private inspected: { card: Card; strength?: number } | null = null;
@@ -57,6 +60,10 @@ export class Match {
   private logOpen = false;
   private settings: Settings = load('settings', { speed: 'normal', confirmPass: true } as Settings);
   private ai = new AiClient();
+  /** A second worker, so the coach never delays the opponent. */
+  private coachAi = new AiClient();
+  private coachOn: boolean = load('coach', false);
+  private coach: { turn: number; gen: number; result: SearchResult | null } | null = null;
   private root: HTMLElement;
   private toasts: HTMLElement;
   private modal: HTMLElement | null = null;
@@ -85,6 +92,7 @@ export class Match {
   destroy(): void {
     this.generation++;
     this.ai.dispose();
+    this.coachAi.dispose();
     this.closeModal();
     this.toasts.remove();
     document.body.classList.remove('in-match');
@@ -121,7 +129,7 @@ export class Match {
   /** Human action. */
   private act(action: Action): void {
     if (this.thinking || toAct(this.state) !== HUMAN) return;
-    this.history.push({ state: this.state, log: this.log.length });
+    this.history.push({ state: this.state, log: this.log.length, action });
     this.selection = null;
     this.passArmed = false;
     const { state, events } = apply(this.state, action);
@@ -166,8 +174,10 @@ export class Match {
     this.prompt();
   }
 
+  /** Takes back your last whole turn, including any choices it prompted. */
   private undo(): void {
-    const last = this.history.pop();
+    let last = this.history.pop();
+    while (last && last.state.pending && this.history.length) last = this.history.pop();
     if (!last) return;
     this.generation++;
     this.thinking = false;
@@ -258,6 +268,8 @@ export class Match {
       this.undo();
     } else if (e.key === 'p' || e.key === 'P') {
       this.pass();
+    } else if (e.key === 'c' || e.key === 'C') {
+      this.toggleCoach();
     } else if (e.key === 'l' || e.key === 'L') {
       this.logOpen = !this.logOpen;
       this.render();
@@ -417,10 +429,102 @@ export class Match {
         'div',
         { class: 'modal-actions' },
         h('button', { class: 'btn primary', on: { click: () => this.start(seedFrom(Date.now())) } }, 'Rematch'),
+        this.decisions().length ? h('button', { class: 'btn', on: { click: () => void this.review() } }, 'Review my moves') : null,
         this.history.length ? h('button', { class: 'btn', on: { click: () => this.undo() } }, 'Take back last move') : null,
         h('button', { class: 'btn', on: { click: () => this.exit() } }, 'Change decks'),
       ),
     ]);
+  }
+
+  // -------------------------------------------------------------------------
+  // Coach
+
+  private toggleCoach(): void {
+    this.coachOn = !this.coachOn;
+    save('coach', this.coachOn);
+    this.render();
+  }
+
+  /** Asks the coach about the current position, once per position. */
+  private requestCoach(): void {
+    if (!this.coachOn || this.thinking || toAct(this.state) !== HUMAN || this.state.phase !== 'play') return;
+    const turn = this.state.turn;
+    const gen = this.generation;
+    if (this.coach && this.coach.turn === turn && this.coach.gen === gen) return;
+    this.coach = { turn, gen, result: null };
+    void this.coachAi
+      .analyse({ view: view(this.state, HUMAN), me: HUMAN, iterations: 5000, timeMs: 1400, opponentDeck: this.setup.opponent, seed: seedFrom(Date.now()) })
+      .then((result) => {
+        if (this.coach?.turn === turn && this.coach.gen === gen && this.generation === gen) {
+          this.coach.result = result;
+          this.render();
+        }
+      })
+      .catch(() => undefined);
+  }
+
+  private currentCoach(): SearchResult | null {
+    return this.coach && this.coach.turn === this.state.turn && this.coach.gen === this.generation ? this.coach.result : null;
+  }
+
+  private decisions(): Decision[] {
+    return this.history.filter((h) => h.state.phase === 'play').map((h) => ({ state: h.state, action: h.action }));
+  }
+
+  /** Re-analyses each of your play-phase decisions and grades it. */
+  private async review(): Promise<void> {
+    const decisions = this.decisions();
+    const bar = h('progress', { class: 'review-progress' });
+    bar.max = decisions.length;
+    bar.value = 0;
+    const note = h('p', null, `Checking ${decisions.length} decisions…`);
+    this.openModal('Reviewing your moves', [note, bar]);
+    const gen = this.generation;
+    const verdicts: Verdict[] = [];
+    for (const [i, d] of decisions.entries()) {
+      const r = await this.coachAi.analyse({ view: view(d.state, HUMAN), me: HUMAN, iterations: 2500, timeMs: 900, opponentDeck: this.setup.opponent, seed: 1000 + i });
+      if (gen !== this.generation) return;
+      const v = judge(d, r, actionKey);
+      if (v) verdicts.push(v);
+      bar.value = i + 1;
+    }
+    this.openModal(
+      'Your moves, reviewed',
+      [
+        ...reviewBody(verdicts, (d) => this.replayFrom(d)),
+        h(
+          'div',
+          { class: 'modal-actions' },
+          h('button', { class: 'btn', on: { click: () => this.gameOver() } }, 'Back'),
+          h('button', { class: 'btn primary', on: { click: () => this.start(seedFrom(Date.now())) } }, 'Rematch'),
+        ),
+      ],
+      { wide: true },
+    );
+  }
+
+  /** Rewinds to a past decision so you can try a different move. */
+  private replayFrom(d: Decision): void {
+    const i = this.history.findIndex((h) => h.state === d.state);
+    if (i < 0) return;
+    const entry = this.history[i] as (typeof this.history)[number];
+    this.generation++;
+    this.thinking = false;
+    this.history = this.history.slice(0, i);
+    this.state = entry.state;
+    this.log = this.log.slice(0, entry.log);
+    this.selection = null;
+    this.closeModal();
+    this.toast('Rewound. Try another move.');
+    this.render();
+    this.prompt();
+  }
+
+  private trackerModal(): void {
+    this.openModal(`${this.setup.opponentName}'s cards still to come`, [
+      ...trackerBody(view(this.state, HUMAN), BOT, this.setup.opponent, (c) => this.inspect(c)),
+      h('div', { class: 'modal-actions' }, h('button', { class: 'btn', on: { click: () => this.closeModal() } }, 'Close')),
+    ], { dismissable: true, wide: true });
   }
 
   // -------------------------------------------------------------------------
@@ -459,6 +563,8 @@ export class Match {
     const sel = this.selection;
     const selectedCard = sel?.kind === 'hand' ? this.state.players[HUMAN].hand.find((c) => c.uid === sel.uid) : undefined;
     const selectedDef = selectedCard ? def(selectedCard.id) : null;
+    const coachResult = this.coachOn && humanTurn ? this.currentCoach() : null;
+    const hint = hintTarget(coachResult);
 
     const unitTile = (side: PlayerId, row: Row, c: Card) => {
       nowUids.add(c.uid);
@@ -509,7 +615,7 @@ export class Match {
       const ld = def(P.leader.id);
       const leaderState = P.leaderDisabled ? 'disabled' : P.leaderUsed ? 'used' : ld.type === 'leader' && LEADER_TEXT[ld.leader].passive ? 'passive' : leaderUsable ? 'usable' : '';
       const leader = tile(P.leader, {
-        classes: ['leader', leaderState, this.selection?.kind === 'leader' && p === HUMAN ? 'selected' : ''],
+        classes: ['leader', leaderState, this.selection?.kind === 'leader' && p === HUMAN ? 'selected' : '', p === HUMAN && hint.leader ? 'hint' : ''],
         onClick: leaderUsable ? () => this.select({ kind: 'leader' }) : () => this.inspect(P.leader),
         onHover: () => this.inspect(P.leader),
       });
@@ -533,6 +639,7 @@ export class Match {
             ),
             P.passed && this.state.phase === 'play' ? h('span', { class: 'passed' }, 'Passed') : null,
           ),
+          p === BOT ? h('button', { class: 'btn ghost small tracker-btn', on: { click: () => this.trackerModal() }, title: 'Cards they have not played yet' }, 'Their cards') : null,
         ),
         h('span', { class: `total${total > opTotal ? ' leading' : ''}`, aria: { label: `Total ${total}` } }, total),
       );
@@ -584,7 +691,7 @@ export class Match {
       primary,
       h(
         'button',
-        { class: `btn pass${this.passArmed ? ' armed' : ''}`, disabled: !humanTurn, on: { click: () => this.pass() }, title: 'Pass (P)' },
+        { class: `btn pass${this.passArmed ? ' armed' : ''}${hint.pass ? ' hint' : ''}`, disabled: !humanTurn, on: { click: () => this.pass() }, title: 'Pass (P)' },
         this.passArmed ? 'Confirm pass' : 'Pass',
       ),
     );
@@ -598,16 +705,25 @@ export class Match {
       if (weatherBox.classList.contains('target') && t.direct) this.act(t.direct);
     });
 
+    // Cards with no legal play right now (a Decoy with nothing to swap) stay
+    // inspectable but can't be selected.
+    const playable = new Set(humanTurn ? legalActions(this.state).flatMap((a) => (a.type === 'play' ? [a.uid] : [])) : []);
     const hand = h(
       'div',
       { class: 'hand', style: `--n:${Math.max(v.players[HUMAN].hand.length, 1)}`, aria: { label: 'Your hand' } },
       ...v.players[HUMAN].hand.map((c) => {
         nowUids.add(c.uid);
         const selected = this.selection?.kind === 'hand' && this.selection.uid === c.uid;
+        const canPlay = playable.has(c.uid);
         return tile(c, {
-          classes: [selected ? 'selected' : '', prevUids.has(c.uid) ? '' : 'enter'],
+          classes: [selected ? 'selected' : '', prevUids.has(c.uid) ? '' : 'enter', hint.hand === c.uid ? 'hint' : '', humanTurn && !canPlay ? 'unplayable' : ''],
           disabled: !humanTurn,
           onClick: (e) => {
+            if (!canPlay) {
+              this.inspect(c);
+              this.toast(`${def(c.id).name} has nothing to target right now.`);
+              return;
+            }
             if (e.detail === 2 && selected && t.direct) this.act(t.direct);
             else this.select({ kind: 'hand', uid: c.uid });
           },
@@ -634,6 +750,7 @@ export class Match {
         },
         'Log',
       ),
+      h('button', { class: `btn ghost${this.coachOn ? ' on' : ''}`, on: { click: () => this.toggleCoach() }, title: 'Coach: hints and win chances (C)', aria: { pressed: String(this.coachOn) } }, 'Coach'),
       h('button', { class: 'btn ghost', on: { click: () => this.menuModal() }, title: 'Settings and quit', aria: { label: 'Menu' } }, '☰'),
     );
 
@@ -663,7 +780,7 @@ export class Match {
     this.root.append(
       h('aside', { class: 'side left' }, playerPanel(BOT), weatherBox, playerPanel(HUMAN)),
       field,
-      h('aside', { class: 'side right' }, toolbar, pile(BOT), feed, controls, pile(HUMAN)),
+      h('aside', { class: 'side right' }, toolbar, pile(BOT), this.coachOn && humanTurn ? coachPanel(this.state, coachResult) : feed, controls, pile(HUMAN)),
       hand,
       h('div', { class: 'inspector-slot' }, inspector(this.inspected?.card ?? null, this.inspected?.strength)),
     );
@@ -672,6 +789,7 @@ export class Match {
     this.root.classList.toggle('selecting', !!this.selection);
     if (!this.selection && !this.modal) this.root.classList.remove('inspecting');
     this.lastUids = nowUids;
+    this.requestCoach();
   }
 
   private menuModal(): void {
@@ -707,7 +825,7 @@ export class Match {
       [
         h('label', { class: 'field-row' }, 'Opponent speed', speed),
         h('label', { class: 'field-row' }, confirmBox, 'Ask before passing with cards in hand'),
-        h('p', { class: 'muted' }, 'Keys: Esc deselect · Enter play selected · P pass · Z undo · L log'),
+        h('p', { class: 'muted' }, 'Keys: Esc deselect · Enter play selected · P pass · Z undo · C coach · L log'),
         h(
           'div',
           { class: 'modal-actions' },

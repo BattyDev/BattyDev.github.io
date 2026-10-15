@@ -32,7 +32,7 @@ function factionPool(s: GameState, p: PlayerId): string[] {
 }
 
 /** Cards that started in `p`'s deck and are visible to the viewer right now. */
-function seenFrom(s: GameState, p: PlayerId): string[] {
+export function seenFrom(s: GameState, p: PlayerId): string[] {
   const [b0, b1, b2] = s.uidBounds;
   const [lo, hi] = p === 0 ? [b0, b1] : [b1, b2];
   const out: string[] = [];

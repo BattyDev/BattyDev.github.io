@@ -43,7 +43,7 @@ test('a full match can be played to the end', async ({ page }) => {
       await page.waitForTimeout(50);
       continue;
     }
-    const cards = page.locator('.hand .card:not([disabled])');
+    const cards = page.locator('.hand .card:not([disabled]):not(.unplayable)');
     // Play a few cards each round, then pass, so rounds actually end.
     const handSize = await cards.count();
     if (handSize === 0 || (step % 5 === 4)) {
@@ -60,19 +60,32 @@ test('a full match can be played to the end', async ({ page }) => {
   throw new Error('match did not finish');
 });
 
+/** Answers any mid-turn prompt (Medic and the like) with its first option. */
+async function settle(page: Page) {
+  for (let i = 0; i < 5; i++) {
+    const pick = page.getByRole('dialog').locator('.card.pick, .pick-rows .btn').first();
+    if (!(await pick.count())) return;
+    await pick.click();
+  }
+}
+
 test('undo takes back a move', async ({ page }) => {
   await fastSettings(page);
   await page.goto('./');
   await page.getByRole('button', { name: 'Start match' }).click();
-  const keep = page.getByRole('button', { name: 'Keep this hand' });
-  await keep.click();
-  await expect(page.locator('.status')).toHaveText('Your turn', { timeout: 15000 });
+  await page.getByRole('button', { name: 'Keep this hand' }).click();
+  await expect(page.locator('.status')).toHaveText('Your turn', { timeout: 20000 });
   const before = await page.locator('.hand .card').count();
-  await page.locator('.hand .card').first().click();
+  const deckBefore = await page.locator('.piles.me .deck .pile-count').textContent();
+  await page.locator('.hand .card:not(.unplayable)').first().click();
   const target = page.locator('.row.target, .card.target, .weather.target').first();
   if (await target.count()) await target.click();
   else await page.locator('.controls .btn.primary').click();
-  await expect(page.locator('.status')).toHaveText('Your turn', { timeout: 15000 });
+  await settle(page);
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+  await expect(page.locator('.status')).toHaveText(/Your turn|Match over/, { timeout: 20000 });
   await page.getByRole('button', { name: 'Undo' }).click();
+  await settle(page);
   await expect(page.locator('.hand .card')).toHaveCount(before);
+  await expect(page.locator('.piles.me .deck .pile-count')).toHaveText(deckBefore ?? '');
 });

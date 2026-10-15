@@ -9,6 +9,7 @@ import { totalScore } from '../classic/score';
 import type { Action, DeckList, GameState, PlayerId } from '../classic/types';
 import { Rng } from '../core/rng';
 import { determinize } from './determinize';
+import { actionKey } from './keys';
 
 export interface MoveRequest {
   view: GameState;
@@ -33,39 +34,14 @@ export function ahead(s: GameState, me: PlayerId): boolean {
 
 /** What a card in hand is worth relative to points on the board, by situation. */
 export function cardValue(s: GameState, me: PlayerId): number {
-  const decisive = s.players[me].lives === 1 || s.players[other(me)].lives === 1;
-  return decisive ? 3 : s.round === 1 ? 7 : 5;
+  const final = s.players[me].lives === 1 && s.players[other(me)].lives === 1;
+  return final ? 2 : s.round === 1 ? 7 : 5;
 }
 
-/** Same action modulo which copy of a card: lets us skip duplicate work. */
-function signature(s: GameState, me: PlayerId, a: Action): string {
-  const idOf = (uid: number) => {
-    for (const P of s.players) {
-      const c = P.hand.find((x) => x.uid === uid) ?? P.discard.find((x) => x.uid === uid) ?? P.deck.find((x) => x.uid === uid);
-      if (c) return c.id;
-      for (const r of Object.values(P.rows)) {
-        const u = r.units.find((x) => x.uid === uid);
-        if (u) return u.id;
-      }
-    }
-    return String(uid);
-  };
-  switch (a.type) {
-    case 'play':
-      return `play:${idOf(a.uid)}:${a.row ?? ''}:${a.target === undefined ? '' : idOf(a.target)}`;
-    case 'choose':
-      return `choose:${idOf(a.uid)}:${a.row ?? ''}`;
-    case 'redraw':
-      return `redraw:${idOf(a.uid)}`;
-    default:
-      return JSON.stringify(a) + me;
-  }
-}
-
-export function dedupe(s: GameState, me: PlayerId, acts: Action[]): Action[] {
+export function dedupe(s: GameState, _me: PlayerId, acts: Action[]): Action[] {
   const seen = new Set<string>();
   return acts.filter((a) => {
-    const k = signature(s, me, a);
+    const k = actionKey(s, a);
     if (seen.has(k)) return false;
     seen.add(k);
     return true;
@@ -201,15 +177,20 @@ export function simpleMove(req: MoveRequest): Action {
     return reachable && cheap ? best.action : pass;
   }
 
-  const decisive = lastLife || O.lives === 1;
-  if (decisive) {
+  if (lastLife && O.lives === 1) {
     // Final round: play on unless the lead is out of reach of their hand.
     if (m > O.hand.length * 10 + 5) return pass;
+    return best.action;
+  }
+  if (lastLife) {
+    // Must win this round, but there's another after it: get ahead, then
+    // make them spend to catch up.
+    if (m > 0 && best.value < 8) return pass;
     return best.action;
   }
   // Ahead with no card disadvantage: pass and make them spend cards to win.
   if (m > 0 && P.hand.length <= O.hand.length + 1 && best.value < 8) return pass;
   // Far behind and not ahead on cards: concede the round, save the cards.
-  if (m < -12 && P.hand.length <= O.hand.length && view.round === 1) return pass;
+  if (m < -12 && P.hand.length <= O.hand.length + (O.lives === 1 ? 2 : 0)) return pass;
   return best.action;
 }
