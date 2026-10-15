@@ -30,6 +30,7 @@ npm run build        # typecheck + build to dist/
 | `tools/` | One-off importers for card data and art |
 | `test/` | Vitest suites; `e2e/` holds Playwright |
 | `docs/VERIFY.md` | Rules still to confirm against the real game |
+| `docs/AI.md` | How the bots and coach work, with benchmark results |
 
 ### The engine contract
 
