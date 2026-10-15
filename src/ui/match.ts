@@ -453,7 +453,7 @@ export class Match {
     if (this.coach && this.coach.turn === turn && this.coach.gen === gen) return;
     this.coach = { turn, gen, result: null };
     void this.coachAi
-      .analyse({ view: view(this.state, HUMAN), me: HUMAN, iterations: 5000, timeMs: 1400, opponentDeck: this.setup.opponent, seed: seedFrom(Date.now()) })
+      .analyse({ view: view(this.state, HUMAN), me: HUMAN, iterations: 3000, timeMs: 1400, opponentDeck: this.setup.opponent, seed: seedFrom(Date.now()) })
       .then((result) => {
         if (this.coach?.turn === turn && this.coach.gen === gen && this.generation === gen) {
           this.coach.result = result;
@@ -482,7 +482,7 @@ export class Match {
     const gen = this.generation;
     const verdicts: Verdict[] = [];
     for (const [i, d] of decisions.entries()) {
-      const r = await this.coachAi.analyse({ view: view(d.state, HUMAN), me: HUMAN, iterations: 2500, timeMs: 900, opponentDeck: this.setup.opponent, seed: 1000 + i });
+      const r = await this.coachAi.analyse({ view: view(d.state, HUMAN), me: HUMAN, iterations: 1500, timeMs: 900, opponentDeck: this.setup.opponent, seed: 1000 + i });
       if (gen !== this.generation) return;
       const v = judge(d, r, actionKey);
       if (v) verdicts.push(v);

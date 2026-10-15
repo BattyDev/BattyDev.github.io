@@ -26,7 +26,11 @@ export interface SearchOptions {
   exploration?: number;
   opponentDeck: DeckList | null;
   seed: number;
-  /** How games are finished: quick guesses, or a one-move lookahead (slower, wiser). */
+  /**
+   * How games are finished: 'greedy' (one-move lookahead, the default) or
+   * 'fast' (guesses from the cards alone). Greedy is about 2.3× slower per
+   * iteration and much stronger per second; see test/bench.
+   */
   playout?: PlayoutStyle;
 }
 
@@ -129,7 +133,7 @@ export function search(view: GameState, me: PlayerId, opts: SearchOptions): Sear
     }
 
     // Simulate, then back up.
-    const end = playout(s, rng, opts.playout);
+    const end = playout(s, rng, opts.playout ?? 'greedy');
     for (let m: Node | null = n; m; m = m.parent) {
       m.visits++;
       m.reward += rewardFor(end, m.player);

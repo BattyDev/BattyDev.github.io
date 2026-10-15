@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { determinize } from '../../src/ai/determinize';
+import { search } from '../../src/ai/ismcts';
 import { simpleMove } from '../../src/ai/simple';
 import { STARTER_DECKS } from '../../src/classic/cards';
 import { apply, isLegal, legalActions, newGame, toAct } from '../../src/classic/engine';
@@ -85,5 +86,42 @@ describe('simple bot', () => {
       if (s.winner === 0) wins++;
     }
     expect(wins).toBeGreaterThanOrEqual(17);
+  });
+});
+
+describe('search bot', () => {
+  // Deterministic: fixed seeds and an iteration cap rather than a time cap.
+  const searcher: Policy = (s, me, oppDeck, seed) =>
+    s.phase !== 'play' ? bot(s, me, oppDeck, seed) : search(view(s, me), me, { iterations: 250, opponentDeck: oppDeck, seed }).action;
+
+  it('beats the simple bot in a small fixed-seed match', () => {
+    // Each pairing is played both ways round, so deck strength cancels out.
+    let wins = 0;
+    let games = 0;
+    for (let g = 0; g < 3; g++) {
+      const a = STARTER_DECKS[g * 3]!;
+      const b = STARTER_DECKS[(g * 3 + 4) % STARTER_DECKS.length]!;
+      if (playGame(a, b, 900 + g, [searcher, bot]).winner === 0) wins++;
+      if (playGame(a, b, 900 + g, [bot, searcher]).winner === 1) wins++;
+      games += 2;
+    }
+    // A smoke check that search hasn't collapsed (it won 4 of 6 when written).
+    // Six games can't measure strength: `npm run bench` does that.
+    expect(wins).toBeGreaterThanOrEqual(3);
+  }, 180_000);
+
+  it('reports a sensible spread of moves', () => {
+    let s = start(STARTER_DECKS[0]!, STARTER_DECKS[3]!, 21);
+    while (s.phase !== 'play') s = apply(s, legalActions(s).find((a) => a.type === 'endRedraw' || a.type === 'chooseFirst')!).state;
+    const me = toAct(s)!;
+    const r = search(view(s, me), me, { iterations: 300, opponentDeck: STARTER_DECKS[me === 0 ? 3 : 0]!, seed: 1 });
+    expect(r.iterations).toBe(300);
+    expect(r.moves.length).toBeGreaterThan(3);
+    for (const m of r.moves) {
+      expect(m.win).toBeGreaterThanOrEqual(0);
+      expect(m.win).toBeLessThanOrEqual(1);
+      expect(isLegal(s, m.action)).toBe(true);
+    }
+    expect(r.moves[0]!.visits).toBeGreaterThanOrEqual(r.moves[r.moves.length - 1]!.visits);
   });
 });

@@ -24,12 +24,12 @@ export const BOTS: Record<BotLevel, { name: string; blurb: string; move: (req: M
   strong: {
     name: 'Seasoned player',
     blurb: 'Thinks a few thousand games ahead each turn. Stronger than anyone in the game.',
-    move: searchMove(4000, 1500),
+    move: searchMove(3000, 1500),
   },
   expert: {
     name: 'Gaunter O’Dimm',
     blurb: 'Takes its time and rarely wastes a card. For when the others feel easy.',
-    move: searchMove(16000, 5000),
+    move: searchMove(12000, 5000),
   },
 };
 
