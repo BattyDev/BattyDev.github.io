@@ -1,0 +1,77 @@
+import './styles.css';
+import { icon } from './assets';
+import { clear, h } from './dom';
+import { Match, type MatchSetup } from './match';
+import { renderMenu } from './menu';
+
+const app = document.getElementById('app') as HTMLElement;
+
+// The game's weather overlays, referenced from CSS.
+for (const w of ['frost', 'fog', 'rain']) document.documentElement.style.setProperty(`--ov-${w}`, `url(${icon(`overlay_${w}`)})`);
+let match: Match | null = null;
+
+function about(): void {
+  clear(app);
+  app.append(
+    h(
+      'div',
+      { class: 'menu about' },
+      h('header', { class: 'menu-head' }, h('h1', null, 'About'), h('p', null, 'How this simulator works')),
+      h(
+        'section',
+        { class: 'panel prose' },
+        h('h2', null, 'What it is'),
+        h(
+          'p',
+          null,
+          'A faithful copy of the Gwent minigame from The Witcher 3: Wild Hunt, including Hearts of Stone, Blood and Wine (Skellige) and the next-gen update, built for practising the hard matches in the game.',
+        ),
+        h('h2', null, 'The opponent plays fair'),
+        h(
+          'p',
+          null,
+          'The AI only ever sees what a player at the table could see. It knows which cards are in your deck, as a regular opponent would, but never which ones are in your hand or what order your deck is in. To decide, it imagines possible hands for you and plays the move that does best across them.',
+        ),
+        h('h2', null, 'Rules'),
+        h(
+          'p',
+          null,
+          'Every card ability, leader and faction perk is implemented and covered by automated tests. A few fine details could not be confirmed from card text alone and are listed for checking against the real game.',
+        ),
+        h('h2', null, 'Credits'),
+        h(
+          'p',
+          null,
+          'Gwent and The Witcher are trademarks of CD PROJEKT S.A. Card art and icons are © CD PROJEKT RED and used non-commercially under their fan content guidelines. This project is not endorsed by CD PROJEKT RED. Card data and art were converted from ',
+          h('a', { href: 'https://github.com/asundr/gwent-classic' }, 'gwent-classic'),
+          ' by Arun Sundaram (MIT with Commons Clause).',
+        ),
+        h('p', null, h('a', { class: 'btn', href: '#/' }, 'Back')),
+      ),
+    ),
+  );
+}
+
+function play(setup: MatchSetup): void {
+  match?.destroy();
+  match = new Match(app, setup, () => {
+    match?.destroy();
+    match = null;
+    location.hash = '#/';
+    route();
+  });
+}
+
+function route(): void {
+  if (location.hash === '#/about') {
+    match?.destroy();
+    match = null;
+    about();
+    return;
+  }
+  if (match) return;
+  renderMenu(app, play);
+}
+
+window.addEventListener('hashchange', route);
+route();
