@@ -1,0 +1,163 @@
+/* BattyDev · Baby · Savings
+   One fill colour (--gold) means "money set aside" everywhere on this page:
+   the tower, the item drawings, the bars and the history line. Accounts get
+   their own identity colours, set inline from savings.js. */
+
+.bar span { background: var(--gold); }
+.is-over .bar span { background: var(--red); }
+.goal-label .target i { margin-right: 2px; }
+.is-good .goal-label .target i, .is-bought .goal-label .target i { color: var(--green); }
+.is-over .goal-label .target i { color: var(--red); }
+.stat .d i { margin-right: 2px; }
+
+/* ---- item drawings ---- */
+.item-art { display: block; overflow: visible; }
+.item-art .art-base { fill: rgba(157,178,192,0.08); stroke: none; }
+.item-art .art-fill { fill: var(--gold); stroke: none; }
+.item-art .art-line { fill: none; stroke: #5d7686; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.item-art .art-line-fill { fill: none; stroke: #8a6a1f; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+
+/* ---- the stack ---- */
+.stack-layout { display: grid; gap: 16px; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; }
+.stack-layout .panel { margin-bottom: 0; }
+.stack-layout .stat-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.tower-wrap { display: flex; gap: 14px; align-items: stretch; }
+
+/* The thermometer tube runs the full height of the tower beside it. */
+.tube {
+  position: relative; flex: 0 0 18px; margin-bottom: 0;
+  background: rgba(7,21,28,0.85); border: 1px solid var(--rule);
+  border-radius: 99px 99px 0 0;
+}
+.tube-fill {
+  position: absolute; left: 3px; right: 3px; bottom: 0;
+  background: var(--gold); border-radius: 99px 99px 0 0;
+  transition: height .6s ease;
+}
+.bulb {
+  position: absolute; left: 50%; bottom: -30px; transform: translateX(-50%);
+  width: 46px; height: 46px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--gold); color: var(--void);
+  font-size: 12px; font-weight: 900; border: 3px solid var(--panel-solid);
+}
+
+.tower { list-style: none; margin: 0; padding: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.block {
+  position: relative; display: flex; align-items: center; gap: 10px;
+  padding: 6px 12px; overflow: hidden;
+  background: rgba(7,21,28,0.55); border: 1px solid var(--rule); border-radius: var(--radius);
+}
+/* The fill rises inside each block; its top edge is a solid line so the
+   level reads even where the wash is faint. */
+.block-fill {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: rgba(242,193,78,0.22); border-top: 2px solid var(--gold);
+  transition: height .6s ease;
+}
+.block.is-full .block-fill { border-top-color: transparent; background: rgba(242,193,78,0.28); }
+.block:not(.is-full):not(.is-part) .block-fill { border-top: 0; }
+.block > :not(.block-fill) { position: relative; }
+.block-art { width: 30px; height: 30px; flex: 0 0 30px; }
+.block-name { font-weight: 700; font-size: 14px; line-height: 1.2; min-width: 0; }
+.block-amt { margin-left: auto; color: var(--ink-dim); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.block.is-full .block-amt { color: var(--ink); }
+.block-amt i { color: var(--green); }
+.tower-panel .fine { margin-top: 38px; }
+
+/* ---- item carousel ---- */
+.carousel-wrap { position: relative; margin-bottom: 16px; }
+.carousel {
+  display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory;
+  padding: 4px 2px 14px; scrollbar-width: thin; scrollbar-color: var(--rule) transparent;
+}
+.carousel:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.card {
+  position: relative; flex: 0 0 236px; scroll-snap-align: start;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 16px; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px;
+}
+.card .card-art { width: 120px; height: 120px; margin: 4px auto 8px; }
+.card h3 { margin: 0; font-size: 17px; line-height: 1.2; }
+.card p { margin: 0; font-size: 13px; }
+.card-amt { color: var(--ink-dim); }
+.card-amt b { color: var(--ink); font-size: 18px; }
+.card .frac { float: right; color: var(--ink); font-weight: 700; font-size: 15px; }
+.card .bar { margin: 2px 0 4px; }
+.card-sub i { margin-right: 3px; }
+.card.is-good .card-sub i, .card.is-bought .card-sub i { color: var(--green); }
+.card.is-over .card-sub i { color: var(--red); }
+.card.is-short .card-sub i { color: var(--ink-faint); }
+.card-where { color: var(--ink-dim); }
+.card-where i { color: var(--ink-faint); }
+.card-note { color: var(--ink-faint); font-size: 12px !important; margin-top: auto !important; padding-top: 6px; }
+.card-badge {
+  position: absolute; top: 12px; right: 12px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--green); border: 1px solid rgba(155,240,11,0.5); border-radius: 99px; padding: 1px 7px;
+}
+.card.is-general { border-style: dashed; }
+.car-nav { display: flex; justify-content: flex-end; gap: 8px; margin: -46px 0 12px; }
+.car-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--panel-solid); border: 1px solid var(--rule); color: var(--ink);
+  cursor: pointer; display: grid; place-items: center;
+}
+.car-btn:hover { border-color: var(--aqua-dim); }
+.car-btn:focus-visible { outline: 2px solid var(--green); }
+
+/* ---- accounts ---- */
+.acct-bar { display: flex; gap: 2px; height: 22px; border-radius: 4px; overflow: hidden; background: rgba(7,21,28,0.85); }
+.acct-bar .seg { min-width: 4px; }
+.legend { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; }
+.legend li { display: inline-flex; align-items: center; gap: 6px; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; flex: 0 0 10px; }
+.acct-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.acct > h2 { display: flex; align-items: center; gap: 8px; }
+.acct-bal { margin: -4px 0 8px; font-size: 26px; font-weight: 700; }
+
+/* ---- history ---- */
+.filters { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 14px; }
+.filters label { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-faint); }
+.filters select {
+  background: var(--panel-solid); color: var(--ink); border: 1px solid var(--rule); border-radius: var(--radius);
+  padding: 6px 8px; font: inherit; font-size: 14px; text-transform: none; letter-spacing: 0;
+}
+.filters select:focus-visible { outline: 2px solid var(--green); }
+
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart .grid { stroke: rgba(102,237,241,0.09); stroke-width: 1; }
+.chart .tick { fill: var(--ink-faint); font-size: 11px; font-variant-numeric: tabular-nums; }
+.chart .ref { stroke: var(--ink-faint); stroke-width: 1; }
+.chart .ref-label { fill: var(--ink-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+.chart .area { fill: var(--gold); fill-opacity: 0.1; }
+.chart .line { fill: none; stroke: var(--gold); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .end, .chart .cross-dot { fill: var(--gold); stroke: var(--panel-solid); stroke-width: 2; }
+.chart .end-label { fill: var(--ink); font-size: 12px; font-weight: 700; }
+.chart .cross { stroke: var(--ink-dim); stroke-width: 1; }
+.chart .hit { fill: transparent; cursor: crosshair; }
+.tip {
+  position: absolute; pointer-events: none; z-index: 3;
+  display: flex; flex-direction: column; gap: 1px; min-width: 150px;
+  padding: 8px 10px; font-size: 12px;
+  background: var(--panel-solid); border: 1px solid var(--rule); border-radius: var(--radius);
+  box-shadow: 0 8px 24px #0008;
+}
+.tip[hidden] { display: none; }
+.tip b { font-size: 12px; }
+#ledger tr.is-spent td, #ledger tr.is-out td.num { color: var(--ink-dim); }
+#ledger .tag { border-color: var(--ink-faint); color: var(--ink-dim); }
+
+@media (max-width: 760px) {
+  .stack-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 620px) {
+  .goal-label { flex-wrap: wrap; }
+  .goal-label .target { margin-left: 0; flex-basis: 100%; }
+  .car-nav { display: none; }
+  .card { flex-basis: 78%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tube-fill, .block-fill { transition: none; }
+  .carousel { scroll-behavior: auto; }
+}

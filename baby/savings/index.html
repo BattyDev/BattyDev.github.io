@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07151c">
+<title>Savings · Baby · BattyDev</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;700;900&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="../shared/baby.css?v=3" rel="stylesheet">
+<link href="savings.css?v=1" rel="stylesheet">
+</head>
+<body>
+
+<div class="wallpaper" aria-hidden="true"></div>
+
+<div id="app" hidden>
+  <header class="home-bar">
+    <a class="account" href="../" aria-label="Back to Baby">
+      <span class="gamerpic">B</span>
+      <span><b>Savings</b><small>Baby</small></span>
+    </a>
+    <nav class="system-icons" aria-label="Views">
+      <button type="button" data-view-target="stack" aria-label="The stack"><i class="bi bi-thermometer-half"></i></button>
+      <button type="button" data-view-target="items" aria-label="Item by item"><i class="bi bi-grid-3x2-gap"></i></button>
+      <button type="button" data-view-target="accounts" aria-label="Where the money is"><i class="bi bi-bank"></i></button>
+      <button type="button" data-view-target="history" aria-label="History"><i class="bi bi-graph-up"></i></button>
+    </nav>
+    <div class="system-status">
+      <span id="updated" class="stamp">—</span>
+      <button type="button" class="signout" id="lock">Sign out</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="banner" class="notice" hidden></div>
+    <div id="sample" class="notice is-info" hidden>
+      Showing <b>sample data</b>: every item, amount and account here is a placeholder.
+    </div>
+
+    <section id="view-stack" class="view" aria-labelledby="stack-heading">
+      <div class="section-head">
+        <p class="eyebrow">The stack</p>
+        <h1 id="stack-heading">—</h1>
+        <p class="lede" id="stack-lede"></p>
+      </div>
+      <div class="stack-layout">
+        <div class="panel tower-panel">
+          <div class="tower-wrap">
+            <div class="tube" aria-hidden="true"><span class="tube-fill" id="tube-fill"></span><span class="bulb" id="bulb"></span></div>
+            <ol class="tower" id="tower" aria-label="Items, first needed at the bottom"></ol>
+          </div>
+          <p class="fine">Everything saved, item money and general money together, fills from the bottom. The bottom item is needed first.</p>
+        </div>
+        <div class="panel">
+          <h2>Totals</h2>
+          <div class="stat-grid" id="stack-stats"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-items" class="view" aria-labelledby="items-heading" hidden>
+      <div class="section-head">
+        <p class="eyebrow">Item by item</p>
+        <h1 id="items-heading">What we're saving for</h1>
+        <p class="lede">Each item fills with the money put toward it. Scroll sideways for the rest.</p>
+      </div>
+      <div class="carousel-wrap">
+        <div class="car-nav">
+          <button type="button" class="car-btn" id="car-prev" aria-label="Scroll back"><i class="bi bi-chevron-left"></i></button>
+          <button type="button" class="car-btn" id="car-next" aria-label="Scroll forward"><i class="bi bi-chevron-right"></i></button>
+        </div>
+        <div class="carousel" id="carousel" tabindex="0" aria-label="Items"></div>
+      </div>
+      <div class="panel">
+        <h2>All items</h2>
+        <div class="goals" id="goals"></div>
+      </div>
+    </section>
+
+    <section id="view-accounts" class="view" aria-labelledby="accounts-heading" hidden>
+      <div class="section-head">
+        <p class="eyebrow">Where the money is</p>
+        <h1 id="accounts-heading">Accounts</h1>
+        <p class="lede" id="accounts-lede">Where each dollar is sitting right now.</p>
+      </div>
+      <div class="panel">
+        <h2>Split by account</h2>
+        <div class="acct-bar" id="acct-bar" role="img"></div>
+        <ul class="legend" id="acct-legend"></ul>
+      </div>
+      <div class="acct-grid" id="acct-cards"></div>
+    </section>
+
+    <section id="view-history" class="view" aria-labelledby="history-heading" hidden>
+      <div class="section-head">
+        <p class="eyebrow">Over time</p>
+        <h1 id="history-heading">History</h1>
+        <p class="lede">Every deposit, purchase and move, and the running total against the goal.</p>
+      </div>
+      <div class="filters">
+        <label>Item <select id="f-goal"></select></label>
+        <label>Account <select id="f-acct"></select></label>
+      </div>
+      <div class="panel">
+        <h2 id="chart-title">Saved so far</h2>
+        <div class="chart" id="chart"></div>
+      </div>
+      <div class="panel">
+        <h2>Ledger</h2>
+        <div class="scroll-x" id="ledger"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="../shared/auth.js?v=3"></script>
+<script src="../shared/savings-model.js?v=3"></script>
+<script src="icons.js?v=1"></script>
+<script src="savings.js?v=1"></script>
+</body>
+</html>
