@@ -500,7 +500,8 @@ export class Match {
 
   /** Asks the coach about the current position, once per position. */
   private requestCoach(): void {
-    if (!this.coachOn || this.thinking || toAct(this.state) !== HUMAN || this.state.phase !== 'play') return;
+    // Not during a prompt (Medic and friends): the panel isn't shown then.
+    if (!this.coachOn || this.thinking || toAct(this.state) !== HUMAN || this.state.phase !== 'play' || this.state.pending) return;
     const turn = this.state.turn;
     const gen = this.generation;
     if (this.coach && this.coach.turn === turn && this.coach.gen === gen) return;

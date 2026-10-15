@@ -28,57 +28,81 @@ export function leaderActive(state: GameState, player: PlayerId, ability: string
   return d.type === 'leader' && d.leader === ability;
 }
 
-function hornSources(row: RowState): number {
-  let n = row.leaderHorn ? 1 : 0;
-  if (row.special) {
-    const d = def(row.special.id);
-    if (d.type === 'special' && d.effect === 'horn') n++;
+/**
+ * Every card's strength on one row, in row order, in a single pass: the
+ * row-wide effects (weather, horns, morale, bond counts) are worked out once
+ * rather than once per card. Search calls this constantly.
+ */
+export function rowStrengths(state: GameState, side: PlayerId, row: Row): number[] {
+  const r: RowState = state.players[side].rows[row];
+  const n = r.units.length;
+  const out = new Array<number>(n);
+  if (n === 0) return out;
+
+  const defs = new Array<UnitDef | null>(n);
+  let horns = r.leaderHorn ? 1 : 0;
+  if (r.special) {
+    const sd = def(r.special.id);
+    if (sd.type === 'special' && sd.effect === 'horn') horns++;
   }
-  for (const c of row.units) {
-    const d = def(c.id);
-    if (d.type === 'unit' && d.abilities.includes('horn')) n++;
+  let morale = 0;
+  let bonds: Map<string, number> | null = null;
+  for (let i = 0; i < n; i++) {
+    const d = def((r.units[i] as Card).id);
+    if (d.type !== 'unit') {
+      defs[i] = null;
+      continue;
+    }
+    defs[i] = d;
+    const ab = d.abilities;
+    if (ab.length) {
+      if (ab.includes('horn')) horns++;
+      if (ab.includes('morale')) morale++;
+      if (ab.includes('bond')) {
+        bonds ??= new Map();
+        bonds.set(d.name, (bonds.get(d.name) ?? 0) + 1);
+      }
+    }
   }
-  return n;
+
+  const weather = weatherOn(state, row);
+  const bran = weather && leaderActive(state, side, 'king_bran');
+  const doubleSpies = state.doubleSpies;
+  for (let i = 0; i < n; i++) {
+    const d = defs[i];
+    if (!d) {
+      out[i] = 0; // decoy
+      continue;
+    }
+    if (d.hero) {
+      out[i] = d.strength;
+      continue;
+    }
+    const ab = d.abilities;
+    let st = d.strength;
+    if (weather) st = bran ? Math.floor(st / 2) : Math.min(st, 1);
+    if (doubleSpies && ab.includes('spy')) st *= 2;
+    if (bonds && ab.includes('bond')) {
+      const k = bonds.get(d.name) ?? 0;
+      if (k > 1) st *= k;
+    }
+    st += ab.includes('morale') ? morale - 1 : morale;
+    if (horns - (ab.includes('horn') ? 1 : 0) > 0) st *= 2;
+    out[i] = st;
+  }
+  return out;
 }
 
 /** Current strength of one card on a row. */
 export function cardStrength(state: GameState, side: PlayerId, row: Row, card: Card): number {
-  const d = def(card.id);
-  if (d.type !== 'unit') return 0; // decoy
-  if (d.hero) return d.strength;
-  const r = state.players[side].rows[row];
-  let s = d.strength;
-
-  if (weatherOn(state, row)) {
-    s = leaderActive(state, side, 'king_bran') ? Math.floor(s / 2) : Math.min(s, 1);
-  }
-  if (state.doubleSpies && d.abilities.includes('spy')) s *= 2;
-
-  if (d.abilities.includes('bond')) {
-    let n = 0;
-    for (const c of r.units) {
-      const o = def(c.id);
-      if (o.type === 'unit' && o.name === d.name && o.abilities.includes('bond')) n++;
-    }
-    if (n > 1) s *= n;
-  }
-
-  let morale = 0;
-  for (const c of r.units) {
-    const o = def(c.id);
-    if (o.type === 'unit' && o.abilities.includes('morale')) morale++;
-  }
-  if (d.abilities.includes('morale')) morale--;
-  s += morale;
-
-  const horns = hornSources(r) - (d.abilities.includes('horn') ? 1 : 0);
-  if (horns > 0) s *= 2;
-  return s;
+  const i = state.players[side].rows[row].units.indexOf(card);
+  const idx = i >= 0 ? i : state.players[side].rows[row].units.findIndex((c) => c.uid === card.uid);
+  return idx >= 0 ? (rowStrengths(state, side, row)[idx] as number) : 0;
 }
 
 export function rowScore(state: GameState, side: PlayerId, row: Row): number {
   let total = 0;
-  for (const c of state.players[side].rows[row].units) total += cardStrength(state, side, row, c);
+  for (const v of rowStrengths(state, side, row)) total += v;
   return total;
 }
 

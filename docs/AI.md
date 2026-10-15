@@ -61,6 +61,14 @@ because its advice is more sensible in hand-checked positions, such as the
 opening moves (`test/bench` and the opening diagnostic in the commit history).
 Better playouts are the main lever for a stronger AI and a better coach.
 
+## Speed
+
+In Node on the build machine, a 3,000-iteration search with greedy playouts
+takes about 2.8 s from the opening position. That was 4.9 s before row
+strengths were computed in one pass (`score.ts › rowStrengths`). Browsers
+are similar on desktop and slower on phones. The bots stop at their time
+budget, whichever comes first.
+
 ## Known limits
 
 - The search assumes you play like its playout policy. Unusual but strong

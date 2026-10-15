@@ -55,8 +55,6 @@ README.
   the time budgets to suit.
 - [ ] Coach explanations: say *why* a move is best ("keeps card advantage",
   "they can't catch up") as well as the number.
-- [ ] Skip the coach's search when a prompt is open, where the panel isn't
-  shown anyway.
 - [ ] `francesca_hope` can be activated when it would move nothing. Either
   check for an actual improvement (cost: an extra search per legal-move
   check) or record the game's behaviour in VERIFY.md.
@@ -71,8 +69,13 @@ README.
   this position").
 
 ### Engineering
-- [ ] Add a manually triggered CI workflow that runs `npm run bench` and
-  posts the result.
-- [ ] Unit tests for the UI helpers (`narrate.ts`, `coach.ts › judge`).
-- [ ] Profile `totalScore`, which is called heavily in search. Caching row
-  scores per state could roughly double the number of iterations.
+- [ ] Search speed: scoring is now one pass per row (1.75× faster overall).
+  Next would be caching row totals per state inside greedy playouts.
+
+## Done since the first list
+
+- Coach skips its search while a prompt is open.
+- Unit tests for the coach's grading and the log's wording (`test/ui`).
+- `Benchmark` workflow, run by hand from the Actions tab.
+- Row strengths computed in one pass: search is 1.75× faster.
+- Scenario codes and saved matches are validated before use.

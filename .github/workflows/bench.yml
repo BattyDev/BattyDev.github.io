@@ -1,0 +1,42 @@
+# Bot-strength benchmark, run by hand from the Actions tab. Slow (tens of
+# minutes), so never on push. Results land in the job summary.
+name: Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      games:
+        description: Games (played in mirrored pairs)
+        default: '40'
+      a:
+        description: Bot A (iterations per move; 0 = simple; suffix g = greedy playouts)
+        default: '1000g'
+      b:
+        description: Bot B
+        default: '0'
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Run
+        env:
+          BENCH_GAMES: ${{ inputs.games }}
+          BENCH_A: ${{ inputs.a }}
+          BENCH_B: ${{ inputs.b }}
+        run: npm run bench 2>&1 | tee bench.log
+      - name: Summary
+        if: always()
+        run: |
+          echo '### Benchmark' >> "$GITHUB_STEP_SUMMARY"
+          grep -E '^search|^simple' bench.log >> "$GITHUB_STEP_SUMMARY" || echo 'No result line found.' >> "$GITHUB_STEP_SUMMARY"

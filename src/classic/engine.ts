@@ -14,7 +14,7 @@
 
 import { Rng } from '../core/rng';
 import { def, leaderDef, unitDef } from './cards';
-import { cardStrength, isNormalUnit, leaderActive, rowScore, scores } from './score';
+import { isNormalUnit, leaderActive, rowScore, rowStrengths, scores } from './score';
 import type {
   Action,
   Card,
@@ -219,17 +219,20 @@ function slotFree(r: RowState): boolean {
 
 /** The unit(s) a row-limited Scorch would destroy, or [] when it would fizzle. */
 function rowScorchTargets(s: GameState, side: PlayerId, row: Row): Card[] {
-  if (rowScore(s, side, row) < 10) return [];
+  const strengths = rowStrengths(s, side, row);
+  let total = 0;
+  for (const v of strengths) total += v;
+  if (total < 10) return [];
   let max = -1;
   let out: Card[] = [];
-  for (const c of s.players[side].rows[row].units) {
-    if (!isNormalUnit(def(c.id))) continue;
-    const st = cardStrength(s, side, row, c);
+  s.players[side].rows[row].units.forEach((c, i) => {
+    if (!isNormalUnit(def(c.id))) return;
+    const st = strengths[i] as number;
     if (st > max) {
       max = st;
       out = [c];
     } else if (st === max) out.push(c);
-  }
+  });
   return out;
 }
 
@@ -689,14 +692,15 @@ function scorchAll(ctx: Ctx, exclude: Card | null): void {
   let targets: { side: PlayerId; row: Row; card: Card }[] = [];
   for (const side of [0, 1] as const) {
     for (const row of ROWS) {
-      for (const c of s.players[side].rows[row].units) {
-        if (c === exclude || !isNormalUnit(def(c.id))) continue;
-        const st = cardStrength(s, side, row, c);
+      const strengths = rowStrengths(s, side, row);
+      s.players[side].rows[row].units.forEach((c, i) => {
+        if (c === exclude || !isNormalUnit(def(c.id))) return;
+        const st = strengths[i] as number;
         if (st > max) {
           max = st;
           targets = [{ side, row, card: c }];
         } else if (st === max) targets.push({ side, row, card: c });
-      }
+      });
     }
   }
   for (const t of targets) destroy(ctx, t.side, t.row, t.card, 'scorch');
