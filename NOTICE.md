@@ -9,9 +9,12 @@ CD PROJEKT S.A. All card art, icons and other game assets under
 non-commercially under CD PROJEKT RED's fan content guidelines. Nothing on
 this site is sold, and the site carries no ads.
 
-Before launch, the exact wording CD PROJEKT RED's current fan content
-guidelines ask for must be checked and copied into the site footer and the
-About page (see the launch checklist in the README).
+The same notice appears on every page of the app (`src/ui/notice.ts`) and
+links to the guidelines at https://www.cdprojektred.com/en/fan-content.
+When it was written, no mandated wording could be found, so it states what
+the guidelines require in substance: unofficial, free, not endorsed, and
+CD PROJEKT's ownership of the IP. If the guidelines prescribe exact text,
+replace `NOTICE_TEXT` with it.
 
 ## gwent-classic
 

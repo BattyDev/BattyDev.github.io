@@ -541,3 +541,8 @@ table.rounds { width: 100%; border-collapse: collapse; margin: 0.4em 0; }
 .exam-toggle { margin: 0 0 1em; font-size: 0.9rem; }
 .exam-badge { padding: 0.25em 0.75em; border: 1px solid var(--red); border-radius: var(--radius); color: #f0a08f; font-size: 0.85rem; font-weight: 700; }
 @media (max-width: 700px) { .sc-row { grid-template-columns: 4.5em 36px minmax(0, 1fr); } }
+
+/* fan-content notice: on every page */
+.menu-foot { max-width: 900px; margin: 0 auto; padding: 8px 16px 28px; }
+.fan-notice { max-width: 72ch; margin: 0.3em auto; }
+.modal .fan-notice { margin: 1em 0 0; font-size: 0.8rem; color: var(--ink-dim); line-height: 1.45; }

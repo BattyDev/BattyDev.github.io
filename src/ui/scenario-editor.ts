@@ -10,6 +10,7 @@ import { ROWS } from '../classic/types';
 import { icon, shield } from './assets';
 import { inspector, tile } from './cards';
 import { clear, h } from './dom';
+import { siteFooter } from './notice';
 import { listDecks } from './library';
 import type { MatchSetup } from './match';
 import { load, save } from './storage';
@@ -414,6 +415,7 @@ export function renderScenarioEditor(host: HTMLElement, code: string | null, pla
         ),
       ),
     );
+    host.append(siteFooter());
   };
 
   draw();

@@ -8,6 +8,7 @@ import { artSm, shield } from './assets';
 import { clear, h } from './dom';
 import { getDeck, listDecks } from './library';
 import type { MatchSetup } from './match';
+import { siteFooter } from './notice';
 import { load, save } from './storage';
 
 interface Choice {
@@ -300,12 +301,7 @@ export function renderMenu(host: HTMLElement, start: (setup: MatchSetup) => void
           ),
           h('button', { class: 'btn primary big', type: 'button', on: { click: go } }, 'Start match'),
         ),
-        h(
-          'footer',
-          { class: 'menu-foot' },
-          h('p', null, 'Unofficial fan project. Gwent and The Witcher are trademarks of CD PROJEKT S.A.; card art © CD PROJEKT RED, used non-commercially. Not endorsed by CD PROJEKT RED.'),
-          h('p', null, h('a', { href: '#/about' }, 'About this simulator'), ' · ', h('a', { href: '../' }, 'battydev.com')),
-        ),
+        siteFooter(),
       ),
     );
   };

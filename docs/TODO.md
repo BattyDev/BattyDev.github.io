@@ -7,18 +7,13 @@ README.
 
 ## Needs you (no code can do these)
 
-- [ ] **Create `BattyDev/batty-gwent`** on GitHub: public, empty, no README.
-  Then push this code with
-  `git push https://github.com/BattyDev/batty-gwent.git origin/gwent-dev:main`
-  in a clone of BattyDev.github.io, or ask Claude to once the repo is added
-  to a session.
-- [ ] **Check CI is green there**; the Publish workflow then creates `dist`.
-- [ ] **Merge `claude/gwent-plan`** in BattyDev.github.io. That deploys
+- [x] Create `BattyDev/batty-gwent`, push, CI green, `dist` published.
+- [ ] **Merge PR #19** (`claude/gwent-plan`) in BattyDev.github.io. That deploys
   `/gwent` and adds the home tile.
-- [ ] **Fan content notice.** Copy the exact wording CD PROJEKT RED's current
-  fan content guidelines ask for into the menu footer (`src/ui/menu.ts`) and
-  the About page (`src/ui/main.ts`). Their site couldn't be reached from the
-  build environment.
+- [ ] **Fan content notice: check the wording.** A notice is on every page
+  (`src/ui/notice.ts`), linking to the guidelines. It covers what they
+  require in substance, but their page couldn't be read from the build
+  environment. If it prescribes exact text, put that text in `NOTICE_TEXT`.
 - [ ] **Check the rules in `docs/VERIFY.md`** in the real game. Each item
   names a board to set up and what we currently assume.
 - [ ] Optional: add `SITE_DISPATCH_TOKEN` here so updates go live straight

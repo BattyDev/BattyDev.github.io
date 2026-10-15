@@ -4,6 +4,7 @@ import { renderBuilder, renderCollection, renderDeckList } from './builder';
 import { clear, h } from './dom';
 import { forgetMatch, Match, savedMatch, type MatchSetup, type SavedMatch } from './match';
 import { renderMenu } from './menu';
+import { fanNotice } from './notice';
 import { renderScenarioEditor } from './scenario-editor';
 
 const app = document.getElementById('app') as HTMLElement;
@@ -42,10 +43,11 @@ function about(): void {
           'Every card ability, leader and faction perk is implemented and covered by automated tests. A few fine details could not be confirmed from card text alone and are listed for checking against the real game.',
         ),
         h('h2', null, 'Credits'),
+        fanNotice(),
         h(
           'p',
           null,
-          'Gwent and The Witcher are trademarks of CD PROJEKT S.A. Card art and icons are © CD PROJEKT RED and used non-commercially under their fan content guidelines. This project is not endorsed by CD PROJEKT RED. Card data and art were converted from ',
+          'Card data and art were converted from ',
           h('a', { href: 'https://github.com/asundr/gwent-classic' }, 'gwent-classic'),
           ' by Arun Sundaram (MIT with Commons Clause).',
         ),

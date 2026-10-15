@@ -13,6 +13,7 @@ export interface Props {
   src?: string;
   alt?: string;
   href?: string;
+  rel?: string;
   loading?: 'lazy' | 'eager';
   decoding?: 'async' | 'sync' | 'auto';
   draggable?: boolean;

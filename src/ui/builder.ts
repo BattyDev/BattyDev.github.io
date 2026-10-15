@@ -9,6 +9,7 @@ import type { CardDef, DeckList, Faction, Row } from '../classic/types';
 import { artSm, shield } from './assets';
 import { inspector, tile } from './cards';
 import { clear, h } from './dom';
+import { siteFooter } from './notice';
 import { deleteDeck, getDeck, listDecks, newDeckId, owned, saveDeck, setOwned, type DeckRole, type SavedDeck } from './library';
 
 type Filter = 'all' | Row | 'agile' | 'hero' | 'special';
@@ -144,6 +145,7 @@ export function renderDeckList(host: HTMLElement): void {
         ),
       ),
     );
+    host.append(siteFooter());
   };
   draw();
 }
@@ -203,6 +205,7 @@ export function renderCollection(host: HTMLElement): void {
         ),
       ),
     );
+    host.append(siteFooter());
   };
   draw();
 }
@@ -544,6 +547,7 @@ export function renderBuilder(host: HTMLElement, idOrNew: string): () => void {
         h('div', { class: 'builder-inspector' }, inspector(inspected ? { uid: -1, id: inspected } : null)),
       ),
     );
+    host.append(siteFooter());
   };
 
   const showInspect = (id: string) => {

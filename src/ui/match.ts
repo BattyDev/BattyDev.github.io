@@ -19,6 +19,7 @@ import { inspector, tile } from './cards';
 import { coachPanel, hintTarget, judge, reviewBody, trackerBody, type Decision, type Verdict } from './coach';
 import { clear, h, sleep } from './dom';
 import { narrate, type Line } from './narrate';
+import { fanNotice } from './notice';
 import { load, save } from './storage';
 
 export interface MatchSetup {
@@ -885,6 +886,7 @@ export class Match {
         h('label', { class: 'field-row' }, 'Opponent speed', speed),
         h('label', { class: 'field-row' }, confirmBox, 'Ask before passing with cards in hand'),
         h('p', { class: 'muted' }, 'Keys: Esc deselect · Enter play selected · P pass · Z undo · C coach · L log'),
+        fanNotice(),
         h(
           'div',
           { class: 'modal-actions' },
