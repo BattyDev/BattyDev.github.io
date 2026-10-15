@@ -9,6 +9,7 @@ import type { SearchResult } from '../ai/ismcts';
 import { actionKey } from '../ai/keys';
 import { def, FACTION_INFO, LEADER_TEXT } from '../classic/cards';
 import { apply, canUseLeader, legalActions, newGame, other, toAct } from '../classic/engine';
+import { fromScenario, type Scenario } from '../classic/scenario';
 import { cardStrength, rowScore, totalScore, weatherOn } from '../classic/score';
 import type { Action, Card, DeckList, GameEvent, GameState, PlayerId, Row } from '../classic/types';
 import { redactEvent, view } from '../classic/view';
@@ -27,6 +28,26 @@ export interface MatchSetup {
   youName: string;
   opponentName: string;
   seed?: number;
+  /** Start from this position instead of a fresh deal. Rematch replays it. */
+  scenario?: Scenario;
+  /** Dress rehearsal: no coach, no undo. */
+  exam?: boolean;
+}
+
+/** A match in progress, saved so a reload or closed tab doesn't lose it. */
+export interface SavedMatch {
+  setup: MatchSetup;
+  state: GameState;
+  log: Line[];
+}
+
+export function savedMatch(): SavedMatch | null {
+  const m = load<SavedMatch | null>('match', null);
+  return m && m.state && m.state.phase !== 'over' && Array.isArray(m.log) ? m : null;
+}
+
+export function forgetMatch(): void {
+  save('match', null);
 }
 
 interface Settings {
@@ -62,7 +83,7 @@ export class Match {
   private ai = new AiClient();
   /** A second worker, so the coach never delays the opponent. */
   private coachAi = new AiClient();
-  private coachOn: boolean = load('coach', false);
+  private coachPref: boolean = load('coach', false);
   private coach: { turn: number; gen: number; result: SearchResult | null } | null = null;
   private root: HTMLElement;
   private toasts: HTMLElement;
@@ -74,6 +95,7 @@ export class Match {
     private host: HTMLElement,
     private setup: MatchSetup,
     private exit: () => void,
+    resume?: SavedMatch,
   ) {
     this.root = h('div', { class: 'match' });
     this.toasts = h('div', { class: 'sr-only', role: 'status', aria: { live: 'polite' } });
@@ -86,7 +108,24 @@ export class Match {
       const to = e.relatedTarget as Element | null;
       if (!to?.closest?.('.card') && !this.selection) this.root.classList.remove('inspecting');
     });
-    this.start(setup.seed ?? seedFrom(Date.now()));
+    if (resume) {
+      this.state = resume.state;
+      this.log = resume.log;
+      this.toast('Match resumed.');
+      this.render();
+      void this.advance();
+    } else {
+      this.start(setup.seed ?? seedFrom(Date.now()));
+    }
+  }
+
+  private get coachOn(): boolean {
+    return this.coachPref && !this.setup.exam;
+  }
+
+  private persist(): void {
+    if (this.state.phase === 'over') forgetMatch();
+    else save('match', { setup: this.setup, state: this.state, log: this.log } satisfies SavedMatch);
   }
 
   destroy(): void {
@@ -104,16 +143,24 @@ export class Match {
 
   private start(seed: number): void {
     this.generation++;
-    const { state, events } = newGame({
-      seed,
-      players: [
-        { name: this.setup.youName, deck: this.setup.you },
-        { name: this.setup.opponentName, deck: this.setup.opponent },
-      ],
-    });
+    let state: GameState;
+    let events: GameEvent[] = [];
+    if (this.setup.scenario) {
+      state = fromScenario(this.setup.scenario, seed);
+      state.players[0].name = this.setup.youName;
+      state.players[1].name = this.setup.opponentName;
+    } else {
+      ({ state, events } = newGame({
+        seed,
+        players: [
+          { name: this.setup.youName, deck: this.setup.you },
+          { name: this.setup.opponentName, deck: this.setup.opponent },
+        ],
+      }));
+    }
     this.state = state;
     this.history = [];
-    this.log = [];
+    this.log = this.setup.scenario ? [{ who: 'game', text: `Scenario: ${this.setup.scenario.name}. ${toAct(state) === HUMAN ? 'Your move.' : `${this.setup.opponentName} to move.`}` }] : [];
     this.selection = null;
     this.closeModal();
     this.absorb(events);
@@ -176,6 +223,7 @@ export class Match {
 
   /** Takes back your last whole turn, including any choices it prompted. */
   private undo(): void {
+    if (this.setup.exam) return;
     let last = this.history.pop();
     while (last && last.state.pending && this.history.length) last = this.history.pop();
     if (!last) return;
@@ -430,7 +478,7 @@ export class Match {
         { class: 'modal-actions' },
         h('button', { class: 'btn primary', on: { click: () => this.start(seedFrom(Date.now())) } }, 'Rematch'),
         this.decisions().length ? h('button', { class: 'btn', on: { click: () => void this.review() } }, 'Review my moves') : null,
-        this.history.length ? h('button', { class: 'btn', on: { click: () => this.undo() } }, 'Take back last move') : null,
+        this.history.length && !this.setup.exam ? h('button', { class: 'btn', on: { click: () => this.undo() } }, 'Take back last move') : null,
         h('button', { class: 'btn', on: { click: () => this.exit() } }, 'Change decks'),
       ),
     ]);
@@ -440,8 +488,9 @@ export class Match {
   // Coach
 
   private toggleCoach(): void {
-    this.coachOn = !this.coachOn;
-    save('coach', this.coachOn);
+    if (this.setup.exam) return;
+    this.coachPref = !this.coachPref;
+    save('coach', this.coachPref);
     this.render();
   }
 
@@ -735,7 +784,9 @@ export class Match {
     const toolbar = h(
       'nav',
       { class: 'toolbar', aria: { label: 'Match' } },
-      h('button', { class: 'btn ghost', on: { click: () => this.undo() }, disabled: !this.history.length, title: 'Take back your last move (Z)' }, 'Undo'),
+      this.setup.exam
+        ? h('span', { class: 'exam-badge', title: 'Exam mode: no coach, no undo' }, 'Exam')
+        : h('button', { class: 'btn ghost', on: { click: () => this.undo() }, disabled: !this.history.length, title: 'Take back your last move (Z)' }, 'Undo'),
       h(
         'button',
         {
@@ -750,7 +801,9 @@ export class Match {
         },
         'Log',
       ),
-      h('button', { class: `btn ghost${this.coachOn ? ' on' : ''}`, on: { click: () => this.toggleCoach() }, title: 'Coach: hints and win chances (C)', aria: { pressed: String(this.coachOn) } }, 'Coach'),
+      this.setup.exam
+        ? null
+        : h('button', { class: `btn ghost${this.coachOn ? ' on' : ''}`, on: { click: () => this.toggleCoach() }, title: 'Coach: hints and win chances (C)', aria: { pressed: String(this.coachOn) } }, 'Coach'),
       h('button', { class: 'btn ghost', on: { click: () => this.menuModal() }, title: 'Settings and quit', aria: { label: 'Menu' } }, '☰'),
     );
 
@@ -789,6 +842,7 @@ export class Match {
     this.root.classList.toggle('selecting', !!this.selection);
     if (!this.selection && !this.modal) this.root.classList.remove('inspecting');
     this.lastUids = nowUids;
+    this.persist();
     this.requestCoach();
   }
 

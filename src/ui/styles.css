@@ -204,13 +204,14 @@ button.row { cursor: pointer; }
 .row-icon { position: absolute; right: 0.6vw; top: 50%; transform: translateY(-50%); height: 55%; opacity: 0.08; pointer-events: none; }
 
 /* weather on a row tints it, with the game's overlay art where we have it */
-.row.weather-close::after, .row.weather-ranged::after, .row.weather-siege::after {
+.row.weather-close::after, .row.weather-ranged::after, .row.weather-siege::after,
+.sc-row.weather-close::after, .sc-row.weather-ranged::after, .sc-row.weather-siege::after {
   content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 4px;
   background-size: cover; background-position: center; mix-blend-mode: screen; opacity: 0.75;
 }
-.row.weather-close::after { background-image: var(--ov-frost), linear-gradient(90deg, rgba(150, 210, 255, 0.18), rgba(150, 210, 255, 0.05)); }
-.row.weather-ranged::after { background-image: var(--ov-fog), linear-gradient(90deg, rgba(200, 200, 200, 0.18), rgba(200, 200, 200, 0.05)); }
-.row.weather-siege::after { background-image: var(--ov-rain), linear-gradient(90deg, rgba(110, 150, 220, 0.2), rgba(110, 150, 220, 0.05)); }
+.row.weather-close::after, .sc-row.weather-close::after { background-image: var(--ov-frost), linear-gradient(90deg, rgba(150, 210, 255, 0.18), rgba(150, 210, 255, 0.05)); }
+.row.weather-ranged::after, .sc-row.weather-ranged::after { background-image: var(--ov-fog), linear-gradient(90deg, rgba(200, 200, 200, 0.18), rgba(200, 200, 200, 0.05)); }
+.row.weather-siege::after, .sc-row.weather-siege::after { background-image: var(--ov-rain), linear-gradient(90deg, rgba(110, 150, 220, 0.2), rgba(110, 150, 220, 0.05)); }
 
 .card.target { outline-color: var(--gold-hi); box-shadow: 0 0 14px rgba(242, 214, 139, 0.8); cursor: pointer; z-index: 1; }
 
@@ -513,3 +514,30 @@ table.rounds { width: 100%; border-collapse: collapse; margin: 0.4em 0; }
 .collect { display: grid; gap: 4px; font-size: 0.8rem; cursor: pointer; }
 .collect .card { width: 100%; height: auto; }
 .collect span { display: flex; gap: 4px; align-items: flex-start; }
+
+/* -------------------------------------------------------------- scenarios */
+
+.sc-settings { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; }
+.sc-field { display: grid; gap: 4px; font-size: 0.8rem; color: var(--ink-dim); }
+.sc-field.inline { display: inline-flex; align-items: center; gap: 6px; }
+.sc-num { width: 4.5em; }
+.sc-checks { display: flex; flex-wrap: wrap; gap: 6px 14px; width: 100%; }
+.sc-check { display: inline-flex; align-items: center; gap: 0.4em; font-size: 0.88rem; }
+.sc-board { display: grid; gap: 6px; }
+.sc-board hr { width: 100%; border: 0; border-top: 2px solid rgba(210, 166, 74, 0.35); margin: 4px 0; }
+.sc-side-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sc-side-head > img { width: 24px; }
+.sc-zone { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 64px; }
+.sc-zone .card { height: 64px; width: auto; }
+.sc-zone .card:hover { outline-color: var(--red); }
+.sc-add { min-width: 44px; height: 64px; font-size: 1.3rem; border-style: dashed; }
+.sc-row { position: relative; display: grid; grid-template-columns: 7.5em 40px minmax(0, 1fr); align-items: center; gap: 8px; padding: 4px 8px; border-radius: 4px; background: var(--row); }
+.sc-row-label { font-size: 0.8rem; color: var(--ink-dim); }
+.sc-horn { width: 40px; height: 40px; padding: 4px; border: 1px dashed var(--line); border-radius: 50%; background: transparent; cursor: pointer; opacity: 0.45; }
+.sc-horn img { width: 100%; }
+.sc-horn.on { opacity: 1; border: 1px solid var(--gold); box-shadow: 0 0 10px rgba(210, 166, 74, 0.5); }
+.picker-inspect .inspector { width: 220px; margin: 10px auto 0; }
+.panel.resume { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; border-color: var(--gold); }
+.exam-toggle { margin: 0 0 1em; font-size: 0.9rem; }
+.exam-badge { padding: 0.25em 0.75em; border: 1px solid var(--red); border-radius: var(--radius); color: #f0a08f; font-size: 0.85rem; font-weight: 700; }
+@media (max-width: 700px) { .sc-row { grid-template-columns: 4.5em 36px minmax(0, 1fr); } }

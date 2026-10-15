@@ -2,8 +2,9 @@ import './styles.css';
 import { icon } from './assets';
 import { renderBuilder, renderCollection, renderDeckList } from './builder';
 import { clear, h } from './dom';
-import { Match, type MatchSetup } from './match';
+import { forgetMatch, Match, savedMatch, type MatchSetup, type SavedMatch } from './match';
 import { renderMenu } from './menu';
+import { renderScenarioEditor } from './scenario-editor';
 
 const app = document.getElementById('app') as HTMLElement;
 
@@ -54,14 +55,21 @@ function about(): void {
   );
 }
 
-function play(setup: MatchSetup): void {
+function play(setup: MatchSetup, resume?: SavedMatch): void {
   match?.destroy();
-  match = new Match(app, setup, () => {
-    match?.destroy();
-    match = null;
-    location.hash = '#/';
-    route();
-  });
+  if (location.hash !== '#/' && location.hash !== '') history.replaceState(null, '', '#/');
+  match = new Match(
+    app,
+    setup,
+    () => {
+      forgetMatch();
+      match?.destroy();
+      match = null;
+      location.hash = '#/';
+      route();
+    },
+    resume,
+  );
 }
 
 function route(): void {
@@ -76,12 +84,17 @@ function route(): void {
   if (hash === '#/about') return about();
   if (hash === '#/decks') return renderDeckList(app);
   if (hash === '#/collection') return renderCollection(app);
+  if (hash === '#/scenario' || hash.startsWith('#/scenario/')) {
+    cleanup = renderScenarioEditor(app, hash.slice('#/scenario/'.length) || null, play);
+    return;
+  }
   if (hash.startsWith('#/decks/')) {
     cleanup = renderBuilder(app, decodeURIComponent(hash.slice('#/decks/'.length)));
     return;
   }
   if (match) return;
-  renderMenu(app, play);
+  const saved = savedMatch();
+  renderMenu(app, play, saved ? () => play(saved.setup, saved) : null);
 }
 
 window.addEventListener('hashchange', route);

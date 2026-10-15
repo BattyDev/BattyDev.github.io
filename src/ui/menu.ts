@@ -20,6 +20,7 @@ interface Choice {
   /** A saved opponent deck, used instead of a random starter. */
   opponentSaved: string | null;
   level: BotLevel;
+  exam: boolean;
 }
 
 const playable = (role: 'mine' | 'opponent') => listDecks(role).filter((d) => validateDeck(d).length === 0);
@@ -41,10 +42,11 @@ function defaults(): Choice {
     opponent: saved.opponent ?? 'any',
     opponentSaved: saved.opponentSaved && playable('opponent').some((d) => d.id === saved.opponentSaved) ? saved.opponentSaved : null,
     level: saved.level && saved.level in BOTS ? saved.level : 'simple',
+    exam: saved.exam ?? false,
   };
 }
 
-export function renderMenu(host: HTMLElement, start: (setup: MatchSetup) => void): void {
+export function renderMenu(host: HTMLElement, start: (setup: MatchSetup) => void, resume: (() => void) | null = null): void {
   const choice = defaults();
 
   const draw = () => {
@@ -179,6 +181,7 @@ export function renderMenu(host: HTMLElement, start: (setup: MatchSetup) => void
         you: deck,
         opponent: oppDeck,
         level: choice.level,
+        exam: choice.exam,
         youName: 'You',
         opponentName: oppSaved ? oppSaved.name : BOTS[choice.level].name,
       });
@@ -194,8 +197,41 @@ export function renderMenu(host: HTMLElement, start: (setup: MatchSetup) => void
           { class: 'menu-head' },
           h('h1', null, 'Gwent'),
           h('p', null, 'A practice table for The Witcher 3’s card game'),
-          h('nav', { class: 'menu-nav' }, h('a', { href: '#/decks' }, 'Decks'), h('a', { href: '#/collection' }, 'Collection'), h('a', { href: '#/about' }, 'About')),
+          h(
+            'nav',
+            { class: 'menu-nav' },
+            h('a', { href: '#/decks' }, 'Decks'),
+            h('a', { href: '#/scenario' }, 'Scenarios'),
+            h('a', { href: '#/collection' }, 'Collection'),
+            h('a', { href: '#/about' }, 'About'),
+          ),
         ),
+        resume
+          ? h(
+              'section',
+              { class: 'panel resume' },
+              h('div', null, h('strong', null, 'You have a match in progress.'), h('span', { class: 'muted' }, ' Pick up where you left off?')),
+              h(
+                'div',
+                { class: 'modal-actions start' },
+                h('button', { class: 'btn primary', type: 'button', on: { click: resume } }, 'Resume match'),
+                h(
+                  'button',
+                  {
+                    class: 'btn',
+                    type: 'button',
+                    on: {
+                      click: () => {
+                        save('match', null);
+                        renderMenu(host, start, null);
+                      },
+                    },
+                  },
+                  'Discard it',
+                ),
+              ),
+            )
+          : null,
         h(
           'section',
           { class: 'panel' },
@@ -244,6 +280,24 @@ export function renderMenu(host: HTMLElement, start: (setup: MatchSetup) => void
           }),
           h('h3', null, 'Who'),
           bots,
+          h(
+            'label',
+            { class: 'field-row exam-toggle' },
+            (() => {
+              const box = h('input', {
+                type: 'checkbox',
+                on: {
+                  change: (e) => {
+                    choice.exam = (e.target as HTMLInputElement).checked;
+                    save('menu', choice);
+                  },
+                },
+              });
+              box.checked = choice.exam;
+              return box;
+            })(),
+            h('span', null, h('strong', null, 'Exam mode'), ' · no coach and no undo: a dress rehearsal for the real match'),
+          ),
           h('button', { class: 'btn primary big', type: 'button', on: { click: go } }, 'Start match'),
         ),
         h(

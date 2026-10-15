@@ -6,14 +6,14 @@ import type { DeckList, Faction } from './types';
 
 const PREFIX = 'GW1.';
 
-function toBase64Url(s: string): string {
+export function toBase64Url(s: string): string {
   const bytes = new TextEncoder().encode(s);
   let bin = '';
   for (const b of bytes) bin += String.fromCharCode(b);
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-function fromBase64Url(s: string): string {
+export function fromBase64Url(s: string): string {
   const b64 = s.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (s.length % 4)) % 4);
   const bin = atob(b64);
   const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
