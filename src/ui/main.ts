@@ -58,6 +58,19 @@ function about(): void {
 function play(setup: MatchSetup, resume?: SavedMatch): void {
   match?.destroy();
   if (location.hash !== '#/' && location.hash !== '') history.replaceState(null, '', '#/');
+  try {
+    startMatch(setup, resume);
+  } catch (e) {
+    // A save the current code can't read: drop it rather than strand the player.
+    console.error(e);
+    forgetMatch();
+    match?.destroy();
+    match = null;
+    renderMenu(app, play, null);
+  }
+}
+
+function startMatch(setup: MatchSetup, resume?: SavedMatch): void {
   match = new Match(
     app,
     setup,

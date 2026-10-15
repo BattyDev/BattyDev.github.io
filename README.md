@@ -31,6 +31,7 @@ npm run build        # typecheck + build to dist/
 | `test/` | Vitest suites; `e2e/` holds Playwright |
 | `docs/VERIFY.md` | Rules still to confirm against the real game |
 | `docs/AI.md` | How the bots and coach work, with benchmark results |
+| `docs/TODO.md` | What's left, and what each item is waiting on |
 
 ### The engine contract
 
@@ -54,6 +55,4 @@ within the hour).
 
 ## Launch checklist
 
-- [ ] Copy the exact notice wording from CD PROJEKT RED's current fan content
-      guidelines into the footer and About page.
-- [ ] Work through `docs/VERIFY.md` in the real game.
+See [docs/TODO.md](docs/TODO.md), section *Needs you*.

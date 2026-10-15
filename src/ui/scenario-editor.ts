@@ -4,7 +4,7 @@
 
 import { BOTS, type BotLevel } from '../ai/bots';
 import { CARDS, FACTION_INFO, STARTER_DECKS } from '../classic/cards';
-import { decodeScenario, emptySide, encodeScenario, scenarioErrors, type Scenario, type ScenarioSide, type ScenarioWeather } from '../classic/scenario';
+import { decodeScenario, emptySide, encodeScenario, normaliseScenario, scenarioErrors, type Scenario, type ScenarioSide, type ScenarioWeather } from '../classic/scenario';
 import type { CardDef, DeckList, PlayerId, Row } from '../classic/types';
 import { ROWS } from '../classic/types';
 import { icon, shield } from './assets';
@@ -58,7 +58,17 @@ function poolFor(sc: Scenario, side: PlayerId, zone: 'hand' | 'discard' | Row): 
 }
 
 export function renderScenarioEditor(host: HTMLElement, code: string | null, play: (setup: MatchSetup) => void): () => void {
-  let sc: Scenario = load<Scenario | null>('scenarioDraft', null) ?? defaultScenario();
+  let sc: Scenario = defaultScenario();
+  // The saved draft may come from an older version: only keep it if it still parses.
+  try {
+    const draft = load<Scenario | null>('scenarioDraft', null);
+    if (draft) {
+      sc = normaliseScenario(draft);
+      scenarioErrors(sc); // throws only if the shape is beyond repair
+    }
+  } catch {
+    sc = defaultScenario();
+  }
   let message = '';
   if (code) {
     try {

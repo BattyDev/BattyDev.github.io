@@ -44,6 +44,9 @@ differs, fix the engine and add a test.
 - [ ] **Eredin, Bringer of Death** and **Emhyr, the Relentless** can take any
   non-hero unit, but not heroes or special cards.
 - [ ] **Two Emhyr, the White Flame** leaders cancel each other.
+- [ ] **Francesca, Hope of the Aen Seidhe** is the exception to the rule
+  above: we allow it whenever an agile unit is on the board, even if nothing
+  would move.
 
 ## Flow
 

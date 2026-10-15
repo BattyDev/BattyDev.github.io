@@ -50,6 +50,18 @@ const isSpy = (id: string) => {
 /** Problems that make a scenario unplayable, in plain words. Empty means fine. */
 export function scenarioErrors(sc: Scenario): string[] {
   const errors: string[] = [];
+  // Scenarios arrive from links, so check the shape before the contents.
+  if (![1, 2, 3].includes(sc.round)) return ['The round must be 1, 2 or 3.'];
+  if (sc.toMove !== 0 && sc.toMove !== 1) return ['It must be one player’s turn.'];
+  if (!Array.isArray(sc.weather) || sc.weather.some((w) => !(w in WEATHER_CARD))) return ['Unknown weather in the scenario.'];
+  for (const s of sc.sides) {
+    for (const zone of [s.hand, s.discard, ...ROWS.map((r) => s.board[r])]) {
+      if (!Array.isArray(zone) || zone.some((id) => typeof id !== 'string')) return ['The scenario has a malformed list of cards.'];
+    }
+    if (!Array.isArray(s.horns) || s.horns.some((r) => !ROWS.includes(r)) || new Set(s.horns).size !== s.horns.length) return ['The scenario has a malformed horn.'];
+    const extra = s.randomHand ?? 0;
+    if (!Number.isInteger(extra) || extra < 0 || extra > 30) return ['The number of random cards must be between 0 and 30.'];
+  }
   const all = sc.sides.flatMap((s) => [...s.hand, ...s.discard, ...ROWS.flatMap((r) => s.board[r])]);
   for (const id of all) if (!hasCard(id)) errors.push(`Unknown card ${id}.`);
   if (errors.length) return errors;
@@ -199,26 +211,39 @@ export function encodeScenario(sc: Scenario): string {
   return PREFIX + toBase64Url(JSON.stringify(sc));
 }
 
-/** Parses a scenario code, or throws with a message fit to show the user. */
-export function decodeScenario(code: string): Scenario {
-  const t = code.trim();
-  if (!t.startsWith(PREFIX)) throw new Error('That isn’t a scenario code (it should start with GS1.).');
-  let sc: Scenario;
-  try {
-    sc = JSON.parse(fromBase64Url(t.slice(PREFIX.length))) as Scenario;
-  } catch {
-    throw new Error('That scenario code is damaged. Try copying it again.');
-  }
-  if (!sc || !Array.isArray(sc.sides) || sc.sides.length !== 2) throw new Error('That scenario code is damaged.');
+/**
+ * Checks a scenario's shape and fills in missing lists, without judging the
+ * position (a half-edited draft is fine). Throws on anything malformed.
+ */
+export function normaliseScenario(raw: unknown): Scenario {
+  const sc = raw as Scenario;
+  if (!sc || typeof sc !== 'object' || !Array.isArray(sc.sides) || sc.sides.length !== 2) throw new Error('That scenario is damaged.');
   for (const s of sc.sides) {
-    if (!s?.deck || !hasCard(s.deck.leader) || !Array.isArray(s.deck.cards)) throw new Error('The scenario names an unknown deck.');
-    for (const [id] of s.deck.cards) if (!hasCard(id)) throw new Error(`Unknown card in scenario: ${id}`);
+    if (!s?.deck || typeof s.deck.leader !== 'string' || !hasCard(s.deck.leader) || !Array.isArray(s.deck.cards)) throw new Error('The scenario names an unknown deck.');
+    for (const entry of s.deck.cards) {
+      if (!Array.isArray(entry) || typeof entry[0] !== 'string' || !hasCard(entry[0]) || !Number.isInteger(entry[1])) throw new Error('The scenario’s deck has an unknown card.');
+    }
     s.board = { close: s.board?.close ?? [], ranged: s.board?.ranged ?? [], siege: s.board?.siege ?? [] };
     s.hand ??= [];
     s.discard ??= [];
     s.horns ??= [];
   }
   sc.weather ??= [];
+  if (typeof sc.name !== 'string') sc.name = 'Scenario';
+  return sc;
+}
+
+/** Parses a scenario code, or throws with a message fit to show the user. */
+export function decodeScenario(code: string): Scenario {
+  const t = code.trim();
+  if (!t.startsWith(PREFIX)) throw new Error('That isn’t a scenario code (it should start with GS1.).');
+  let raw: unknown;
+  try {
+    raw = JSON.parse(fromBase64Url(t.slice(PREFIX.length)));
+  } catch {
+    throw new Error('That scenario code is damaged. Try copying it again.');
+  }
+  const sc = normaliseScenario(raw);
   const errors = scenarioErrors(sc);
   if (errors.length) throw new Error(errors[0]);
   return sc;

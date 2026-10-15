@@ -8,6 +8,7 @@ import { view } from '../../src/classic/view';
 import { Rng } from '../../src/core/rng';
 import { ids, playout } from './helpers';
 
+type ScenarioSideLike = { horns: string[]; hand: string[] };
 const realms = STARTER_DECKS.find((d) => d.faction === 'realms')!;
 const nilf = STARTER_DECKS.find((d) => d.faction === 'nilfgaard')!;
 
@@ -80,6 +81,21 @@ describe('scenarios', () => {
     sc.sides[0].board.siege.pop();
     sc.sides[0].passed = true;
     expect(scenarioErrors(sc)).toContain('The player to move has already passed.');
+  });
+
+  it('rejects malformed codes instead of crashing', () => {
+    const sc = base();
+    sc.sides[1].lives = 1;
+    const tamper = (f: (x: Record<string, unknown>) => void) => {
+      const x = structuredClone(sc) as unknown as Record<string, unknown>;
+      f(x);
+      return encodeScenario(x as unknown as Scenario);
+    };
+    expect(() => decodeScenario(tamper((x) => (x.round = 7)))).toThrow(/round/);
+    expect(() => decodeScenario(tamper((x) => (x.toMove = 'me')))).toThrow(/turn/);
+    expect(() => decodeScenario(tamper((x) => (x.weather = ['lava'])))).toThrow(/weather/);
+    expect(() => decodeScenario(tamper((x) => ((x.sides as ScenarioSideLike[])[0]!.horns = ['roof'])))).toThrow(/horn/);
+    expect(() => decodeScenario(tamper((x) => ((x.sides as ScenarioSideLike[])[0]!.hand = [42 as unknown as string])))).toThrow(/malformed/);
   });
 
   it('round-trips through a share code', () => {

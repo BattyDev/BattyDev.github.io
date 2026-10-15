@@ -36,14 +36,18 @@ export interface MatchSetup {
 
 /** A match in progress, saved so a reload or closed tab doesn't lose it. */
 export interface SavedMatch {
+  /** Bumped whenever GameState changes shape, so old saves are dropped, not misread. */
+  v: number;
   setup: MatchSetup;
   state: GameState;
   log: Line[];
 }
 
+const SAVE_VERSION = 1;
+
 export function savedMatch(): SavedMatch | null {
   const m = load<SavedMatch | null>('match', null);
-  return m && m.state && m.state.phase !== 'over' && Array.isArray(m.log) ? m : null;
+  return m && m.v === SAVE_VERSION && m.state && m.state.phase !== 'over' && Array.isArray(m.log) ? m : null;
 }
 
 export function forgetMatch(): void {
@@ -125,7 +129,7 @@ export class Match {
 
   private persist(): void {
     if (this.state.phase === 'over') forgetMatch();
-    else save('match', { setup: this.setup, state: this.state, log: this.log } satisfies SavedMatch);
+    else save('match', { v: SAVE_VERSION, setup: this.setup, state: this.state, log: this.log } satisfies SavedMatch);
   }
 
   destroy(): void {
