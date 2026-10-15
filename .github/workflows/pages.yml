@@ -1,9 +1,11 @@
-# Builds battydev.com from two repositories.
+# Builds battydev.com from three repositories.
 #
 # The site lives here; brackets/ lives in BattyDev/batty-brackets and is
 # assembled into place at build time, so battydev.com/brackets keeps working
-# after the split. A push here rebuilds; a push there sends a
-# repository_dispatch (see that repo's publish workflow) which also rebuilds.
+# after the split. gwent/ is the built output of BattyDev/batty-gwent, taken
+# from that repo's `dist` branch. A push here rebuilds; a push to either of
+# those sends a repository_dispatch (see their publish workflows) which also
+# rebuilds.
 name: Deploy site
 
 on:
@@ -11,7 +13,7 @@ on:
     branches: [main]
   # Sent by batty-brackets after a green run on main. Needs a PAT over there.
   repository_dispatch:
-    types: [brackets-updated]
+    types: [brackets-updated, gwent-updated]
   # Fallback so a brackets change still goes live without that PAT — it just
   # waits for the hour instead of landing immediately. Safe to delete once the
   # dispatch is wired up.
@@ -57,6 +59,33 @@ jobs:
 
       - name: Fail if brackets did not land
         run: test -f brackets/index.html
+
+      # Gwent has a build step, so its CI publishes the built site to the
+      # `dist` branch and we take that as-is. Until that branch exists this
+      # is skipped with a warning rather than failing the whole site.
+      - name: Look for the Gwent build
+        id: gwent
+        run: |
+          if git ls-remote --exit-code --heads https://github.com/BattyDev/batty-gwent.git dist > /dev/null 2>&1; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::BattyDev/batty-gwent has no dist branch yet, so /gwent is not deployed."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out Gwent
+        if: steps.gwent.outputs.present == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: BattyDev/batty-gwent
+          ref: dist
+          path: gwent
+
+      - name: Strip non-published files from gwent
+        if: steps.gwent.outputs.present == 'true'
+        run: |
+          rm -rf gwent/.git
+          test -f gwent/index.html
 
       - uses: actions/configure-pages@v5
 

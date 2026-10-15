@@ -19,6 +19,40 @@ is simpler, and it matches `/brackets`.
 
 ---
 
+## Status (October 2026)
+
+The code is on the **`gwent-dev`** branch of this repository, with its own
+history and no shared files. It moves to `BattyDev/batty-gwent` once that
+repo exists. This session couldn't create repositories (GitHub returned 403).
+
+| Milestone | State |
+|---|---|
+| M0 Repo, CI, deploy | CI and publish workflows written; waiting on the repo (steps below) |
+| M1 Rules engine | Done. Every ability, leader and perk, plus 145 tests including 1,000 random games checked for lost cards. Rules that card text can't settle are listed in `docs/VERIFY.md` on that branch |
+| M2 Playable board | Done. Official art; prompts for every choice; log; whole-turn undo; works on a phone held sideways |
+| M3 NPC opponents | **Blocked on data.** No reliable source for in-game decklists could be reached from here, and they shouldn't be guessed. In the meantime, the deck builder can save "opponent" decks rebuilt from a match |
+| M4 Strong AI + coach | Done. ISMCTS bots that never see hidden cards (35–5 against the simple bot); coach with win chances, top moves and pass advice; opponent card tracker; post-match review with "replay from here" |
+| M5 Deck builder | Done. Legality checks, filters, collection checklist, `GW1.` share codes, 100-game quick tests |
+| M6 Launch | This branch adds the deploy step (skipped until the build exists) and the home tile. Still to do: fan-content wording, the `VERIFY.md` checks |
+
+### Launch steps
+
+1. **Create `BattyDev/batty-gwent` on GitHub**: public, and empty (no README).
+2. **Push the code there:**
+   `git push https://github.com/BattyDev/batty-gwent.git origin/gwent-dev:main`
+   (or ask Claude to do it once the repo is added to the session).
+3. **Check the CI workflow is green there.** Then the Publish workflow
+   creates the `dist` branch.
+4. **Merge this branch here.** `pages.yml` picks up `dist` into `/gwent`, and
+   the home tile appears. Before `dist` exists, the Gwent step is skipped with
+   a warning, so merging early is harmless apart from a tile that 404s.
+5. Optional: add `SITE_DISPATCH_TOKEN` to `batty-gwent` (same kind of PAT as
+   for brackets) so updates go live straight away rather than within the
+   hour.
+6. Delete the `gwent-dev` branch here.
+
+---
+
 ## 1. What "high quality" means here
 
 The practice value depends on four things, in this order:
