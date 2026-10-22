@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#101d22" />
+    <link rel="icon" type="image/svg+xml" href="/DungeonDelve/favicon.svg" />
+    <title>Paper Doll Studio</title>
+    <script type="module" crossorigin src="/DungeonDelve/assets/studio-C8DcpHEw.js"></script>
+    <link rel="modulepreload" crossorigin href="/DungeonDelve/assets/three-BMgBdswm.js">
+    <link rel="modulepreload" crossorigin href="/DungeonDelve/assets/grid-zxk0vJDp.js">
+    <link rel="stylesheet" crossorigin href="/DungeonDelve/assets/studio-BTaGUnSn.css">
+  </head>
+  <body>
+    <div class="studio">
+      <header class="studio-top">
+        <a class="back" href="./" id="backLink">← Gathering Hall</a>
+        <div class="brand">
+          <h1>Paper Doll <em>Studio</em></h1>
+          <span class="sub"
+            >The changing room · 64 × 64 frames, 8 walking directions, one combat camera</span
+          >
+        </div>
+        <div class="identity" aria-label="Character">
+          <div class="chips" id="raceChips" role="group" aria-label="Race"></div>
+          <div class="chips" id="sexChips" role="group" aria-label="Sex"></div>
+          <div class="chips" id="classChips" role="group" aria-label="Class"></div>
+        </div>
+        <div class="send">
+          <div class="send-buttons">
+            <button
+              type="button"
+              id="helpBtn"
+              title="Shortcuts (?)"
+              aria-label="Keyboard shortcuts"
+            >
+              ?
+            </button>
+            <button type="button" id="sendBtn" class="primary">Send to game</button>
+          </div>
+          <span class="send-state" id="sendState"></span>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <nav class="panel tools" aria-label="Tools">
+          <h2>Tools</h2>
+          <div class="tool-grid">
+            <button type="button" data-tool="pencil" title="Pencil (B)">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 20l4-1 11-11-3-3L5 16l-1 4z" />
+                <path d="M14 6l3 3" /></svg
+              >Pencil<kbd>B</kbd>
+            </button>
+            <button type="button" data-tool="eraser" title="Eraser (E)">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 20h12" />
+                <path d="M5 15l8-8 6 6-6 6H9z" /></svg
+              >Eraser<kbd>E</kbd>
+            </button>
+            <button type="button" data-tool="fill" title="Fill (G)">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 11l7-7 7 7-7 7z" />
+                <path d="M19 15c0 2 1 3 1 4a1 1 0 0 1-2 0c0-1 1-2 1-4z" /></svg
+              >Fill<kbd>G</kbd>
+            </button>
+            <button type="button" data-tool="picker" title="Eyedropper (I)">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M14 4l6 6-3 3-6-6z" />
+                <path d="M11 7l-7 7v4h4l7-7" /></svg
+              >Pick<kbd>I</kbd>
+            </button>
+            <button type="button" id="mirrorBtn" title="Mirror strokes left/right (M)">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3v18" />
+                <path d="M8 7L4 12l4 5z" />
+                <path d="M16 7l4 5-4 5z" /></svg
+              >Mirror<kbd>M</kbd>
+            </button>
+            <button type="button" id="sizeBtn" title="Brush size (cycles 1–3)">
+              <span class="size-dot" id="sizeNum">1</span>Size
+            </button>
+          </div>
+          <div class="history">
+            <button type="button" id="undoBtn" title="Undo (Ctrl+Z)">↶ Undo</button>
+            <button type="button" id="redoBtn" title="Redo (Ctrl+Shift+Z)">↷ Redo</button>
+          </div>
+          <h2>Color</h2>
+          <label class="current-color" title="Custom color">
+            <span class="swatch" id="curSwatch"></span>
+            <span class="hex" id="curHex">#8fb354</span>
+            <input type="color" id="colorInput" aria-label="Custom color" value="#8fb354" />
+          </label>
+          <div class="swatch-row">
+            <span>Skin &amp; hair</span>
+            <div class="palette mini" id="skinSwatches"></div>
+          </div>
+          <div class="swatch-row" id="recentRow" hidden>
+            <span>Recent</span>
+            <div class="palette mini" id="recentSwatches"></div>
+          </div>
+          <div class="palette" id="palette"></div>
+          <h2>View</h2>
+          <div class="toggles">
+            <label class="chk"
+              ><input type="checkbox" id="guideChk" checked /> Pose guide <kbd>H</kbd></label
+            >
+            <label class="chk"
+              ><input type="checkbox" id="onionChk" checked /> Onion skin <kbd>O</kbd></label
+            >
+            <label class="chk"><input type="checkbox" id="gridChk" checked /> Pixel grid</label>
+            <label class="chk"><input type="checkbox" id="othersChk" checked /> Other layers</label>
+            <label class="chk"
+              ><input type="checkbox" id="overlayChk" checked />
+              <span id="overlayLabel">Ghost body on top</span></label
+            >
+            <input
+              type="range"
+              id="overlayRange"
+              min="10"
+              max="80"
+              value="15"
+              aria-label="Ghost strength"
+            />
+          </div>
+        </nav>
+
+        <section class="board-col">
+          <div class="board-bar">
+            <div class="seg" id="animSeg" role="group" aria-label="Animation"></div>
+            <div class="seg" id="modeSeg" role="group" aria-label="What you are editing">
+              <button type="button" data-mode="body" title="Edit the base body, hair and beard (T)">
+                Body &amp; hair
+              </button>
+              <button type="button" data-mode="gear" title="Edit armor and weapons (T)">
+                Gear
+              </button>
+            </div>
+          </div>
+          <div class="board-wrap">
+            <div class="stage">
+              <canvas id="board" width="512" height="512" aria-label="Drawing board"></canvas>
+              <span class="mirror-note" id="mirrorNote" hidden></span>
+            </div>
+            <div class="board-tools">
+              <button type="button" id="zoomOut" title="Zoom out (−)" aria-label="Zoom out">
+                −
+              </button>
+              <button type="button" id="zoomFit" title="Fit (0)">
+                <span id="zoomLabel">100%</span>
+              </button>
+              <button type="button" id="zoomIn" title="Zoom in (+)" aria-label="Zoom in">+</button>
+              <span class="coords" id="coords">x –, y –</span>
+            </div>
+            <div class="compass" id="dirSeg" role="group" aria-label="Direction"></div>
+          </div>
+          <div class="hint" id="poseHint"></div>
+          <div class="frames-row">
+            <button
+              type="button"
+              id="playBtn"
+              title="Play or pause (P)"
+              aria-label="Play animation"
+            >
+              ▶
+            </button>
+            <button type="button" id="prevFrame" title="Previous frame ([)">‹</button>
+            <div class="frames" id="frames"></div>
+            <button type="button" id="nextFrame" title="Next frame (])">›</button>
+          </div>
+          <div class="frame-actions">
+            <button type="button" id="copyPrevBtn">Copy previous frame</button>
+            <button type="button" id="copyBtn">Copy</button>
+            <button type="button" id="pasteBtn">Paste</button>
+            <button type="button" id="flipBtn">Flip</button>
+            <span id="clearWrap"
+              ><button type="button" id="clearBtn" class="danger">Clear frame</button></span
+            >
+          </div>
+        </section>
+
+        <aside class="side">
+          <section class="panel room-panel" id="roomPanel">
+            <div class="panel-head">
+              <h2>Changing room</h2>
+              <div class="room-actions">
+                <button
+                  type="button"
+                  id="autoWalkBtn"
+                  aria-pressed="true"
+                  title="Walk a loop to show every direction"
+                >
+                  Auto walk
+                </button>
+                <button type="button" id="expandRoomBtn" title="Step into the room full screen">
+                  Expand
+                </button>
+              </div>
+            </div>
+            <div
+              class="room"
+              id="room"
+              tabindex="0"
+              aria-label="Changing room. Click, then walk with WASD or the arrow keys."
+            ></div>
+            <p class="small" id="roomHint">
+              Click the room, then walk with <kbd>WASD</kbd> or arrows. Try a move:
+            </p>
+            <div class="try" id="tryAnims"></div>
+          </section>
+
+          <section class="panel">
+            <div class="tabs" role="tablist">
+              <button type="button" role="tab" data-tab="layers" aria-selected="true">
+                Layers
+              </button>
+              <button type="button" role="tab" data-tab="shape" aria-selected="false">
+                Block in
+              </button>
+              <button type="button" role="tab" data-tab="project" aria-selected="false">
+                Project
+              </button>
+            </div>
+
+            <div class="tab" data-panel="layers">
+              <div class="layers" id="layers"></div>
+              <div class="layer-tools">
+                <button type="button" id="upBtn" title="Move layer up">▲</button>
+                <button type="button" id="downBtn" title="Move layer down">▼</button>
+                <input type="text" id="newName" placeholder="Name" aria-label="Layer name" />
+                <button type="button" id="renameBtn">Rename</button>
+                <span id="delWrap"
+                  ><button type="button" id="delBtn" class="danger">Delete</button></span
+                >
+              </div>
+              <div class="layer-tools">
+                <select id="newSlot" aria-label="New layer slot">
+                  <optgroup label="Body"><option value="base">base body</option></optgroup>
+                  <optgroup label="Hair">
+                    <option value="hair">hair</option>
+                    <option value="beard">beard</option>
+                  </optgroup>
+                  <optgroup label="Armor">
+                    <option value="helmet">helmet</option>
+                    <option value="chest">chest</option>
+                    <option value="gloves">gloves</option>
+                    <option value="pants">pants</option>
+                    <option value="boots">boots</option>
+                    <option value="back">back (quiver, cape)</option>
+                  </optgroup>
+                  <optgroup label="Weapons">
+                    <option value="weapon">weapon</option>
+                    <option value="offhand">off-hand (shield, tome, orb)</option>
+                  </optgroup>
+                </select>
+                <button type="button" id="addLayerBtn">Add layer</button>
+              </div>
+              <div class="layer-tools">
+                <input
+                  type="text"
+                  id="setName"
+                  placeholder="Armor set name, e.g. Bone Warden"
+                  aria-label="Armor set name"
+                />
+                <button type="button" id="addSetBtn">New armor set</button>
+              </div>
+              <div class="layer-tools">
+                <button type="button" id="presetBtn">Add class gear preset</button>
+                <span class="small" id="presetHint"></span>
+              </div>
+              <p class="small">
+                Top of the list draws on top. "Behind" sends a layer under the others for the
+                current direction only. Body and hair are shared by every class; gear belongs to one
+                class.
+              </p>
+            </div>
+
+            <div class="tab" data-panel="shape" hidden>
+              <p class="small">
+                Drops a starter shape for the active layer in the current color, fitted to the pose
+                guide. It replaces that layer's pixels in the chosen frames.
+              </p>
+              <label class="field" id="styleField"
+                ><span id="styleLabel">Style</span
+                ><select id="styleSel"></select
+              ></label>
+              <label class="field"
+                ><span>Apply to</span>
+                <select id="blockScope">
+                  <option value="frame">This frame</option>
+                  <option value="anim">This animation, all directions</option>
+                  <option value="all">Every animation for this class</option>
+                </select>
+              </label>
+              <button type="button" id="blockBtn" class="primary">Block in</button>
+              <div class="divider"></div>
+              <h3>Reset</h3>
+              <label class="field"
+                ><span>What</span>
+                <select id="resetScope">
+                  <option value="frame">This frame</option>
+                  <option value="anim">This animation (all directions)</option>
+                  <option value="all">Entire character (every animation)</option>
+                </select>
+              </label>
+              <label class="field"
+                ><span>Layers</span>
+                <select id="resetLayers">
+                  <option value="every">Body and gear</option>
+                  <option value="mode">All layers being edited</option>
+                  <option value="active">Active layer only</option>
+                </select>
+              </label>
+              <span id="resetWrap"
+                ><button type="button" id="resetBtn" class="danger">Reset…</button></span
+              >
+              <p class="small">
+                Puts layers back to their starting block-in shapes (layers you added yourself go
+                blank). Undo brings your art back.
+              </p>
+            </div>
+
+            <div class="tab" data-panel="project" hidden>
+              <label class="field"
+                ><span>Combat camera (the game shows combat facing E)</span
+                ><select id="combatSel"></select
+              ></label>
+              <label class="chk"
+                ><input type="checkbox" id="autoMirrorChk" checked /> Mirror NE, E, SE from NW, W,
+                SW</label
+              >
+              <div class="layer-tools">
+                <button type="button" id="exportSheetBtn">Download sheet</button>
+                <button type="button" id="exportAllBtn">Download all (.zip)</button>
+              </div>
+              <div class="layer-tools">
+                <button type="button" id="saveProjBtn">Save project file</button>
+                <label class="filebtn"
+                  >Open project<input
+                    type="file"
+                    id="openProj"
+                    accept=".json,application/json"
+                    hidden
+                /></label>
+                <label class="filebtn"
+                  >Import sheet into layer<input
+                    type="file"
+                    id="importSheet"
+                    accept="image/png"
+                    hidden
+                /></label>
+              </div>
+              <div class="divider"></div>
+              <h3>In the game</h3>
+              <div id="wardrobeList" class="wardrobe-list"></div>
+              <p class="small" id="saveState">Your work autosaves in this browser.</p>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </div>
+    <dialog id="dialog" class="dialog"></dialog>
+    <div class="toast" id="toast" hidden></div>
+  </body>
+</html>
