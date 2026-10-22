@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#101d22" />
+    <link rel="icon" type="image/svg+xml" href="/DungeonDelve/favicon.svg" />
+    <title>Portrait Studio · Wardrobe</title>
+    <script type="module" crossorigin src="/DungeonDelve/assets/portraits-DnNZcl9x.js"></script>
+    <link rel="modulepreload" crossorigin href="/DungeonDelve/assets/looks-ZmWrH8ZN.js">
+    <link rel="modulepreload" crossorigin href="/DungeonDelve/assets/default-portraits-Dc33sFbm.js">
+    <link rel="stylesheet" crossorigin href="/DungeonDelve/assets/portraits-CIOu4ZMf.css">
+  </head>
+  <body>
+    <main class="studio portrait-studio">
+      <header class="studio-top">
+        <a class="back" href="./" id="hallLink">← Gathering Hall</a>
+        <div class="brand">
+          <h1>Portrait <em>Studio</em></h1>
+          <span class="sub">A face for every conversation · 64 × 64 pixels</span>
+        </div>
+        <nav class="wardrobe-pages" aria-label="Wardrobe pages">
+          <a href="studio.html">Sprites</a
+          ><a href="portraits.html" aria-current="page">Portraits</a>
+        </nav>
+        <div class="send">
+          <button type="button" id="publish" class="primary">Use portrait in game</button
+          ><span class="send-state" id="saveStatus" role="status"
+            >Draft saved separately from game portraits.</span
+          >
+        </div>
+      </header>
+      <section class="portrait-identity panel" aria-label="Portrait identity">
+        <label
+          >Painting for
+          <select id="person" aria-label="Portrait character">
+            <option value="">Race &amp; sex default</option>
+          </select></label
+        >
+        <label
+          >Race
+          <select id="race" aria-label="Portrait race"></select
+        ></label>
+        <label
+          >Sex
+          <select id="sex" aria-label="Portrait sex"></select
+        ></label>
+        <p id="identityHint" class="small"></p>
+      </section>
+      <div class="workspace portrait-workspace">
+        <nav class="panel tools" aria-label="Painting tools">
+          <h2>Tools</h2>
+          <div class="portrait-tool-grid" id="tools">
+            <button type="button" data-tool="pencil" class="on">Pencil <kbd>B</kbd></button>
+            <button type="button" data-tool="eraser">Eraser <kbd>E</kbd></button>
+            <button type="button" data-tool="fill">Fill <kbd>G</kbd></button>
+            <button type="button" data-tool="picker">Pick <kbd>I</kbd></button>
+          </div>
+          <label class="portrait-control"
+            >Brush size
+            <select id="brush" aria-label="Brush size">
+              <option>1</option>
+              <option>2</option>
+              <option>3</option>
+              <option>4</option>
+            </select></label
+          >
+          <label class="portrait-control"><input type="checkbox" id="symmetry" /> Symmetry</label>
+          <div class="history">
+            <button type="button" id="undo">↶ Undo</button
+            ><button type="button" id="redo">↷ Redo</button>
+          </div>
+          <h2>Colour</h2>
+          <label class="portrait-colour"
+            ><input type="color" id="colour" aria-label="Paint colour" value="#e6b48e" /><span
+              id="hexColour"
+              >#e6b48e</span
+            ></label
+          >
+          <div class="palette" id="portraitPalette"></div>
+          <h2>View</h2>
+          <label class="portrait-control"
+            ><input type="checkbox" id="grid" checked /> Pixel grid</label
+          >
+          <label class="portrait-control"><input type="checkbox" id="guide" /> Face guide</label>
+          <label class="portrait-control"
+            ><input type="checkbox" id="onion" /> Previous frame</label
+          >
+          <h2>Starting shapes</h2>
+          <button type="button" id="headShape">Blank head shape</button>
+          <button type="button" id="defaultFace">Default face</button>
+          <button type="button" id="clearFrame">Clear frame</button>
+          <p class="small">Shapes replace this frame. Undo brings your painting back.</p>
+        </nav>
+        <section class="portrait-painting" aria-label="Portrait canvas and frames">
+          <div class="panel portrait-board-wrap">
+            <canvas
+              id="portraitBoard"
+              width="512"
+              height="512"
+              tabindex="0"
+              aria-label="64 by 64 portrait painting canvas"
+            ></canvas>
+          </div>
+          <div class="portrait-frame-heading">
+            <strong id="frameLabel">Frame 1 / 1</strong
+            ><span class="small">Paint on any frame. One frame makes a still portrait.</span>
+          </div>
+          <div id="portraitFrames" class="portrait-frames" aria-label="Portrait frames"></div>
+          <div class="portrait-actions">
+            <button type="button" id="duplicateFrame">Duplicate frame</button
+            ><button type="button" id="addFrame">Add blank frame</button>
+            <button type="button" id="moveLeft" aria-label="Move frame left">←</button
+            ><button type="button" id="moveRight" aria-label="Move frame right">→</button>
+            <button type="button" id="deleteFrame">Delete frame</button>
+          </div>
+          <p class="small">Up to 16 frames. Ctrl/Cmd + Z to undo; Ctrl/Cmd + Shift + Z to redo.</p>
+        </section>
+        <aside class="portrait-sidebar">
+          <section class="panel portrait-preview-panel">
+            <h2>Conversation preview</h2>
+            <canvas
+              id="portraitPreview"
+              width="64"
+              height="64"
+              aria-label="Animated conversation portrait"
+            ></canvas>
+            <p id="previewStatus" role="status"></p>
+            <button type="button" id="playPreview">Pause preview</button>
+            <div class="portrait-timing">
+              <label
+                >Frames / second <input id="fps" type="number" min="1" max="12" value="8"
+              /></label>
+              <label
+                >Loops before resting <input id="loops" type="number" min="1" max="6" value="3"
+              /></label>
+              <label
+                >Rest on frame 1 (seconds)
+                <input id="rest" type="number" min="1" max="10" value="4"
+              /></label>
+            </div>
+            <p class="small">
+              Plays a few loops, rests on frame 1, then repeats. People who prefer reduced motion
+              see frame 1.
+            </p>
+          </section>
+          <section class="panel portrait-files">
+            <h2>Keep your work</h2>
+            <p class="small">
+              Drafts autosave for each character or race and sex. Use portrait in game publishes
+              this portrait for conversations.
+            </p>
+            <button type="button" id="exportProject">Save portrait project</button>
+            <label class="portrait-file-button"
+              >Open portrait project<input
+                id="importProject"
+                type="file"
+                accept="application/json,.json"
+            /></label>
+            <button type="button" id="exportPng">Download PNG strip</button>
+            <label class="portrait-file-button"
+              >Import PNG strip<input id="importPng" type="file" accept="image/png"
+            /></label>
+            <p class="small">
+              PNG: 64 pixels high, 1–16 frames across. Imports replace this portrait’s frames and
+              can be undone.
+            </p>
+          </section>
+        </aside>
+      </div>
+      <p id="portraitMessage" class="portrait-message" role="status" aria-live="polite"></p>
+    </main>
+  </body>
+</html>
