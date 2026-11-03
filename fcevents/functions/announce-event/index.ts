@@ -25,6 +25,12 @@
  * page about who is playing. Instead this announces the facts the database
  * holds directly -- who signed up, in order, with the roles they offered and
  * any role the organiser pinned -- and links to the page for the live roster.
+ *
+ * ON NAMES: the page leads with the FFXIV character and shows the Discord
+ * handle as a tag, dropping the tag when the two are the same. displayFor() in
+ * fcevents.js is the rule; nameFor() below is the same rule, because an
+ * announcement that calls somebody batty_jjk when the site calls them Cedho
+ * Nalen reads as two different applications.
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
@@ -42,7 +48,148 @@ const json = (body: unknown, status = 200) =>
   });
 
 const ROLE_LABEL: Record<string, string> = { tank: 'Tank', healer: 'Healer', dps: 'DPS' };
+/* Unicode rather than custom server emoji: a custom emoji would need uploading
+   to the guild and would render as raw :shortcode: anywhere it is not installed.
+   These three read at a glance and cost nothing. */
+const ROLE_EMOJI: Record<string, string> = { tank: '🛡️', healer: '💚', dps: '⚔️' };
 const PAGE_URL = 'https://battydev.com/fcevents/';
+const GOLD = 0xc6a664;
+const WARN = 0xd4722a;
+
+type Ev = {
+  id: string; title: string; description: string | null; status: string;
+  scheduled_at: string | null;
+  tanks_needed: number | null; healers_needed: number | null; dps_needed: number | null;
+  party_size: number | null; min_level: number | null; level_rule: string | null;
+  created_by: string;
+};
+type Signup = { member_id: string; roles: string[] | null; assigned_role: string | null };
+type Person = { display_name: string; avatar_url: string | null; character: string | null };
+
+/* Same comparison fcevents.js uses: plenty of people play a character with
+   their own Discord name, and printing it twice reads as a rendering bug. */
+const slug = (v: string | null) => String(v ?? '').toLowerCase();
+
+function nameFor(p: Person | undefined): string {
+  if (!p) return 'Unknown';
+  const character = p.character;
+  if (!character) return p.display_name;
+  return slug(character) === slug(p.display_name)
+    ? character
+    : `${character} (${p.display_name})`;
+}
+
+/* The author line is a credit, not an identification -- the character alone
+   carries it. The roster keeps the handle because that is the line somebody
+   reads when they want to know who to ping, and "Batty Jjk" does not tell you
+   to type @batty_jjk. */
+const creditFor = (p: Person | undefined) =>
+  p ? (p.character || p.display_name) : 'Unknown';
+
+/* Total seats: an explicit party size when there is one, otherwise the sum of
+   whatever per-role requirements are set. Both can be absent, which is what
+   "unlimited" means -- and then there is no such thing as a spot left. */
+function seats(ev: Ev): number | null {
+  if (ev.party_size != null) return ev.party_size;
+  const roles = [ev.tanks_needed, ev.healers_needed, ev.dps_needed].filter((n) => n != null) as number[];
+  return roles.length ? roles.reduce((a, b) => a + b, 0) : null;
+}
+
+/* Discord markdown quotes one line at a time, so a multi-line description needs
+   the marker on every line or only its first line is quoted. */
+const quote = (text: string) => text.split('\n').map((l) => `> ${l}`).join('\n');
+
+export function buildEmbed(ev: Ev, signups: Signup[], people: Map<string, Person>) {
+  const cancelled = ev.status === 'cancelled';
+  const total = seats(ev);
+
+  /* <t:unix:F> renders in each reader's own timezone, which is the right answer
+     for an FC spread across several. */
+  const when = ev.scheduled_at
+    ? (() => {
+        const t = Math.floor(new Date(ev.scheduled_at).getTime() / 1000);
+        return `🗓️ **<t:${t}:F>** · <t:${t}:R>`;
+      })()
+    : '🗓️ *Time not picked yet — add your hours on the page.*';
+
+  const comp = [
+    ev.tanks_needed   != null ? `${ROLE_EMOJI.tank} ${ev.tanks_needed}` : null,
+    ev.healers_needed != null ? `${ROLE_EMOJI.healer} ${ev.healers_needed}` : null,
+    ev.dps_needed     != null ? `${ROLE_EMOJI.dps} ${ev.dps_needed}` : null,
+  ].filter(Boolean).join('  ');
+
+  const left = total != null ? Math.max(0, total - signups.length) : null;
+  const party = [
+    comp || (total != null ? `${total} spots` : 'Unlimited'),
+    total != null
+      ? (left === 0 ? '**full**' : `**${left} spot${left === 1 ? '' : 's'} left**`)
+      : null,
+  ].filter(Boolean).join('  ·  ');
+
+  /* Facts first, then the organiser's own words. Keeping them apart -- and
+     quoting theirs -- stops a long description burying the time and the count,
+     which are the two things somebody scrolling a channel is actually after. */
+  const blocks = [
+    cancelled ? '### ⚠️ Cancelled' : null,
+    when,
+    party,
+    ev.min_level != null
+      ? `📈 Level ${ev.min_level} ${ev.level_rule === 'required' ? 'required' : 'recommended'}`
+      : null,
+    ev.description ? `\n${quote(String(ev.description).slice(0, 1200))}` : null,
+  ].filter(Boolean);
+
+  /* Signup order is the backup queue, so the numbers are load-bearing, not
+     decoration. A pinned role is the organiser's decision and is named; an
+     unpinned one shows what the person offered, as icons. */
+  const roster = signups.map((s, i) => {
+    const who = nameFor(people.get(s.member_id));
+    const role = s.assigned_role
+      ? `${ROLE_EMOJI[s.assigned_role]} **${ROLE_LABEL[s.assigned_role]}**`
+      : (s.roles ?? []).map((r) => ROLE_EMOJI[r] ?? ROLE_LABEL[r]).join(' ');
+    return `\`${String(i + 1).padStart(2, ' ')}\` ${who} · ${role}`;
+  });
+
+  const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
+  if (roster.length) {
+    /* Discord caps a field value at 1024 characters. Truncate on a whole line
+       rather than letting the entire POST be rejected. */
+    let list = '';
+    let shown = 0;
+    for (const l of roster) {
+      if (list.length + l.length + 1 > 900) break;
+      list += (list ? '\n' : '') + l;
+      shown++;
+    }
+    if (shown < roster.length) list += `\n…and ${roster.length - shown} more`;
+    fields.push({
+      name: `Signed up — ${signups.length}${total != null ? `/${total}` : ''}`,
+      value: list,
+    });
+  } else {
+    fields.push({
+      name: 'Signed up — nobody yet',
+      value: `[Be the first](${PAGE_URL}#/event/${ev.id}) 👀`,
+    });
+  }
+
+  const organiser = people.get(ev.created_by);
+
+  return {
+    author: organiser
+      ? {
+          name: `Organised by ${creditFor(organiser)}`,
+          ...(organiser.avatar_url ? { icon_url: organiser.avatar_url } : {}),
+        }
+      : undefined,
+    title: String(ev.title).slice(0, 256),
+    url: `${PAGE_URL}#/event/${ev.id}`,
+    description: blocks.join('\n'),
+    color: cancelled ? WARN : GOLD,
+    fields,
+    footer: { text: 'battydev.com/fcevents' },
+  };
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
@@ -96,76 +243,35 @@ Deno.serve(async (req: Request) => {
      never succeed. */
   if (checkErr || !mayManage) return json({ error: 'forbidden' }, 403);
 
-  const [{ data: ev, error: evErr }, { data: signups }, { data: dir }] = await Promise.all([
-    db.from('raid_events').select('*').eq('id', eventId).single(),
-    db.from('raid_event_signups').select('member_id, roles, assigned_role, seq')
-      .eq('event_id', eventId).order('seq'),
-    db.from('raid_member_directory').select('id, display_name'),
-  ]);
+  const [{ data: ev, error: evErr }, { data: signups }, { data: dir }, { data: chars }] =
+    await Promise.all([
+      db.from('raid_events').select('*').eq('id', eventId).single(),
+      db.from('raid_event_signups').select('member_id, roles, assigned_role, seq')
+        .eq('event_id', eventId).order('seq'),
+      db.from('raid_member_directory').select('id, display_name, avatar_url'),
+      /* Opened to every member by 003, which is what lets an announcement lead
+         with the character the way the page does. */
+      db.from('raid_characters').select('member_id, character_name'),
+    ]);
   if (evErr || !ev) return json({ error: 'not_found' }, 404);
 
-  const names = new Map((dir ?? []).map((m: any) => [m.id, m.display_name]));
-  const roster = (signups ?? []).map((s: any, i: number) => {
-    const name = names.get(s.member_id) ?? 'Unknown';
-    const role = s.assigned_role
-      ? `**${ROLE_LABEL[s.assigned_role]}**`
-      : (s.roles ?? []).map((r: string) => ROLE_LABEL[r]).join('/');
-    return `${i + 1}. ${name} — ${role}`;
-  });
-
-  const comp = [
-    ev.tanks_needed != null ? `${ev.tanks_needed} Tank` : null,
-    ev.healers_needed != null ? `${ev.healers_needed} Healer` : null,
-    ev.dps_needed != null ? `${ev.dps_needed} DPS` : null,
-  ].filter(Boolean).join(' · ')
-    || (ev.party_size ? `${ev.party_size} spots` : 'Unlimited');
-
-  const fields: Array<{ name: string; value: string; inline?: boolean }> = [
-    { name: 'Composition', value: comp, inline: true },
-    { name: 'Signed up', value: String(roster.length), inline: true },
-  ];
-  /* Added with migration 005; this function predated the column. */
-  if (ev.min_level != null) {
-    fields.push({
-      name: 'Level',
-      value: `${ev.min_level} ${ev.level_rule === 'required' ? 'required' : 'recommended'}`,
-      inline: true,
-    });
+  /* First claim per member, matching charsOf(...)[0] on the page. */
+  const firstChar = new Map<string, string>();
+  for (const c of (chars ?? []) as Array<{ member_id: string; character_name: string }>) {
+    if (!firstChar.has(c.member_id)) firstChar.set(c.member_id, c.character_name);
   }
-  if (roster.length) {
-    /* Discord caps an embed field at 1024 characters. Truncate on a whole line
-       rather than letting the whole POST be rejected. */
-    let list = '';
-    let shown = 0;
-    for (const line of roster) {
-      if (list.length + line.length + 1 > 900) break;
-      list += (list ? '\n' : '') + line;
-      shown++;
-    }
-    if (shown < roster.length) list += `\n…and ${roster.length - shown} more`;
-    fields.push({ name: 'Who', value: list });
-  }
-
-  /* Discord renders <t:unix:F> in each reader's own timezone, which is the
-     right answer for an FC spread across several. */
-  const when = ev.scheduled_at
-    ? `<t:${Math.floor(new Date(ev.scheduled_at).getTime() / 1000)}:F> · <t:${
-        Math.floor(new Date(ev.scheduled_at).getTime() / 1000)}:R>`
-    : 'Time not picked yet — add your hours on the page.';
+  const people = new Map(
+    ((dir ?? []) as Array<{ id: string; display_name: string; avatar_url: string | null }>)
+      .map((m) => [m.id, {
+        display_name: m.display_name,
+        avatar_url: m.avatar_url,
+        character: firstChar.get(m.id) ?? null,
+      }]),
+  );
 
   const payload = {
     username: 'FC Events',
-    embeds: [{
-      title: String(ev.title).slice(0, 256),
-      /* Straight to the event, now that events have their own links, rather
-         than dropping the reader on the index to find it again. */
-      url: `${PAGE_URL}#/event/${ev.id}`,
-      description: [when, ev.description ? `\n${String(ev.description).slice(0, 1500)}` : '']
-        .filter(Boolean).join('\n'),
-      color: 0xc6a664,
-      fields,
-      footer: { text: ev.status === 'scheduled' ? 'Scheduled' : `Status: ${ev.status}` },
-    }],
+    embeds: [buildEmbed(ev as never, (signups ?? []) as never, people as never)],
     /* Nothing in here should ever ping a role or @everyone: the text is
        user-supplied event titles and descriptions, and an organiser should not
        be able to mass-ping the server through a scheduler. */
@@ -182,5 +288,5 @@ Deno.serve(async (req: Request) => {
     const detail = await res.text().catch(() => '');
     return json({ error: 'discord_failed', status: res.status, detail: detail.slice(0, 500) }, 502);
   }
-  return json({ ok: true, announced: roster.length });
+  return json({ ok: true, announced: (signups ?? []).length });
 });
