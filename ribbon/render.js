@@ -5,7 +5,19 @@ const assets = {};
 function loadIllustrations() {
   for (const name of ['lumina', 'moth', 'knight', 'boss']) {
     const image = new Image();
-    image.onload = () => assets[name] = image;
+    image.onload = () => {
+      const sizes = [image];
+      let source = image;
+      while (source.height > 48) {
+        const smaller = document.createElement('canvas');
+        smaller.width = Math.max(1, Math.ceil(source.width / 2));
+        smaller.height = Math.max(1, Math.ceil(source.height / 2));
+        smaller.getContext('2d').drawImage(source, 0, 0, smaller.width, smaller.height);
+        sizes.push(smaller);
+        source = smaller;
+      }
+      assets[name] = sizes;
+    };
     image.src = new URL('./assets/' + name + '.webp', import.meta.url).href;
   }
 }
@@ -19,6 +31,9 @@ export class CourtRenderer {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d', { alpha: false });
     this.camera = { x: 0, z: 0 };
+    this.renderScale = 1;
+    this.frameCost = 1 / 60;
+    this.scaleSamples = 0;
     this.resize();
     this.props = [];
     for (let iz = -5; iz <= 5; iz++) {
@@ -48,13 +63,15 @@ export class CourtRenderer {
     const r = this.canvas.getBoundingClientRect();
     this.w = Math.max(1, r.width);
     this.h = Math.max(1, r.height);
-    const d = Math.min(devicePixelRatio || 1, 1.65);
+    const d = Math.min(devicePixelRatio || 1, 1.65) * this.renderScale;
+    this.pixelRatio = d;
     this.canvas.width = Math.round(this.w * d);
     this.canvas.height = Math.round(this.h * d);
     this.ctx.setTransform(d, 0, 0, d, 0, 0);
     this.f = Math.min(this.h * .94, this.w * 1.48);
     this.base = this.h * .62;
     this.skyCache = null;
+    this.terrain = null;
   }
   project(x, z, h = 0) {
     // Rotate the world into the tilted chase camera, then divide by camera depth.
@@ -175,48 +192,68 @@ export class CourtRenderer {
     const t = 6;
     const cz = this.camera.z;
     const cx = this.camera.x;
+    // The sky pass has already painted the base paving colour. Batch the contrasting
+    // stones and inlays across the court so moving the camera costs a few fills.
+    const stones = new Path2D();
+    const diamonds = new Path2D();
+    const petals = new Path2D();
+    const grid = [];
     for (let j = Math.floor((cz - 89) / t); j <= Math.ceil((cz + 10) / t); j++) {
       const z = j * t;
       const back = this.project(cx, z);
       const front = this.project(cx, z + t);
-      const half = this.w / (2 * back.k) + 7;
-      if (front.y < 0 || back.y > this.h + 1 || front.d < 1) {
-        continue;
-      }
-      for (let i = Math.floor((cx - half) / t); i <= Math.ceil((cx + half) / t); i++) {
-        const x = i * t;
+      if (front.y < 0 || back.y > this.h + 1 || front.d < 1) continue;
+      const half = this.w / (2 * back.k) + t;
+      const start = Math.floor((cx - half) / t);
+      const end = Math.ceil((cx + half) / t);
+      const lines = new Path2D();
+      lines.moveTo(0, back.y);
+      lines.lineTo(this.w, back.y);
+      const mid = this.project(cx, z + t / 2);
+      for (let i = start; i <= end; i++) {
+        const x = i * t - cx;
+        const a = this.w / 2 + x * back.k;
+        const b = this.w / 2 + x * front.k;
         const path = i % 3 === 0 || j % 3 === 0;
-        const color = path ? L.ground[(i + j) & 1] : L.ground[0];
-        const ax = this.w * .5 + (x - cx) * back.k;
-        const bx = this.w * .5 + (x + t - cx) * back.k;
-        const ay = back.y;
-        const by = front.y;
-        const dx = this.w * .5 + (x - cx) * front.k;
-        const ex = this.w * .5 + (x + t - cx) * front.k;
-        this.poly([[ax, ay], [bx + .5, ay], [ex + .5, by + .5], [dx, by + .5]], color);
-        c.strokeStyle = L.inlay + '62';
-        c.lineWidth = clamp(back.k * .025, .45, 1.5);
-        c.beginPath();
-        c.moveTo(ax, ay);
-        c.lineTo(bx, ay);
-        c.moveTo(ax, ay);
-        c.lineTo(dx, by);
-        c.stroke();
-        if (path && back.k > 5) {
-          const m = this.project(x + 3, z + 3);
-          const u = m.k * .39;
-          this.poly([[m.x, m.y - u * .48], [m.x + u, m.y], [m.x, m.y + u * .48], [m.x - u, m.y]], L.inlay + '88');
+        lines.moveTo(a, back.y);
+        lines.lineTo(b, front.y);
+        if (path && ((i + j) & 1)) {
+          stones.moveTo(a, back.y);
+          stones.lineTo(a + t * back.k + .5, back.y);
+          stones.lineTo(b + t * front.k + .5, front.y + .5);
+          stones.lineTo(b, front.y + .5);
+          stones.closePath();
         }
-        if (!path && back.k > 6) {
-          const m = this.project(x + 3, z + 3);
+        const center = this.w / 2 + (x + t / 2) * mid.k;
+        if (path && back.k > 5) {
+          const radius = mid.k * .39;
+          diamonds.moveTo(center, mid.y - radius * .48);
+          diamonds.lineTo(center + radius, mid.y);
+          diamonds.lineTo(center, mid.y + radius * .48);
+          diamonds.lineTo(center - radius, mid.y);
+          diamonds.closePath();
+        } else if (!path && back.k > 6) {
           for (let n = 0; n < 3; n++) {
-            const v = (seed(i + n, j) - .5) * 3 * m.k;
-            const a = (seed(j + n, i) - .5) * m.k;
-            this.circ(m.x + v, m.y + a, m.k * .075, m.k * .035, L.inlay + 'aa');
+            const px = center + (seed(i + n, j) - .5) * 3 * mid.k;
+            const py = mid.y + (seed(j + n, i) - .5) * mid.k;
+            petals.moveTo(px + mid.k * .075, py);
+            petals.ellipse(px, py, mid.k * .075, mid.k * .035, 0, 0, TAU);
           }
         }
       }
+      grid.push({lines, width:clamp(back.k * .025, .45, 1.5)});
     }
+    c.fillStyle = L.ground[1];
+    c.fill(stones);
+    c.strokeStyle = L.inlay + '62';
+    for (const row of grid) {
+      c.lineWidth = row.width;
+      c.stroke(row.lines);
+    }
+    c.fillStyle = L.inlay + '88';
+    c.fill(diamonds);
+    c.fillStyle = L.inlay + 'aa';
+    c.fill(petals);
     const horizon = this.base - this.f * .324 / .946;
     const grad = c.createLinearGradient(0, horizon, 0, horizon + this.f * .21);
     grad.addColorStop(0, L.sky[2]);
@@ -227,12 +264,37 @@ export class CourtRenderer {
       const pts = axis ? [[x - 100, z, 0], [x + 100, z, 0], [x + 100, z + .22, 0], [x - 100, z + .22, 0]] : [[x, cz - 79, 0], [x + .2, cz - 79, 0], [x + .2, cz + 8, 0], [x, cz + 8, 0]];
       this.face(pts, '#ddaa69');
     }
+  }
+  warnings(s) {
     for (const w of s.warnings) {
       const p = this.project(w.x, w.z);
       this.circ(p.x, p.y, p.k * w.r, p.k * w.r * .5, '#a92b5e66');
       this.ring(w.x, w.z, w.r, '#fc577a', 3);
       this.ring(w.x, w.z, w.r * (1 - w.t / 1.55), '#ffe7bf', 2);
     }
+  }
+  backdrop(state, palette) {
+    const {x, z} = this.camera;
+    const previous = this.terrain;
+    if (!previous || previous.stage !== state.stage || previous.base !== this.base ||
+        Math.abs(x - previous.x) + Math.abs(z - previous.z) > .012) {
+      const buffer = previous?.buffer || document.createElement('canvas');
+      const density = Math.min(1, this.pixelRatio);
+      const width = Math.ceil(this.w * density);
+      const height = Math.ceil(this.h * density);
+      if (buffer.width !== width || buffer.height !== height) {
+        buffer.width = width;
+        buffer.height = height;
+      }
+      const screen = this.ctx;
+      this.ctx = buffer.getContext('2d', {alpha:false});
+      this.ctx.setTransform(density, 0, 0, density, 0, 0);
+      this.sky(state.stage, palette);
+      this.ground(state, palette);
+      this.ctx = screen;
+      this.terrain = {buffer, stage:state.stage, base:this.base, x, z};
+    }
+    this.ctx.drawImage(this.terrain.buffer, 0, 0, this.w, this.h);
   }
   ring(x, z, r, color, width) {
     const c = this.ctx;
@@ -365,12 +427,54 @@ export class CourtRenderer {
       this.box(x, z, .65, .57, 2.59, 2.73, gold);
     }
   }
+  cachedProp(object, palette, time, stage, point) {
+    // Near-camera architecture fills the screen and benefits from exact clipping.
+    if (point.d < 7) {
+      this.prop(object, palette, time, stage);
+      return;
+    }
+    const angle = (object.x - this.camera.x) / point.d;
+    let frame = object.frame;
+    const animated = stage >= 3 && (object.k === 'tree' || object.k === 'arch');
+    const animateRing = animated && (time < frame?.time || time - frame?.time > .48 + object.phase * .04);
+    if (!frame || frame.stage !== stage || animateRing ||
+        Math.abs(angle - frame.angle) > .065 || Math.abs(point.k / frame.scale - 1) > .09) {
+      // Enclose the projected architecture before drawing into its transparent tile.
+      const corners = [];
+      for (const dx of [-2.65, 2.65]) {
+        for (const dz of [-1.7, 1.7]) {
+          for (const h of [-.45, 5.15]) {
+            corners.push(this.project(object.x + dx, object.z + dz, h));
+          }
+        }
+      }
+      const left = Math.floor(Math.min(...corners.map(p => p.x))) - 2;
+      const top = Math.floor(Math.min(...corners.map(p => p.y))) - 2;
+      const width = Math.ceil(Math.max(...corners.map(p => p.x))) - left + 2;
+      const height = Math.ceil(Math.max(...corners.map(p => p.y))) - top + 2;
+      const density = Math.min(this.pixelRatio, 480 / Math.max(width, height));
+      const buffer = frame?.buffer || document.createElement('canvas');
+      buffer.width = Math.max(1, Math.ceil(width * density));
+      buffer.height = Math.max(1, Math.ceil(height * density));
+      const screen = this.ctx;
+      this.ctx = buffer.getContext('2d');
+      this.ctx.setTransform(density, 0, 0, density, -left * density, -top * density);
+      this.prop(object, palette, time, stage);
+      this.ctx = screen;
+      frame = {buffer, stage, angle, time, scale:point.k, x:left - point.x,
+        y:top - point.y, width:buffer.width / density, height:buffer.height / density};
+      object.frame = frame;
+    }
+    const factor = point.k / frame.scale;
+    this.ctx.drawImage(frame.buffer, point.x + frame.x * factor, point.y + frame.y * factor,
+      frame.width * factor, frame.height * factor);
+  }
   actor(o, s) {
     const c = this.ctx;
     const p = this.project(o.x, o.z);
     const hero = o === s.player;
     const k = hero ? 'lumina' : o.kind;
-    const im = assets[k];
+    const sizes = assets[k];
     const boss = k === 'boss';
     const flier = boss || k === 'moth';
     const height = boss ? 3.95 : hero ? 2.05 : flier ? 1.03 : 1.85;
@@ -379,21 +483,34 @@ export class CourtRenderer {
     const base = this.project(o.x, o.z, bob);
     const h = base.y - top.y;
     this.circ(p.x, p.y, p.k * (boss ? 1.35 : hero ? .52 : .43), p.k * (boss ? .44 : .18), '#57435a4f');
+    if (sizes) {
+      let image = sizes[0];
+      const pixels = h * this.pixelRatio;
+      for (let i = 1; i < sizes.length && sizes[i].height >= pixels; i++) {
+        image = sizes[i];
+      }
+      const stretch = flier ? 1 + Math.sin(s.time * 6 + o.phase) * .07 : 1;
+      const width = h * sizes[0].width / sizes[0].height * stretch;
+      if (hero && o.inv > 0) c.globalAlpha = .65 + .35 * Math.abs(Math.sin(s.time * 18));
+      else if (o.hit > 0) c.globalAlpha = .66;
+      if (hero && o.face < 0) {
+        c.save();
+        c.translate(base.x, base.y);
+        c.scale(-1, 1);
+        c.drawImage(image, -width / 2, -h, width, h);
+        c.restore();
+      } else {
+        c.drawImage(image, base.x - width / 2, base.y - h, width, h);
+      }
+      c.globalAlpha = 1;
+      return;
+    }
     c.save();
     c.translate(base.x, base.y);
     if (hero && o.inv > 0) {
       c.globalAlpha = .65 + .35 * Math.abs(Math.sin(s.time * 18));
     }
-    if (im) {
-      const w = h * im.naturalWidth / im.naturalHeight;
-      const stretch = flier ? 1 + Math.sin(s.time * 6 + o.phase) * .07 : 1;
-      c.scale((hero ? o.face : 1) * stretch, 1);
-      if (o.hit > 0) {
-        c.globalAlpha = .66;
-      }
-      c.drawImage(im, -w / 2, -h, w, h);
-    }
-    else {
+    {
       c.scale(h / 100, h / 100);
       if (hero || k === 'knight') {
         if (hero) {
@@ -430,6 +547,25 @@ export class CourtRenderer {
     this.poly([[x, y - r], [x + r * .24, y - r * .24], [x + r, y], [x + r * .24, y + r * .24], [x, y + r], [x - r * .24, y + r * .24], [x - r, y], [x - r * .24, y - r * .24]], color);
   }
   draw(s, dt) {
+    // The backing store can shrink under sustained load. Projection, HUD and touch
+    // coordinates always use CSS pixels, so the camera and controls do not move.
+    if (s.mode === 'play' && dt > 0) {
+      this.frameCost += (dt - this.frameCost) * .12;
+      this.scaleSamples++;
+      const nativeDensity = Math.min(devicePixelRatio || 1, 1.65);
+      const floor = Math.max(.54, Math.min(1, 310 / (Math.min(this.w, this.h) * nativeDensity)));
+      let scale = this.renderScale;
+      if (this.scaleSamples >= 12 && this.frameCost > .035) {
+        scale = Math.max(floor, scale * .78);
+      } else if (this.scaleSamples >= 240 && this.frameCost < .019) {
+        scale = Math.min(1, scale + .09);
+      }
+      if (Math.abs(scale - this.renderScale) > .02) {
+        this.renderScale = scale;
+        this.scaleSamples = 0;
+        this.resize();
+      }
+    }
     const c = this.ctx;
     const title = s.mode === 'title';
     const target = s.player;
@@ -438,8 +574,8 @@ export class CourtRenderer {
     this.camera.x += ((title ? (this.w < this.h ? -.5 : -3.4) : target.x) - this.camera.x) * lerp;
     this.camera.z += ((title ? .6 : target.z) - this.camera.z) * lerp;
     const L = locales[s.stage - 1];
-    this.sky(s.stage, L);
-    this.ground(s, L);
+    this.backdrop(s, L);
+    this.warnings(s);
     const objects = [];
     const add = (o, k) => {
       const p = this.project(o.x, o.z);
@@ -472,7 +608,7 @@ export class CourtRenderer {
         if (o.z > target.z && Math.abs(p.x - pl.x) < p.k * 2.4 && p.y - p.k * 5 < pl.y) {
           c.globalAlpha = .28;
         }
-        this.prop(o, L, s.time, s.stage);
+        this.cachedProp(o, L, s.time, s.stage, p);
         c.restore();
       }
       else if (k === 'actor') {
