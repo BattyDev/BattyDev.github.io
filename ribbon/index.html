@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#29263e">
+  <title>Ribbon Survivors · BattyDev</title>
+  <link rel="stylesheet" href="./style.css?v=3">
+</head>
+<body>
+<main id="app" data-mode="title">
+  <canvas id="game" aria-label="Perspective view of Lumina's courtyard"></canvas>
+  <header><a href="../" class="home" aria-label="Back to BattyDev">‹ <span>BattyDev</span></a><span class="wordmark">✧ &nbsp; Ribbon Survivors</span><button id="sound" aria-label="Enable sound" aria-pressed="false">Sound off</button></header>
+  <div id="hud" hidden>
+    <div class="status"><div class="hero-seal">✧</div><div class="vitals"><div class="line"><b>Lumina</b><span id="health"></span></div><div class="bar"><i id="hpBar"></i></div><div class="line small"><span id="lvl"></span><span id="xp"></span></div><div class="bar xp"><i id="xpBar"></i></div></div></div>
+    <div class="location"><span id="court"></span><b id="clock"></b></div>
+    <button id="pause" aria-label="Pause game">Ⅱ</button>
+    <div id="bossHud" hidden><span>Eclipse Moth</span><div class="bar"><i></i></div></div>
+  </div>
+  <div id="stageNotice" hidden></div>
+  <div id="title" class="cover">
+    <div class="cover-inner">
+      <div class="ornament" aria-hidden="true"><i></i>✦<i></i></div>
+      <h1>Ribbon<br><em>Survivors</em></h1>
+      <p>Guide Lumina through three enchanted courtyards and face the Eclipse Moth.</p>
+      <button class="primary" id="start">Enter the courtyard <span>→</span></button>
+      <small class="keys">WASD / arrows to move · Auto-cast wand</small>
+      <small class="touch-hint">Drag the stick to move · Auto-cast wand</small>
+    </div>
+  </div>
+  <div id="stick" role="group" aria-label="Movement joystick"><div></div></div>
+  <div id="dialog" class="veil" hidden><section class="panel" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+    <div class="ornament" aria-hidden="true"><i></i>✦<i></i></div>
+    <p class="eyebrow" id="kicker"></p><h2 id="dialogTitle"></h2><p id="copy"></p>
+    <div id="choices"></div>
+    <div class="actions"><button class="primary" id="resume">Resume run →</button><button class="primary" id="continue">Continue cycle →</button><button id="retire">Retire with victory</button><button id="restart">Start a new run</button></div>
+  </section></div>
+</main>
+<script type="module" src="./main.js?v=3"></script>
+</body></html>
