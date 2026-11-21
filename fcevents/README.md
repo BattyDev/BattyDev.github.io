@@ -104,10 +104,15 @@ backup, in the same order.
 | `sql/004_last_leader_guard.sql` | Refuses to remove the last leader from inside the app |
 | `sql/005_timezone_and_level.sql` | A member's timezone; an event's required/recommended level |
 | `sql/006_job_preferences.sql` | Preferred job order, and the UPDATE policy it needed |
+| `sql/007_discord_interactions.sql` | The read surface for slash commands, granted to `service_role` alone |
 | `functions/announce-event/index.ts` | Edge Function that posts an event to Discord |
+| `functions/discord-interactions/index.ts` | Edge Function that answers Discord slash commands |
+| `functions/discord-interactions/register-commands.mjs` | Registers the commands with Discord. Run locally; needs a credential. |
 | `sql/test/00_supabase_shim.sql` | Local-only: fakes Supabase's auth schema and roles |
 | `sql/test/01_rls_proof.sql` | Local-only: proves the availability split with role impersonation |
 | `sql/test/02_events_proof.sql` | Local-only: proves the event/consent split, the escalation, and claims |
+| `sql/test/03_discord_proof.sql` | Local-only: proves only `service_role` may assert a Discord identity |
+| `functions/discord-interactions/test/harness.mjs` | Local-only: drives the real handler with genuine Ed25519 keys |
 | `sql/test/ui-harness.js` | Local-only: drives the page in Chromium with a stubbed client |
 
 ## Timezones
@@ -426,6 +431,88 @@ the URL, then Supabase → Edge Functions → Secrets → add `DISCORD_WEBHOOK_U
 Until it is set, the button reports *"DISCORD_WEBHOOK_URL is not set"* rather
 than failing silently.
 
+## Discord slash commands
+
+`/events` lists what is coming up, ephemerally — only the person who typed it
+sees the reply. This is **HTTP interactions**, not a gateway bot: no always-on
+process, no websocket, no bot user sitting in the member list. Discord makes an
+HTTPS request to an Edge Function, it answers, and that is the whole lifecycle.
+
+### What authenticates a caller with no JWT
+
+Every other path into this database arrives with a Supabase JWT, so `auth.uid()`
+answers "who is this" and the policies do the rest. A Discord interaction has no
+JWT and never will. It carries a Discord user id and an **Ed25519 signature over
+(timestamp + raw body)**, and that signature is the only thing making the request
+trustworthy — so it is checked before the body is even parsed.
+
+Two consequences worth writing down:
+
+- **The body is read as text before parsing.** The signature covers the exact
+  bytes Discord sent; a JSON round trip would not reproduce them.
+- **A bad signature must return 401.** When you save an Interactions Endpoint
+  URL, Discord probes it with a deliberately invalid signature and refuses the
+  URL unless it gets exactly that. The failure path is a feature Discord tests
+  for, not just hygiene.
+
+The function is deployed with `verify_jwt = false`. That is not an
+unauthenticated function — it authenticates differently, and Supabase's JWT gate
+would reject Discord before our own check could run.
+
+### Why the identity is the whole security question
+
+After the signature check, the function knows "Discord says this is user 1234".
+It then has to ask the database what user 1234 may see — which means passing a
+**discord_id as a parameter**, and a function that takes an identity as an
+argument is, by construction, a function that impersonates.
+
+So `raid_discord_events()` in 007 is SECURITY DEFINER and granted to
+`service_role` **alone**, reachable only from inside an Edge Function holding
+the service key. If `authenticated` could call it, any signed-in member could
+pass somebody else's Discord id and read as them; if `anon` could, anyone on the
+internet could. Supabase's default privileges hand EXECUTE to both on every new
+function in `public`, and PostgREST publishes anything EXECUTE-able at `/rpc/` —
+the same trap 001 documents for `raid_is_leader()` — so the grant is revoked
+before it is given.
+
+`sql/test/03_discord_proof.sql` section A is that claim, proved: anon, a plain
+member, and a **leader** are all refused; only `service_role` gets an answer.
+
+The alternative was to hold the service key, query the tables directly, and
+filter in TypeScript. That would put the visibility rules in two languages, free
+to drift. The database decides here as it does everywhere else, and a Discord
+command can reach strictly **less** than the page can: no availability, no poll
+responses, no other member's rows.
+
+### The three-second window
+
+Discord gives a command three seconds to reply, and a cold start plus a database
+round trip can lose that race — which shows the user "the application did not
+respond" with no clean retry. So the command **defers immediately** (an ephemeral
+ack) and then edits its own reply, which has a fifteen-minute window instead of
+three seconds. `EdgeRuntime.waitUntil()` keeps the isolate alive for that second
+half; without it the runtime may tear the function down mid-fetch.
+
+### Setting it up
+
+1. **Deploy the function** (done — `discord-interactions`, `verify_jwt = false`).
+   Its URL is
+   `https://bbqauqqymjxqcyurxmna.supabase.co/functions/v1/discord-interactions`.
+2. **Set `DISCORD_PUBLIC_KEY`** in Supabase → Edge Functions → Secrets, from
+   Developer Portal → General Information → Public Key. Until it is set the
+   function returns 503 with that sentence, rather than 401 — a 401 there would
+   read to Discord as a signature failure and the message would never be seen.
+3. **Then** paste the URL into Developer Portal → General Information →
+   Interactions Endpoint URL. It must be steps 1 and 2 first: Discord PINGs on
+   save and rejects the URL if verification fails.
+4. **Install the app** into the server. `applications.commands` scope is enough —
+   no `bot` scope, so nothing joins the member list. Needs Manage Server.
+5. **Register the commands** with `functions/discord-interactions/register-commands.mjs`,
+   run locally. Use `DISCORD_GUILD_ID` while testing: guild commands appear in
+   seconds, global ones are cached for up to an hour.
+
+Nothing in steps 1–3 touches the server, and nothing in 4–5 touches the database.
+
 ## Running the checks
 
 The SQL proof, against any local Postgres:
@@ -438,14 +525,23 @@ psql -f sql/test/00_supabase_shim.sql \
      -f sql/004_last_leader_guard.sql \
      -f sql/005_timezone_and_level.sql \
      -f sql/006_job_preferences.sql \
+     -f sql/007_discord_interactions.sql \
      -f sql/test/01_rls_proof.sql \
-     -f sql/test/02_events_proof.sql
+     -f sql/test/02_events_proof.sql \
+     -f sql/test/03_discord_proof.sql
 ```
 
 The UI harness, which stubs the Supabase client so no network is needed:
 
 ```sh
 cd sql/test && node ui-harness.js
+```
+
+The interactions harness, which runs the real Edge Function handler against
+genuine Ed25519 signatures:
+
+```sh
+cd functions/discord-interactions && node --experimental-strip-types test/harness.mjs
 ```
 
 ## Status
@@ -461,13 +557,20 @@ then the public heatmap renders and reads empty.
 
 Also done: character linking and the adventurer-plate skin.
 
-Blocked, both on the same thing:
+Also done: the `discord-interactions` Edge Function and the `/events` command it
+answers, with migration 007's `service_role`-only read surface behind it.
 
-- **Posting to Discord.** The `announce-event` function is deployed and the
-  button is live, but `DISCORD_WEBHOOK_URL` is not set, so it reports
-  *"DISCORD_WEBHOOK_URL is not set"* rather than posting. Creating a webhook
-  needs Manage Server on the Discord side.
-- **The Discord slash command** — HTTP interactions via an Edge Function, Ed25519
-  signature verified, deferring inside the 3-second reply window. Installing an
-  application into the server needs Manage Server too, so this is blocked by the
-  same permission, not by anything in the code.
+Waiting on configuration, not on code:
+
+- **Posting to Discord** needs `DISCORD_WEBHOOK_URL` in Supabase → Edge Functions
+  → Secrets. Until it is set the button reports that sentence rather than
+  posting. Creating a webhook needs **Manage Webhooks** on the target channel —
+  not Manage Server, which is a larger permission and only the app install needs
+  it.
+- **The slash command** needs `DISCORD_PUBLIC_KEY` set, the Interactions Endpoint
+  URL saved, the app installed, and the commands registered. See *Setting it up*
+  above for the order, which matters.
+
+Next, once `/events` is proven end to end: `/signup`, which needs command
+autocomplete and a write path, and is deliberately not built until the read path
+has been through real Discord rather than a harness.
