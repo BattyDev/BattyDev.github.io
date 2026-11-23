@@ -1,5 +1,5 @@
 import { activities, cleanResponse, dates, emptyResponse, foodOptions, participation, presets, statuses, validateWindows } from './survey.js?v=1';
-import { publishableKey, submissionUrl } from './config.js?v=1';
+import { publishableKey, submissionUrl } from './config.js?v=2';
 
 const draftKey = 'adcock-holiday-2026';
 const stepPanel = document.querySelector('#step');
