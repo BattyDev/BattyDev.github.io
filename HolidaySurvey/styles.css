@@ -1,5 +1,6 @@
 :root {
   color-scheme: light;
+  touch-action: manipulation;
   font-family: 'Aptos', 'Segoe UI', system-ui, sans-serif;
   color: #202d26;
   background: #f6f5ee;
