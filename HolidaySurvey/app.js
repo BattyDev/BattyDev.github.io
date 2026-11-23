@@ -1,8 +1,9 @@
-import { activities, cleanDraft, cleanResponse, dates, emptyResponse, participation, presets, statuses, validateWindows } from './survey.js?v=2';
+import { activities, activitySuggestionLimit, cleanDraft, cleanResponse, communityActivityId, dates, emptyResponse, participation, presets, statuses, validateWindows } from './survey.js?v=3';
 import { publishableKey, submissionUrl } from './config.js?v=2';
 
 const draftKey = 'adcock-holiday-2026';
 const resumeKey = draftKey + '-resume';
+const catalogKey = draftKey + '-activity-ideas';
 const stepPanel = document.querySelector('#step');
 const form = document.querySelector('#survey-form');
 const navigation = document.querySelector('#navigation');
@@ -42,6 +43,7 @@ function loadDraft(saved) {
 
 const cached = readCache(draftKey);
 const saved = loadDraft(cached);
+let community = readCache(catalogKey) || [];
 let state = saved?.response || emptyResponse();
 let token = cached?.token || readCache(resumeKey) || '';
 let sent = saved?.sent || false;
@@ -81,6 +83,19 @@ function sendToSurvey(payload, keepalive = false) {
     signal: AbortSignal.timeout(20000),
     keepalive,
   });
+}
+
+async function loadCommunity() {
+  if (!submissionUrl) return;
+  try {
+    const result = await sendToSurvey({ action: 'list_activities' });
+    if (!result.ok) return;
+    const { activities: ideas } = await result.json();
+    community = ideas.filter(({ id, label }) => communityActivityId.test('community-' + id) &&
+      typeof label === 'string' && label.length > 0 && label.length <= activitySuggestionLimit)
+      .map(({ id, label }) => ['community-' + id, label, '💡']);
+    try { window.localStorage.setItem(catalogKey, JSON.stringify(community)); } catch { /* An online list still works. */ }
+  } catch { /* Keep the last loaded list when offline. */ }
 }
 
 async function syncDraft() {
@@ -139,10 +154,12 @@ const selectedDates = () => dates.filter((iso) => state.days[iso]?.status);
 const daysPerPage = 4;
 const timePageCount = () => Math.ceil(selectedDates().length / daysPerPage);
 const datesOnPage = (index) => selectedDates().slice(index * daysPerPage, (index + 1) * daysPerPage);
+const ideasPerPage = 4;
 const steps = () => [
   ['name', 'First name'], ['days', 'Days'],
   ...Array.from({ length: timePageCount() }, (_, index) => ['times-' + index, 'Times']),
   ['activity-0', 'Activities'], ['activity-1', 'Activities'], ['activity-2', 'Activities'],
+  ...Array.from({ length: Math.ceil(community.length / ideasPerPage) }, (_, index) => ['suggested-' + index, 'Family ideas']),
   ['food', 'Food'], ['review', 'Review'],
 ];
 
@@ -207,14 +224,28 @@ function timePage(index) {
     }).join('');
 }
 
-function activityPage(index) {
-  return heading('What sounds fun?', 'Activities ' + (index + 1) + ' of 3. Choose how you’d like to join in, or skip any item.') +
-    activityPages[index].map(([id, label, emoji, location]) => '<fieldset class="subcard activity"><legend><span class="activity-name"><span class="activity-icon" aria-hidden="true"><span>' +
-      emoji + '</span><img src="assets/activities/' + id + '.png" width="44" height="44" alt=""></span><span>' + label +
+function activityCards(items) {
+  return items.map(([id, label, emoji, location]) => '<fieldset class="subcard activity"><legend><span class="activity-name"><span class="activity-icon" aria-hidden="true"><span>' +
+      emoji + '</span>' + (communityActivityId.test(id) ? '' : '<img src="assets/activities/' + id + '.png" width="44" height="44" alt="">') + '</span><span class="activity-label">' + escape(label) +
       (location ? '<small>' + location + '</small>' : '') + '</span></span></legend><div class="choices">' +
       participation.map(([value, choice]) => '<label><input type="radio" name="' + id + '" value="' + value + '" ' +
         (state.activities[id] === value ? 'checked' : '') + '><span>' + choice + '</span></label>').join('') +
       '</div>' + (state.activities[id] ? button('Clear choice', 'clear-activity', 'data-id="' + id + '"') : '') + '</fieldset>').join('');
+}
+
+function activityPage(index) {
+  const writeIn = '<label class="field">Suggest another activity <span class="optional">Optional</span>' +
+    '<input type="text" name="activitySuggestion" maxlength="' + activitySuggestionLimit + '" aria-describedby="activity-suggestion-help" value="' +
+    escape(state.activitySuggestion) + '"></label>' +
+    '<p class="help suggestion-help" id="activity-suggestion-help">After you submit, others can vote on your idea. They’ll see the activity title only.</p>';
+  return heading('What sounds fun?', 'Activities ' + (index + 1) + ' of 3. Choose how you’d like to join in, or skip any item.') +
+    activityCards(activityPages[index]) + (index === activityPages.length - 1 ? writeIn : '');
+}
+
+function suggestedPage(index) {
+  const start = index * ideasPerPage;
+  return heading('Family activity ideas', 'These ideas were suggested by other respondents. Vote on any that sound fun.') +
+    activityCards(community.slice(start, start + ideasPerPage));
 }
 
 function foodPage() {
@@ -232,14 +263,15 @@ function reviewPage() {
       statuses[day.status] + '</span><br>' + times +
       (day.note ? '<br><span class="help">' + escape(day.note) + '</span>' : '') + '</li>';
   }).join('');
-  const activityRows = activities.filter(([id]) => state.activities[id]).map(([id, label]) => '<li>' + label + ' <span class="help">· ' +
+  const activityRows = [...activities, ...community].filter(([id]) => state.activities[id]).map(([id, label]) => '<li>' + escape(label) + ' <span class="help">· ' +
     participation.find(([value]) => value === state.activities[id])[1] + '</span></li>').join('');
   return heading('Ready to send?', 'Take a quick look before you share your response.') +
     '<div class="review-section"><h2>First name</h2>' + button('Edit first name', 'jump', 'data-step="name"') + '<p>' + escape(state.name) + '</p></div>' +
     '<div class="review-section"><h2>Availability</h2>' + button('Edit days', 'jump', 'data-step="days"') +
     (dayRows ? button('Edit times', 'jump', 'data-step="times-0"') + '<ul>' + dayRows + '</ul>' : '<p>No days selected.</p>') + '</div>' +
     '<div class="review-section"><h2>Activities</h2>' + button('Edit activities', 'jump', 'data-step="activity-0"') +
-    (activityRows ? '<ul>' + activityRows + '</ul>' : '<p>No activities answered.</p>') + '</div>' +
+    (activityRows ? '<ul>' + activityRows + '</ul>' : '<p>No activities answered.</p>') +
+    (state.activitySuggestion.trim() ? '<p><strong>Your suggestion</strong> ' + escape(state.activitySuggestion.trim()) + '</p>' : '') + '</div>' +
     '<div class="review-section"><h2>Food</h2>' + button('Edit food', 'jump', 'data-step="food"') +
     '<p class="food-note">' + escape(state.foodNote.trim() || 'No food suggestions added.') + '</p></div>';
 }
@@ -251,7 +283,7 @@ function showError(message) {
 
 function render(focus = false) {
   const pages = steps();
-  if (!(step === 'done' && sent) && !pages.some(([id]) => step === id)) step = 'days';
+  if (!(step === 'done' && sent) && !pages.some(([id]) => step === id)) step = step.startsWith('suggested-') ? 'activity-2' : 'days';
   const position = pages.findIndex(([id]) => step === id);
   const done = step === 'done';
   draftStatus.hidden = done || !draftStatus.textContent;
@@ -264,6 +296,7 @@ function render(focus = false) {
   if (step === 'days') stepPanel.innerHTML = calendar();
   if (step.startsWith('times-')) stepPanel.innerHTML = timePage(Number(step.at(-1)));
   if (step.startsWith('activity-')) stepPanel.innerHTML = activityPage(Number(step.at(-1)));
+  if (step.startsWith('suggested-')) stepPanel.innerHTML = suggestedPage(Number(step.slice('suggested-'.length)));
   if (step === 'food') stepPanel.innerHTML = foodPage();
   if (step === 'review') stepPanel.innerHTML = reviewPage();
   if (done) stepPanel.innerHTML = heading('Thanks, ' + escape(state.name) + '!', 'Your response is saved. If your plans change, you can update it from this browser.');
@@ -346,6 +379,7 @@ form.addEventListener('click', (event) => {
 form.addEventListener('input', ({ target }) => {
   const { name, value, dataset } = target;
   if (name === 'name') state.name = value;
+  if (name === 'activitySuggestion') state.activitySuggestion = value;
   if (name === 'foodNote') state.foodNote = value;
   if (target.type === 'radio') {
     state.activities[name] = value;
@@ -407,6 +441,7 @@ form.addEventListener('submit', async (event) => {
     Object.assign(state, response);
     sent = true;
     step = 'done';
+    void loadCommunity();
     save(true);
     render(true);
   } catch (problem) {
@@ -419,9 +454,14 @@ form.addEventListener('submit', async (event) => {
   }
 });
 
-render();
-if (cachedHere && revision) showDraftStatus('Saved on this device.');
-void restoreCloudDraft();
+const catalogReady = loadCommunity();
+const restore = () => {
+  render();
+  if (cachedHere && revision) showDraftStatus('Saved on this device.');
+};
+if (step.startsWith('suggested-') && !community.length) void catalogReady.then(restore);
+else restore();
+void catalogReady.then(restoreCloudDraft);
 window.addEventListener('online', syncDraft);
 window.addEventListener('pagehide', syncDraft);
 document.addEventListener('visibilitychange', () => {

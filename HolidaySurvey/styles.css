@@ -139,6 +139,8 @@ summary { width: fit-content; min-height: 2.5rem; padding: .6rem .05rem; font-we
 .activity .quiet { margin-top: .45rem; min-height: 2.75rem; }
 .activity legend { padding: 0 .25rem; font-weight: 750; }
 .activity-name { display: flex; align-items: center; gap: .45rem; }
+.activity-label { min-width: 0; overflow-wrap: anywhere; }
+.suggestion-help { margin-top: .45rem; }
 .activity-name small { display: block; font-size: .875rem; font-weight: 500; color: var(--muted); }
 .activity-icon { display: grid; place-items: center; font-size: 1.8rem; width: 2.75rem; height: 2.75rem; flex: 0 0 2.75rem; }
 .activity-icon > * { grid-area: 1 / 1; }
