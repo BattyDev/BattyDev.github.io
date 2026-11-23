@@ -31,6 +31,7 @@ export const presets = [
 
 export const activitySuggestionLimit = 80;
 export const communityActivityId = /^community-[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/;
+export const communityVoteIds = (votes) => Object.keys(votes).filter((id) => communityActivityId.test(id));
 export const emptyResponse = () => ({ name: '', days: {}, activities: {}, activitySuggestion: '', food: [], foodNote: '' });
 
 const validTime = (time) => typeof time === 'string' && /^(?:0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/.test(time);
@@ -61,7 +62,11 @@ export function cleanDraft(draft) {
   response.activities = cleanVotes(value.activities);
   const page = text(draft.step, 20);
   const step = /^(name|days|times-[0-3]|activity-[0-2]|suggested-\d+|food|review|done)$/.test(page) ? page : 'name';
-  return { response, step, sent: draft.sent === true, template: windows(draft.template).slice(0, 1), revision: draft.revision };
+  const sent = draft.sent === true;
+  const submittedIdeaVotes = !sent ? [] : Array.isArray(draft.submittedIdeaVotes)
+    ? [...new Set(draft.submittedIdeaVotes.filter((id) => typeof id === 'string' && communityActivityId.test(id)))]
+    : communityVoteIds(response.activities);
+  return { response, step, sent, submittedIdeaVotes, template: windows(draft.template).slice(0, 1), revision: draft.revision };
 }
 
 export function validateWindows(windows) {

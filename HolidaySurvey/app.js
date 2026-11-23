@@ -1,4 +1,4 @@
-import { activities, activitySuggestionLimit, cleanDraft, cleanResponse, communityActivityId, dates, emptyResponse, participation, presets, statuses, validateWindows } from './survey.js?v=3';
+import { activities, activitySuggestionLimit, cleanDraft, cleanResponse, communityActivityId, communityVoteIds, dates, emptyResponse, participation, presets, statuses, validateWindows } from './survey.js?v=4';
 import { publishableKey, submissionUrl } from './config.js?v=2';
 
 const draftKey = 'adcock-holiday-2026';
@@ -47,6 +47,7 @@ let community = readCache(catalogKey) || [];
 let state = saved?.response || emptyResponse();
 let token = cached?.token || readCache(resumeKey) || '';
 let sent = saved?.sent || false;
+let submittedIdeaVotes = saved?.submittedIdeaVotes || [];
 let step = saved?.step || 'name';
 let busy = false;
 let template = saved?.template || [];
@@ -56,7 +57,7 @@ let writingRevision = 0;
 let syncTimer;
 let cachedHere = Boolean(saved);
 
-const snapshot = () => ({ response: state, sent, step, template, revision });
+const snapshot = () => ({ response: state, sent, submittedIdeaVotes, step, template, revision });
 
 function writeCache() {
   const data = JSON.stringify({ ...snapshot(), token });
@@ -136,7 +137,7 @@ async function restoreCloudDraft() {
     if (draft && draft.revision > revision) {
       // A refresh can race the previous tab’s final write. Only restore until local editing resumes.
       const remote = cleanDraft(draft);
-      ({ response: state, sent, step, template, revision } = remote);
+      ({ response: state, sent, submittedIdeaVotes, step, template, revision } = remote);
       cachedHere = writeCache();
       syncedRevision = revision;
       render();
@@ -248,6 +249,15 @@ function suggestedPage(index) {
     activityCards(community.slice(start, start + ideasPerPage));
 }
 
+const unansweredIdeas = () => community.filter(([id]) => !submittedIdeaVotes.includes(id));
+
+function donePage(ideas) {
+  return heading('Thanks, ' + escape(state.name) + '!', 'Your response is saved. If your plans change, you can update it from this browser.') +
+    (ideas.length ? '<section class="new-ideas"><h2>New family activity ideas</h2>' +
+      '<p class="help">Vote on the new ideas below, then resubmit to save your choices.</p>' +
+      activityCards(ideas) + '</section>' : '');
+}
+
 function foodPage() {
   return heading('What sounds good to eat?', 'Share any dishes, restaurants, or dietary needs you’d like us to consider.') +
     '<label class="field">Food ideas or requests <span class="optional">Optional</span>' +
@@ -286,6 +296,7 @@ function render(focus = false) {
   if (!(step === 'done' && sent) && !pages.some(([id]) => step === id)) step = step.startsWith('suggested-') ? 'activity-2' : 'days';
   const position = pages.findIndex(([id]) => step === id);
   const done = step === 'done';
+  const newIdeas = done ? unansweredIdeas() : [];
   draftStatus.hidden = done || !draftStatus.textContent;
   const count = pages.length;
   const value = done ? count : position + 1;
@@ -299,8 +310,10 @@ function render(focus = false) {
   if (step.startsWith('suggested-')) stepPanel.innerHTML = suggestedPage(Number(step.slice('suggested-'.length)));
   if (step === 'food') stepPanel.innerHTML = foodPage();
   if (step === 'review') stepPanel.innerHTML = reviewPage();
-  if (done) stepPanel.innerHTML = heading('Thanks, ' + escape(state.name) + '!', 'Your response is saved. If your plans change, you can update it from this browser.');
-  navigation.innerHTML = done ? button('Edit my response', 'jump', 'data-step="review"', 'primary') :
+  if (done) stepPanel.innerHTML = donePage(newIdeas);
+  navigation.innerHTML = done ? (newIdeas.length
+    ? button('Edit my response', 'jump', 'data-step="review"') + '<button class="primary" type="submit">Resubmit responses</button>'
+    : button('Edit my response', 'jump', 'data-step="review"', 'primary')) :
     (position > 0 ? button('Back', 'back') : '') + '<button class="primary" type="submit">' +
     (step === 'review' ? (sent ? 'Save changes' : 'Send response') : 'Continue') + '</button>';
   stepPanel.querySelectorAll('.activity-icon img').forEach((img) => {
@@ -418,7 +431,8 @@ form.addEventListener('submit', async (event) => {
       return;
     }
   }
-  if (step !== 'review') {
+  if (step === 'done' && !unansweredIdeas().length) return;
+  if (step !== 'review' && step !== 'done') {
     const pages = steps();
     step = pages[pages.findIndex(([id]) => id === step) + 1][0];
     save(true);
@@ -440,6 +454,7 @@ form.addEventListener('submit', async (event) => {
     if (!request.ok) throw Error('Your draft is safe on this device. Try sending again in a moment.');
     Object.assign(state, response);
     sent = true;
+    submittedIdeaVotes = communityVoteIds(response.activities);
     step = 'done';
     void loadCommunity();
     save(true);
@@ -450,10 +465,11 @@ form.addEventListener('submit', async (event) => {
   } finally {
     busy = false;
     navigation.querySelectorAll('button').forEach((control) => { control.disabled = false; });
-    submit.textContent = sent ? 'Save changes' : 'Send response';
+    submit.textContent = step === 'done' ? 'Resubmit responses' : sent ? 'Save changes' : 'Send response';
   }
 });
 
+const startingRevision = revision;
 const catalogReady = loadCommunity();
 const restore = () => {
   render();
@@ -461,7 +477,10 @@ const restore = () => {
 };
 if (step.startsWith('suggested-') && !community.length) void catalogReady.then(restore);
 else restore();
-void catalogReady.then(restoreCloudDraft);
+void catalogReady.then(() => {
+  if (step === 'done' && revision === startingRevision) render();
+  return restoreCloudDraft();
+});
 window.addEventListener('online', syncDraft);
 window.addEventListener('pagehide', syncDraft);
 document.addEventListener('visibilitychange', () => {
