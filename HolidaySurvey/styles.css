@@ -144,8 +144,8 @@ summary { width: fit-content; min-height: 2.5rem; padding: .6rem .05rem; font-we
 .activity-icon.loaded img { opacity: 1; }
 .activity-icon.loaded span { visibility: hidden; }
 .choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .3rem; }
-.choices label { display: grid; cursor: pointer; }
-.choices span { display: grid; place-items: center; min-height: 2.8rem; padding: .3rem .12rem; text-align: center; line-height: 1.2; font-size: .875rem; font-weight: 650; border: 1px solid var(--line); border-radius: .55rem; background: #f7f6ef; }
+.choices label { display: grid; min-inline-size: 0; cursor: pointer; }
+.choices span { display: grid; place-items: center; min-height: 2.8rem; padding: .3rem .12rem; overflow-wrap: anywhere; text-align: center; line-height: 1.2; font-size: .875rem; font-weight: 650; border: 1px solid var(--line); border-radius: .55rem; background: #f7f6ef; }
 .choices input:checked + span { background: #204e3d; color: white; border-color: #204e3d; }
 .choices input:focus-visible + span { outline: 3px solid #aa6200; outline-offset: 2px; }
 .choices input, .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -157,6 +157,25 @@ summary { width: fit-content; min-height: 2.5rem; padding: .6rem .05rem; font-we
 .review-section ul { padding-left: 1.25rem; margin: .3rem 0; }
 .review-section li { margin: .35rem 0; }
 .food-note { white-space: pre-wrap; }
+
+@media (max-width: 27rem) {
+  .masthead-title { max-inline-size: 62%; }
+  .masthead img { width: 48%; }
+  .masthead::after { background: linear-gradient(90deg, var(--comic-pink) 52%, #ffd2dfb8 60%, #ffd2df00 76%); }
+
+  /* Keep the native time controls wide enough for the time and clock icon. */
+  .window { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .window .remove { grid-column: 1 / -1; justify-self: end; }
+}
+
+@media (max-width: 23.5rem) {
+  .choices { grid-template-columns: minmax(0, 1.17fr) minmax(0, 1.22fr) minmax(0, .61fr); }
+}
+
+@media (max-width: 22rem) {
+  .window label { grid-column: 1 / -1; display: grid; grid-template-columns: 3rem minmax(0, 1fr); align-items: center; }
+  .window input { margin-top: 0; }
+}
 
 @media (min-width: 44rem) {
   .survey { margin-top: 2rem; }
