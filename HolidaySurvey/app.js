@@ -39,7 +39,7 @@ const daysPerPage = 4;
 const timePageCount = () => Math.ceil(selectedDates().length / daysPerPage);
 const datesOnPage = (index) => selectedDates().slice(index * daysPerPage, (index + 1) * daysPerPage);
 const steps = () => [
-  ['name', 'Name'], ['days', 'Days'],
+  ['name', 'First name'], ['days', 'Days'],
   ...Array.from({ length: timePageCount() }, (_, index) => ['times-' + index, 'Times']),
   ['activity-0', 'Activities'], ['activity-1', 'Activities'], ['activity-2', 'Activities'],
   ['food', 'Food'], ['review', 'Review'],
@@ -134,7 +134,7 @@ function reviewPage() {
     participation.find(([value]) => value === state.activities[id])[1] + '</span></li>').join('');
   const foodLabels = foodOptions.filter(([id]) => state.food.includes(id)).map(([, label]) => label);
   return heading('Ready to send?', 'Take a quick look before you share your response.') +
-    '<div class="review-section"><h2>Name</h2>' + button('Edit name', 'jump', 'data-step="name"') + '<p>' + escape(state.name) + '</p></div>' +
+    '<div class="review-section"><h2>First name</h2>' + button('Edit first name', 'jump', 'data-step="name"') + '<p>' + escape(state.name) + '</p></div>' +
     '<div class="review-section"><h2>Availability</h2>' + button('Edit days', 'jump', 'data-step="days"') +
     (dayRows ? button('Edit times', 'jump', 'data-step="times-0"') + '<ul>' + dayRows + '</ul>' : '<p>No days selected.</p>') + '</div>' +
     '<div class="review-section"><h2>Activities</h2>' + button('Edit activities', 'jump', 'data-step="activity-0"') +
@@ -158,7 +158,7 @@ function render(focus = false) {
   progress.innerHTML = '<span>' + (done ? 'Complete' : pages[position][1]) + '</span><span>' + value + ' / ' + count +
     '</span><progress value="' + value + '" max="' + count + '" aria-label="Survey progress"></progress>';
   if (step === 'name') stepPanel.innerHTML = heading('Let’s get together.', 'Tell us when you’re free from December 19 to January 1 and what you’d enjoy doing with the family.') +
-    '<label class="field">Your name<input type="text" name="name" autocomplete="name" required maxlength="80" placeholder="First and last name" value="' + escape(state.name) + '"></label>';
+    '<label class="field">First name<input type="text" name="name" autocomplete="given-name" required maxlength="80" value="' + escape(state.name) + '"></label>';
   if (step === 'days') stepPanel.innerHTML = calendar();
   if (step.startsWith('times-')) stepPanel.innerHTML = timePage(Number(step.at(-1)));
   if (step.startsWith('activity-')) stepPanel.innerHTML = activityPage(Number(step.at(-1)));
@@ -260,7 +260,7 @@ form.addEventListener('submit', async (event) => {
   if (busy) return;
   showError('');
   if (step === 'name' && !state.name.trim()) {
-    showError('Enter your name to continue.');
+    showError('Enter your first name to continue.');
     form.elements.name.focus();
     return;
   }
