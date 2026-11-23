@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Adcock Holiday Family Survey</title>
+  <meta name="description" content="Pick the dates, activities, and food that work for you this holiday break.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#ffd2df">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Adcock Holiday Family Survey">
+  <meta property="og:description" content="December 19 – January 1 · Tell us when you're free and what sounds fun.">
+  <meta property="og:url" content="https://battydev.com/HolidaySurvey/">
+  <meta property="og:image" content="https://battydev.com/HolidaySurvey/assets/holiday-share-comic.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Adcock Holiday Family Survey in a pink comic panel with a smiling Christmas tree and fireworks">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="apple-touch-icon" href="assets/touch-icon-comic.png">
+  <link rel="icon" href="assets/touch-icon-comic.png" type="image/png">
+  <link rel="stylesheet" href="styles.css?v=2">
+  <script type="module" src="app.js?v=2"></script>
+</head>
+<body>
+  <main class="survey">
+    <header class="masthead">
+      <img src="assets/masthead-comic.webp" width="432" height="531" alt="">
+      <div class="masthead-title"><strong>Adcock Holiday</strong><span>Family Survey</span></div>
+      <span class="masthead-dates">Dec 19 – Jan 1</span>
+    </header>
+    <div class="progress" id="progress" aria-label="Survey progress"></div>
+    <form id="survey-form" novalidate>
+      <div id="step" class="panel" aria-labelledby="step-heading"></div>
+      <p class="error" id="form-error" role="alert" hidden></p>
+      <div id="navigation" class="navigation"></div>
+    </form>
+    <noscript><p>This survey needs JavaScript to show the calendar and save your answers.</p></noscript>
+  </main>
+</body>
+</html>
