@@ -103,6 +103,7 @@ textarea { resize: vertical; }
 .quiet { background: #f3f3eb; color: var(--pine); border-color: var(--line); font-size: .875rem; }
 .quiet:hover { background: #e9eee6; }
 .error { margin-top: .7rem; padding: .75rem 1rem; border: 1px solid #c36051; border-radius: .65rem; background: #fff2ed; color: #792819; }
+.draft-status { margin: .55rem .1rem 0; }
 [hidden] { display: none !important; }
 
 .calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .25rem; margin: 1rem 0 .6rem; }
@@ -163,18 +164,18 @@ summary { width: fit-content; min-height: 2.5rem; padding: .6rem .05rem; font-we
   .masthead img { width: 48%; }
   .masthead::after { background: linear-gradient(90deg, var(--comic-pink) 52%, #ffd2dfb8 60%, #ffd2df00 76%); }
 
-  /* Keep the native time controls wide enough for the time and clock icon. */
-  .window { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .window .remove { grid-column: 1 / -1; justify-self: end; }
 }
 
 @media (max-width: 23.5rem) {
   .choices { grid-template-columns: minmax(0, 1.17fr) minmax(0, 1.22fr) minmax(0, .61fr); }
 }
 
-@media (max-width: 22rem) {
-  .window label { grid-column: 1 / -1; display: grid; grid-template-columns: 3rem minmax(0, 1fr); align-items: center; }
-  .window input { margin-top: 0; }
+@media (max-width: 44rem) {
+  /* iOS reserves space for the time picker inside the field. Give each picker a full row. */
+  .window { display: grid; grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+  .window label { display: block; }
+  .window input[type=time] { display: block; width: 100%; max-inline-size: 100%; min-inline-size: 0; }
+  .window .remove { justify-self: end; }
 }
 
 @media (min-width: 44rem) {
