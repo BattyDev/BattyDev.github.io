@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#ffd2df">
+  <title>Adcock Holiday Survey Results</title>
+  <link rel="icon" href="../assets/touch-icon-comic.png" type="image/png">
+  <link rel="stylesheet" href="../styles.css?v=8">
+  <link rel="stylesheet" href="results.css?v=1">
+  <script type="module" src="results.js?v=1"></script>
+</head>
+<body>
+  <main class="survey results">
+    <header class="results-header">
+      <h1>Holiday survey results</h1>
+      <p id="summary" class="help" hidden></p>
+    </header>
+    <section class="panel" id="locked">
+      <p id="link-status" role="status">Open the organizer link to view the results.</p>
+    </section>
+    <section id="dashboard" hidden>
+      <div class="toolbar">
+        <nav aria-label="Results views">
+          <button type="button" class="quiet" data-view="overlap" aria-pressed="true">Time overlap</button>
+          <button type="button" class="quiet" data-view="interests" aria-pressed="false">Activities &amp; food</button>
+          <button type="button" class="quiet" data-view="individuals" aria-pressed="false">Individuals</button>
+        </nav>
+        <div class="result-actions">
+          <button type="button" class="quiet" id="refresh">Refresh</button>
+          <button type="button" class="quiet" id="lock">Close results</button>
+        </div>
+      </div>
+      <div class="panel" id="view" aria-live="polite"></div>
+    </section>
+    <p id="message" class="error" role="alert" hidden></p>
+    <noscript><p>JavaScript is needed to open the results.</p></noscript>
+  </main>
+</body>
+</html>
