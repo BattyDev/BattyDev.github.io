@@ -1,12 +1,14 @@
-import { activities, cleanResponse, dates, emptyResponse, participation, presets, statuses, validateWindows } from './survey.js?v=1';
+import { activities, cleanDraft, cleanResponse, dates, emptyResponse, participation, presets, statuses, validateWindows } from './survey.js?v=2';
 import { publishableKey, submissionUrl } from './config.js?v=2';
 
 const draftKey = 'adcock-holiday-2026';
+const resumeKey = draftKey + '-resume';
 const stepPanel = document.querySelector('#step');
 const form = document.querySelector('#survey-form');
 const navigation = document.querySelector('#navigation');
 const error = document.querySelector('#form-error');
 const progress = document.querySelector('#progress');
+const draftStatus = document.querySelector('#draft-status');
 const dateLabel = new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 const fullDateLabel = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 const timeLabel = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
@@ -18,20 +20,119 @@ const displayTime = (time) => timeLabel.format(new Date('2026-12-19T' + time + '
 const escape = (text) => String(text).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const activityPages = [activities.slice(0, 4), activities.slice(4, 8), activities.slice(8)];
 
-function loadDraft() {
-  try { return JSON.parse(localStorage.getItem(draftKey)); } catch { return null; }
+function readCache(key) {
+  for (const storage of ['localStorage', 'sessionStorage']) {
+    try {
+      const value = window[storage].getItem(key);
+      if (value) return JSON.parse(value);
+    } catch { /* Some private browsing contexts block browser storage. */ }
+  }
+  return null;
 }
 
-const saved = loadDraft();
-const state = saved?.response || emptyResponse();
-let token = saved?.token || '';
-let sent = Boolean(saved?.sent);
-let step = sent ? 'done' : 'name';
-let busy = false;
-let template = [];
+function loadDraft(saved) {
+  try {
+    return cleanDraft({
+      ...saved,
+      step: saved?.step || (saved?.sent ? 'done' : saved?.response?.name ? 'days' : 'name'),
+      revision: saved?.revision ?? 0,
+    });
+  } catch { return null; }
+}
 
-function save() {
-  try { localStorage.setItem(draftKey, JSON.stringify({ response: state, token, sent })); } catch { /* The current page still works with storage disabled. */ }
+const cached = readCache(draftKey);
+const saved = loadDraft(cached);
+let state = saved?.response || emptyResponse();
+let token = cached?.token || readCache(resumeKey) || '';
+let sent = saved?.sent || false;
+let step = saved?.step || 'name';
+let busy = false;
+let template = saved?.template || [];
+let revision = saved?.revision || 0;
+let syncedRevision = 0;
+let writingRevision = 0;
+let syncTimer;
+let cachedHere = Boolean(saved);
+
+const snapshot = () => ({ response: state, sent, step, template, revision });
+
+function writeCache() {
+  const data = JSON.stringify({ ...snapshot(), token });
+  for (const storage of ['localStorage', 'sessionStorage']) {
+    try {
+      window[storage].setItem(resumeKey, JSON.stringify(token));
+      window[storage].setItem(draftKey, data);
+      return true;
+    } catch { /* Fall back to storage that lasts for the current tab. */ }
+  }
+  return false;
+}
+
+function showDraftStatus(message) {
+  draftStatus.textContent = message;
+  draftStatus.hidden = !message || step === 'done';
+}
+
+function sendToSurvey(payload, keepalive = false) {
+  return fetch(submissionUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: publishableKey },
+    body: JSON.stringify({ ...payload, token }),
+    signal: AbortSignal.timeout(20000),
+    keepalive,
+  });
+}
+
+async function syncDraft() {
+  clearTimeout(syncTimer);
+  if (!submissionUrl || !token || revision <= Math.max(syncedRevision, writingRevision)) return;
+  const sentRevision = revision;
+  writingRevision = sentRevision;
+  try {
+    const result = await sendToSurvey({ action: 'save_draft', draft: snapshot() }, true);
+    if (!result.ok) throw Error('Could not sync draft.');
+    syncedRevision = Math.max(syncedRevision, sentRevision);
+    if (revision === sentRevision) showDraftStatus('Draft saved.');
+  } catch {
+    if (revision === sentRevision) showDraftStatus(cachedHere ? 'Saved on this device. Waiting to sync.' : 'Draft could not be saved yet.');
+  } finally {
+    if (writingRevision === sentRevision) writingRevision = 0;
+  }
+}
+
+function save(syncNow = false) {
+  token ||= crypto.randomUUID();
+  revision = Math.max(Date.now(), revision + 1);
+  cachedHere = writeCache();
+  showDraftStatus(cachedHere ? 'Saved on this device.' : 'Saving draft…');
+  clearTimeout(syncTimer);
+  if (syncNow) void syncDraft();
+  else syncTimer = setTimeout(syncDraft, 500);
+}
+
+async function restoreCloudDraft() {
+  if (!submissionUrl || !token) return;
+  const startingRevision = revision;
+  try {
+    const result = await sendToSurvey({ action: 'load_draft' });
+    if (!result.ok) return;
+    const { draft } = await result.json();
+    if (revision !== startingRevision) return;
+    if (draft && draft.revision > revision) {
+      // A refresh can race the previous tab’s final write. Only restore until local editing resumes.
+      const remote = cleanDraft(draft);
+      ({ response: state, sent, step, template, revision } = remote);
+      cachedHere = writeCache();
+      syncedRevision = revision;
+      render();
+      showDraftStatus('Draft saved.');
+    } else if (draft?.revision === revision) {
+      syncedRevision = revision;
+      showDraftStatus('Draft saved.');
+    } else {
+      void syncDraft();
+    }
+  } catch { /* The cached draft still works offline. */ }
 }
 
 const selectedDates = () => dates.filter((iso) => state.days[iso]?.status);
@@ -126,8 +227,9 @@ function foodPage() {
 function reviewPage() {
   const dayRows = selectedDates().map((iso) => {
     const day = state.days[iso];
+    const times = validateWindows(day.windows) ? day.windows.map(([start, end]) => displayTime(start) + '–' + displayTime(end)).join(', ') : 'Time window incomplete';
     return '<li><strong>' + dateLabel.format(dateObject(iso)) + '</strong> <span class="badge day-' + day.status + '">' +
-      statuses[day.status] + '</span><br>' + day.windows.map(([start, end]) => displayTime(start) + '–' + displayTime(end)).join(', ') +
+      statuses[day.status] + '</span><br>' + times +
       (day.note ? '<br><span class="help">' + escape(day.note) + '</span>' : '') + '</li>';
   }).join('');
   const activityRows = activities.filter(([id]) => state.activities[id]).map(([id, label]) => '<li>' + label + ' <span class="help">· ' +
@@ -149,8 +251,10 @@ function showError(message) {
 
 function render(focus = false) {
   const pages = steps();
+  if (!(step === 'done' && sent) && !pages.some(([id]) => step === id)) step = 'days';
   const position = pages.findIndex(([id]) => step === id);
   const done = step === 'done';
+  draftStatus.hidden = done || !draftStatus.textContent;
   const count = pages.length;
   const value = done ? count : position + 1;
   progress.innerHTML = '<span>' + (done ? 'Complete' : pages[position][1]) + '</span><span>' + value + ' / ' + count +
@@ -204,6 +308,7 @@ form.addEventListener('click', (event) => {
   const { action, date, index } = target.dataset;
   if (action === 'jump' || action === 'back') {
     step = action === 'jump' ? target.dataset.step : steps()[steps().findIndex(([id]) => id === step) - 1][0];
+    save(true);
     render(true);
     return;
   }
@@ -218,7 +323,7 @@ form.addEventListener('click', (event) => {
     state.days[date].status = 0;
     state.days[date].windows = [];
     if (Number(step.at(-1)) >= timePageCount()) step = 'activity-0';
-    save();
+    save(true);
     render(true);
     return;
   }
@@ -282,6 +387,7 @@ form.addEventListener('submit', async (event) => {
   if (step !== 'review') {
     const pages = steps();
     step = pages[pages.findIndex(([id]) => id === step) + 1][0];
+    save(true);
     render(true);
     return;
   }
@@ -295,19 +401,13 @@ form.addEventListener('submit', async (event) => {
   submit.textContent = 'Saving…';
   try {
     const response = cleanResponse(state);
-    token ||= crypto.randomUUID();
-    save();
-    const request = await fetch(submissionUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', apikey: publishableKey },
-      body: JSON.stringify({ token, response }),
-      signal: AbortSignal.timeout(20000),
-    });
+    save(true);
+    const request = await sendToSurvey({ response });
     if (!request.ok) throw Error('Your draft is safe on this device. Try sending again in a moment.');
     Object.assign(state, response);
     sent = true;
-    save();
     step = 'done';
+    save(true);
     render(true);
   } catch (problem) {
     showError(problem instanceof TypeError || problem.name === 'TimeoutError' ?
@@ -320,3 +420,10 @@ form.addEventListener('submit', async (event) => {
 });
 
 render();
+if (cachedHere && revision) showDraftStatus('Saved on this device.');
+void restoreCloudDraft();
+window.addEventListener('online', syncDraft);
+window.addEventListener('pagehide', syncDraft);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') void syncDraft();
+});
