@@ -29,10 +29,18 @@ export const presets = [
   ['Evening', '17:00', '21:00'], ['All day', '09:00', '21:00'],
 ];
 
-export const emptyResponse = () => ({ name: '', days: {}, activities: {}, food: [], foodNote: '' });
+export const activitySuggestionLimit = 80;
+export const communityActivityId = /^community-[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/;
+export const emptyResponse = () => ({ name: '', days: {}, activities: {}, activitySuggestion: '', food: [], foodNote: '' });
 
 const validTime = (time) => typeof time === 'string' && /^(?:0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/.test(time);
 const choices = new Set(participation.map(([id]) => id));
+const activityIds = new Set(activities.map(([id]) => id));
+
+function cleanVotes(votes) {
+  return Object.fromEntries(Object.entries(votes ?? {}).filter(([id, answer]) =>
+    (activityIds.has(id) || communityActivityId.test(id)) && choices.has(answer)));
+}
 
 export function cleanDraft(draft) {
   if (!draft?.response || !Number.isSafeInteger(draft.revision) || draft.revision < 0) throw Error('Invalid draft.');
@@ -42,6 +50,7 @@ export function cleanDraft(draft) {
     [0, 1].map((index) => validTime(window?.[index]) ? window[index] : '')) : [];
   const response = emptyResponse();
   response.name = text(value.name, 80);
+  response.activitySuggestion = text(value.activitySuggestion, activitySuggestionLimit);
   response.foodNote = text(value.foodNote, 1000);
   response.food = foodOptions.filter(([id]) => Array.isArray(value.food) && value.food.includes(id)).map(([id]) => id);
   for (const iso of dates) {
@@ -49,12 +58,9 @@ export function cleanDraft(draft) {
     if (!day || ![0, 1, 2].includes(day.status)) continue;
     response.days[iso] = { status: day.status, windows: windows(day.windows), note: text(day.note, 500) };
   }
-  for (const [id] of activities) {
-    const answer = value.activities?.[id];
-    if (choices.has(answer)) response.activities[id] = answer;
-  }
+  response.activities = cleanVotes(value.activities);
   const page = text(draft.step, 20);
-  const step = /^(name|days|times-[0-3]|activity-[0-2]|food|review|done)$/.test(page) ? page : 'name';
+  const step = /^(name|days|times-[0-3]|activity-[0-2]|suggested-\d+|food|review|done)$/.test(page) ? page : 'name';
   return { response, step, sent: draft.sent === true, template: windows(draft.template).slice(0, 1), revision: draft.revision };
 }
 
@@ -85,9 +91,12 @@ export function cleanResponse(value) {
     }
     result.days[iso] = { status: day.status, windows, note: day.note.trim() };
   }
-  for (const [id] of activities) {
-    const answer = value.activities?.[id];
-    if (choices.has(answer)) result.activities[id] = answer;
+  result.activities = cleanVotes(value.activities);
+  if (value.activitySuggestion !== undefined) {
+    if (typeof value.activitySuggestion !== 'string' || value.activitySuggestion.length > activitySuggestionLimit) {
+      throw Error('Keep your activity suggestion under 80 characters.');
+    }
+    result.activitySuggestion = value.activitySuggestion.trim().replace(/\s+/g, ' ');
   }
   result.food = foodOptions.filter(([id]) => Array.isArray(value.food) && value.food.includes(id)).map(([id]) => id);
   if (typeof value.foodNote !== 'string' || value.foodNote.length > 1000) throw Error('Keep food ideas under 1,000 characters.');
