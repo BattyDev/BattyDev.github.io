@@ -128,6 +128,7 @@ textarea { resize: vertical; }
 .window { display: flex; gap: .45rem; align-items: end; margin: .45rem 0; }
 .window label { flex: 1; min-width: 0; font-size: .875rem; font-weight: 700; }
 .window input { margin-top: .2rem; font-size: 1rem; padding-inline: .35rem; }
+.time-actions { display: flex; flex-wrap: wrap; gap: .35rem; }
 .remove { min-width: 2.75rem; }
 details { margin-top: .5rem; }
 summary { width: fit-content; min-height: 2.5rem; padding: .6rem .05rem; font-weight: 650; color: var(--pine); }
@@ -143,16 +144,11 @@ summary { width: fit-content; min-height: 2.5rem; padding: .6rem .05rem; font-we
 .activity-icon.loaded img { opacity: 1; }
 .activity-icon.loaded span { visibility: hidden; }
 .choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .3rem; }
-.choices label, .food-options label { cursor: pointer; }
-.choices label { display: grid; }
+.choices label { display: grid; cursor: pointer; }
 .choices span { display: grid; place-items: center; min-height: 2.8rem; padding: .3rem .12rem; text-align: center; line-height: 1.2; font-size: .875rem; font-weight: 650; border: 1px solid var(--line); border-radius: .55rem; background: #f7f6ef; }
 .choices input:checked + span { background: #204e3d; color: white; border-color: #204e3d; }
 .choices input:focus-visible + span { outline: 3px solid #aa6200; outline-offset: 2px; }
 .choices input, .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.food-options { padding: 0; margin: 0; border: 0; }
-.food-options legend { font-weight: 700; padding: 0; }
-.food-options label { display: flex; gap: .65rem; align-items: center; min-height: 2.75rem; }
-.food-options input { width: 1.2rem; height: 1.2rem; margin: 0; accent-color: var(--pine); }
 .optional { font-size: .875rem; font-weight: 500; color: var(--muted); margin-left: .3rem; }
 .review-section { padding: .7rem 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
 .review-section h2 { display: inline-block; margin-right: .5rem; }

@@ -1,4 +1,4 @@
-import { activities, cleanResponse, dates, emptyResponse, foodOptions, participation, presets, statuses, validateWindows } from './survey.js?v=1';
+import { activities, cleanResponse, dates, emptyResponse, participation, presets, statuses, validateWindows } from './survey.js?v=1';
 import { publishableKey, submissionUrl } from './config.js?v=2';
 
 const draftKey = 'adcock-holiday-2026';
@@ -94,10 +94,13 @@ function timePage(index) {
     datesOnPage(index).map((iso) => {
       const day = state.days[iso];
       const windows = day.windows.length ? day.windows : [['', '']];
+      const dateAttributes = 'data-date="' + iso + '"';
       return '<section class="subcard time-card" data-day="' + iso + '"><div class="time-title"><h2>' +
         dateLabel.format(dateObject(iso)) + '</h2><span class="badge day-' + day.status + '">' + statuses[day.status] + '</span></div>' +
-        presetButtons(iso, windows) + timeFields(iso, windows) +
-        (windows.length < 6 ? button('+ Add another window', 'add-window', 'data-date="' + iso + '"') : '') +
+        presetButtons(iso, windows) + timeFields(iso, windows) + '<div class="time-actions">' +
+        (windows.length < 6 ? button('+ Add another window', 'add-window', dateAttributes) : '') +
+        button('Clear times', 'clear-times', dateAttributes) +
+        button('Mark unavailable', 'mark-unavailable', dateAttributes) + '</div>' +
         '<details ' + (day.note ? 'open' : '') + '><summary>Add a note for this day</summary><label class="sr-only" for="note-' + iso + '">Anything we should know about ' + dateLabel.format(dateObject(iso)) + '?</label>' +
         '<textarea id="note-' + iso + '" data-date="' + iso + '" maxlength="500" rows="2" placeholder="Anything we should know about this day?">' + escape(day.note) + '</textarea></details></section>';
     }).join('');
@@ -114,11 +117,8 @@ function activityPage(index) {
 }
 
 function foodPage() {
-  return heading('What sounds good to eat?', 'Pick any options you’d enjoy. A favorite dish, restaurant, or dietary need would help with planning.') +
-    '<fieldset class="food-options"><legend>Food options <span class="optional">Optional</span></legend>' +
-    foodOptions.map(([id, label]) => '<label><input type="checkbox" name="food" value="' + id + '" ' +
-      (state.food.includes(id) ? 'checked' : '') + '><span>' + label + '</span></label>').join('') +
-    '</fieldset><label class="field">Food ideas or requests <span class="optional">Optional</span>' +
+  return heading('What sounds good to eat?', 'Share any dishes, restaurants, or dietary needs you’d like us to consider.') +
+    '<label class="field">Food ideas or requests <span class="optional">Optional</span>' +
     '<textarea name="foodNote" rows="4" maxlength="1000" placeholder="Pizza from a favorite spot, a taco night, gluten-free options…">' +
     escape(state.foodNote) + '</textarea></label>';
 }
@@ -132,7 +132,6 @@ function reviewPage() {
   }).join('');
   const activityRows = activities.filter(([id]) => state.activities[id]).map(([id, label]) => '<li>' + label + ' <span class="help">· ' +
     participation.find(([value]) => value === state.activities[id])[1] + '</span></li>').join('');
-  const foodLabels = foodOptions.filter(([id]) => state.food.includes(id)).map(([, label]) => label);
   return heading('Ready to send?', 'Take a quick look before you share your response.') +
     '<div class="review-section"><h2>First name</h2>' + button('Edit first name', 'jump', 'data-step="name"') + '<p>' + escape(state.name) + '</p></div>' +
     '<div class="review-section"><h2>Availability</h2>' + button('Edit days', 'jump', 'data-step="days"') +
@@ -140,8 +139,7 @@ function reviewPage() {
     '<div class="review-section"><h2>Activities</h2>' + button('Edit activities', 'jump', 'data-step="activity-0"') +
     (activityRows ? '<ul>' + activityRows + '</ul>' : '<p>No activities answered.</p>') + '</div>' +
     '<div class="review-section"><h2>Food</h2>' + button('Edit food', 'jump', 'data-step="food"') +
-    '<p>' + escape(foodLabels.join(', ') || 'No options selected.') + '</p>' +
-    (state.foodNote ? '<p class="food-note">' + escape(state.foodNote) + '</p>' : '') + '</div>';
+    '<p class="food-note">' + escape(state.foodNote.trim() || 'No food suggestions added.') + '</p></div>';
 }
 
 function showError(message) {
@@ -212,7 +210,17 @@ form.addEventListener('click', (event) => {
   if (action === 'day') {
     const day = state.days[date] || { status: 0, windows: [], note: '' };
     day.status = (day.status + 1) % statuses.length;
+    if (day.status === 0) day.windows = [];
     state.days[date] = day;
+  }
+  if (action === 'clear-times') state.days[date].windows = [];
+  if (action === 'mark-unavailable') {
+    state.days[date].status = 0;
+    state.days[date].windows = [];
+    if (Number(step.at(-1)) >= timePageCount()) step = 'activity-0';
+    save();
+    render(true);
+    return;
   }
   if (action === 'clear-activity') delete state.activities[target.dataset.id];
   if (action === 'apply-template') {
@@ -234,7 +242,6 @@ form.addEventListener('input', ({ target }) => {
   const { name, value, dataset } = target;
   if (name === 'name') state.name = value;
   if (name === 'foodNote') state.foodNote = value;
-  if (name === 'food') state.food = Array.from(form.querySelectorAll('input[name="food"]:checked'), (input) => input.value);
   if (target.type === 'radio') {
     state.activities[name] = value;
     const activity = target.closest('.activity');
@@ -267,7 +274,7 @@ form.addEventListener('submit', async (event) => {
   if (step.startsWith('times-')) {
     const invalid = datesOnPage(Number(step.at(-1))).find((iso) => !validateWindows(state.days[iso].windows));
     if (invalid) {
-      showError('Add a valid time window for ' + dateLabel.format(dateObject(invalid)) + '. Use times between 9 a.m. and 9 p.m.');
+      showError('Add a time window between 9 a.m. and 9 p.m. for ' + dateLabel.format(dateObject(invalid)) + ', or mark the date unavailable.');
       stepPanel.querySelector('[data-day="' + invalid + '"] input').focus();
       return;
     }
