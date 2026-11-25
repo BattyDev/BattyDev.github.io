@@ -172,7 +172,7 @@ export class Hud {
     const reduced = document.documentElement.classList.contains("reduced");
     this.bars.innerHTML = "";
     for (const bar of snapshot.bars) {
-      const p = project(bar.x, 1.35, bar.z, width, height);
+      const p = project(bar.x, 2.2, bar.z, width, height);
       const row = document.createElement("div");
       row.className = "bar";
       row.style.left = `${p.x}px`;

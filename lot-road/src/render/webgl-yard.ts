@@ -26,6 +26,26 @@ import type { RenderSnapshot, SnapshotProp, YardRenderer } from "./types";
 const HOT = new THREE.Color("#E6FF3D");
 const IDLE = new THREE.Color("#1C1915");
 
+/** Chunky camp silhouettes. Does not move collision or the pad circles. */
+const CAMP_CHUNK: Record<string, number> = {
+  grill: 1.65,
+  mill: 1.65,
+  forge: 1.75,
+  counter: 1.65,
+  hearth: 1.5,
+  deck: 1.5,
+  grove: 1.65,
+  stone: 1.6,
+  beast: 1.7,
+  wolf: 1.7,
+  seal: 1.65,
+  raw: 1.8,
+  bill: 1.8,
+  wood: 1.8,
+  meat: 1.8,
+  smoke: 1.45,
+};
+
 function paint(geo: THREE.BufferGeometry, hex: string): THREE.BufferGeometry {
   const color = new THREE.Color(hex);
   const count = geo.getAttribute("position").count;
@@ -783,9 +803,14 @@ export class WebglYard implements YardRenderer {
     let sx = 1;
     let sy = 1;
     let sz = 1;
+    // Visual size only. Pads, the fence, and the yard radius stay as they are.
+    const chunk = CAMP_CHUNK[prop.kind] ?? 1;
+    sx = chunk;
+    sy = chunk;
+    sz = chunk;
     if (prop.kind === "smoke") y = 0.15 + Math.sin(snapshot.time / 180) * 0.12;
     if (prop.kind === "reed" || prop.kind === "clay" || prop.kind === "grove") {
-      sy = Math.max(0.2, prop.scale);
+      sy = Math.max(0.2, prop.scale) * chunk;
     }
     if (prop.kind === "pile") {
       const bulk = 0.85 + prop.scale * 0.4;
@@ -810,6 +835,7 @@ export class WebglYard implements YardRenderer {
       boss.position.set(snapshot.boss.x, 0, snapshot.boss.z);
       boss.rotation.z = Math.sin(snapshot.boss.swing * Math.PI) * 0.45;
       boss.rotation.y = snapshot.boss.facing;
+      boss.scale.setScalar(1.75);
       const pack = boss.getObjectByName("pack");
       const cash = boss.getObjectByName("cash");
       const meat = snapshot.carry.raw + snapshot.carry.cooked;
@@ -851,7 +877,7 @@ export class WebglYard implements YardRenderer {
       const bob = data.walking && !snapshot.reduced ? Math.sin(snapshot.time / 90 + i) * 0.06 : 0;
       hand.position.y = bob;
       hand.rotation.y = data.walking ? 0.4 : 0.85;
-      hand.scale.setScalar(1);
+      hand.scale.setScalar(1.65);
     }
   }
 

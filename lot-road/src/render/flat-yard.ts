@@ -98,7 +98,7 @@ export class FlatYard implements YardRenderer {
       y: project(snapshot.boss.x, 0, snapshot.boss.z, w, h).y,
       draw: () => {
         if (snapshot.ring) this.ring(snapshot.boss.x, snapshot.boss.z);
-        this.person(snapshot.boss.x, snapshot.boss.z, snapshot.ring ? "#7EB6E6" : "#F6EFE2", snapshot.ring ? "#F7F4EC" : "#C43B3B", 1.9);
+        this.person(snapshot.boss.x, snapshot.boss.z, snapshot.ring ? "#7EB6E6" : "#F6EFE2", snapshot.ring ? "#F7F4EC" : "#C43B3B", snapshot.ring ? 3.2 : 1.9);
         if (snapshot.ring) this.pack(snapshot.boss.x, snapshot.boss.z, snapshot.carry);
       },
     });
@@ -113,7 +113,7 @@ export class FlatYard implements YardRenderer {
       const p = project(hand.x, 0, hand.z, w, h);
       sprites.push({
         y: p.y,
-        draw: () => this.person(hand.x, hand.z, hand.color, null, 1.7),
+        draw: () => this.person(hand.x, hand.z, hand.color, null, snapshot.ring ? 2.9 : 1.7),
       });
     });
     sprites.sort((a, b) => a.y - b.y);
@@ -143,7 +143,8 @@ export class FlatYard implements YardRenderer {
       ctx.fill();
     }
     const worldH =
-      prop.kind === "grove" ? 1.15 * prop.scale : prop.kind === "beast" ? 0.55 : prop.kind === "pad" || prop.kind === "coin" ? 0.16 : prop.kind === "wood" || prop.kind === "meat" ? 0.22 : prop.kind === "pile" ? 0.4 : prop.kind === "reed" || prop.kind === "clay" ? 0.35 + prop.scale * 0.7 : prop.kind === "boat" ? 0.45 : 1;
+      (prop.kind === "grove" ? 1.15 * prop.scale : prop.kind === "beast" ? 0.55 : prop.kind === "pad" || prop.kind === "coin" ? 0.16 : prop.kind === "wood" || prop.kind === "meat" ? 0.22 : prop.kind === "pile" ? 0.4 : prop.kind === "reed" || prop.kind === "clay" ? 0.35 + prop.scale * 0.7 : prop.kind === "boat" ? 0.45 : 1) *
+      (snapshot.ring && ["grove", "beast", "wolf", "seal", "grill", "mill", "forge", "counter", "hearth", "deck", "stone", "raw", "bill", "smoke"].includes(prop.kind) ? 1.65 : 1);
     const height = this.worldHeight(x, z, worldH);
     const colors: Record<string, string> = {
       reed: "#7BA04A",

@@ -139,13 +139,24 @@ export function beastGeo(wounds: number): THREE.BufferGeometry {
 }
 
 export function wolfGeo(wounds = 0): THREE.BufferGeometry {
-  const mane: Part[] = [
-    [-0.14, 0.66, 0.22],
-    [0.14, 0.66, 0.22],
-    [-0.16, 0.52, 0.12],
-    [0.16, 0.52, 0.12],
-    [0, 0.74, 0.16],
-  ].map(([x, y, z]) => ({ geo: ico(0.08), color: "#4A5C6E", x, y, z, sx: 0.75, sy: 1.15, sz: 0.7 }));
+  const mane: Part[] = [];
+  for (let i = 0; i < 8; i += 1) {
+    const angle = (i / 8) * Math.PI * 2;
+    mane.push({
+      geo: ico(0.1),
+      color: i % 2 ? "#3E4E60" : "#4A5C6E",
+      x: Math.sin(angle) * 0.18,
+      y: 0.64 + (i % 2) * 0.08,
+      z: 0.26 + Math.cos(angle) * 0.12,
+      sx: 0.65,
+      sy: 1.35,
+      sz: 0.6,
+    });
+  }
+  mane.push(
+    { geo: ico(0.08), color: "#3E4E60", x: -0.13, y: 0.6, z: 0.44, sx: 0.55, sy: 1.2, sz: 0.85 },
+    { geo: ico(0.08), color: "#3E4E60", x: 0.13, y: 0.6, z: 0.44, sx: 0.55, sy: 1.2, sz: 0.85 },
+  );
   return mergeParts([
     { geo: ico(0.28, 1), color: "#7E93A8", y: 0.48, sx: 0.72, sy: 0.78, sz: 1.3 },
     { geo: ico(0.15, 1), color: "#6E8498", z: 0.4, y: 0.64 },
@@ -168,10 +179,20 @@ export function wolfGeo(wounds = 0): THREE.BufferGeometry {
 export function sealGeo(wounds = 0): THREE.BufferGeometry {
   const whiskers: Part[] = [];
   for (const side of [-1, 1]) {
-    whiskers.push(
-      { geo: box(0.2, 0.015, 0.015), color: "#F7FBFD", x: side * 0.18, y: 0.4, z: 0.52, rz: side * 0.35 },
-      { geo: box(0.16, 0.015, 0.015), color: "#F7FBFD", x: side * 0.16, y: 0.36, z: 0.52, rz: side * 0.05 },
-    );
+    for (const fan of [
+      { y: 0.46, rz: 0.5, len: 0.36 },
+      { y: 0.41, rz: 0.15, len: 0.32 },
+      { y: 0.36, rz: -0.25, len: 0.28 },
+    ]) {
+      whiskers.push({
+        geo: box(fan.len, 0.02, 0.02),
+        color: "#F7FBFD",
+        x: side * (0.1 + fan.len * 0.42),
+        y: fan.y,
+        z: 0.56,
+        rz: side * fan.rz,
+      });
+    }
   }
   return mergeParts([
     { geo: ball(0.34, 8, 6), color: "#8A97A3", y: 0.3, sx: 1.05, sy: 0.7, sz: 1.3 },
@@ -287,16 +308,18 @@ export function millGeo(): THREE.BufferGeometry {
 
 export function forgeGeo(): THREE.BufferGeometry {
   return mergeParts([
-    { geo: box(0.9, 0.08, 0.78), color: "#C5CCD1", y: 0.04 },
-    { geo: box(0.64, 0.3, 0.56), color: "#6E767E", y: 0.22 },
-    { geo: box(0.46, 0.26, 0.42), color: "#5C656E", y: 0.48 },
-    { geo: box(0.32, 0.3, 0.3), color: "#4E565E", y: 0.74 },
-    { geo: box(0.16, 0.08, 0.14), color: "#2A2724", y: 0.92 },
-    { geo: box(0.24, 0.18, 0.06), color: "#F2B134", z: 0.3, y: 0.28 },
-    { geo: box(0.12, 0.1, 0.04), color: "#E07A3D", z: 0.33, y: 0.26 },
-    { geo: box(0.42, 0.1, 0.16), color: "#3A3E44", z: 0.62, y: 0.2 },
-    { geo: box(0.14, 0.16, 0.12), color: "#2A2724", z: 0.58, y: 0.08 },
-    { geo: box(0.18, 0.08, 0.1), color: "#4A5158", z: 0.78, y: 0.22 },
+    { geo: box(1.2, 0.08, 1.0), color: "#D5D8DC", y: 0.04 },
+    { geo: box(0.82, 0.34, 0.72), color: "#6A727A", y: 0.24 },
+    { geo: box(0.58, 0.3, 0.52), color: "#596168", y: 0.54 },
+    { geo: box(0.4, 0.32, 0.38), color: "#4A525A", y: 0.82 },
+    { geo: box(0.24, 0.24, 0.24), color: "#3E464E", y: 1.08 },
+    { geo: box(0.12, 0.08, 0.12), color: "#1C1915", y: 1.22 },
+    { geo: box(0.3, 0.24, 0.08), color: "#2A2724", z: 0.36, y: 0.32 },
+    { geo: box(0.2, 0.16, 0.05), color: "#F2B134", z: 0.4, y: 0.32 },
+    { geo: box(0.1, 0.1, 0.04), color: "#FFF1C9", z: 0.43, y: 0.3 },
+    { geo: box(0.5, 0.1, 0.16), color: "#3A3E44", z: 0.78, y: 0.24 },
+    { geo: box(0.16, 0.18, 0.14), color: "#2A2724", z: 0.72, y: 0.1 },
+    { geo: cone(0.08, 0.26, 5), color: "#4A5158", z: 1.02, y: 0.26, rx: Math.PI / 2 },
   ]);
 }
 

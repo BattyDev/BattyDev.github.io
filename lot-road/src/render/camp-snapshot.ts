@@ -158,8 +158,8 @@ export function campSnapshot(state: CampState, time: number, reduced: boolean): 
   const front = state.order === "plank" ? "#3D6EA5" : state.order === "bar" ? "#E6C56A" : "#C43838";
   const line = [front, ...coats.filter((color) => color !== front)];
   const customers = [0, 1, 2].map((i) => ({
-    x: state.counterAt.x + (i - 1) * 0.62,
-    z: state.counterAt.z + 1.05 + i * 0.05,
+    x: state.counterAt.x + (i - 1) * 1.05,
+    z: state.counterAt.z + 1.45 + i * 0.04,
     color: line[i] ?? front,
     walking: i === 0 && state.serveCd > 0,
   }));
@@ -202,12 +202,12 @@ export function campSnapshot(state: CampState, time: number, reduced: boolean): 
     palette,
     props,
     dressing: [
-      { kind: "tree", x: -8.2, z: 2.4, scale: 1.35 },
-      { kind: "tree", x: 8.4, z: 1.6, scale: 1.2 },
-      { kind: "tree", x: -6.4, z: -7.2, scale: 1.45 },
-      { kind: "tree", x: 7.2, z: -6.4, scale: 1.15 },
-      { kind: "rock", x: 8.1, z: -3.2, scale: 1.1 },
-      { kind: "rock", x: -7.6, z: 5.4, scale: 0.9 },
+      { kind: "tree", x: -8.2, z: 2.4, scale: 1.9 },
+      { kind: "tree", x: 8.4, z: 1.6, scale: 1.7 },
+      { kind: "tree", x: -6.4, z: -7.2, scale: 2.05 },
+      { kind: "tree", x: 7.2, z: -6.4, scale: 1.6 },
+      { kind: "rock", x: 8.1, z: -3.2, scale: 1.55 },
+      { kind: "rock", x: -7.6, z: 5.4, scale: 1.3 },
     ],
     hands,
     boss: { x: state.x, z: state.z, swing: state.swing / 280, facing: state.facing },
