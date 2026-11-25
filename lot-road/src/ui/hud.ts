@@ -16,6 +16,7 @@ export interface HudHooks {
   onTravel: () => void;
   onDismissFuture: () => void;
   onReplay: () => void;
+  onFullscreen: () => void;
 }
 
 /**
@@ -38,6 +39,7 @@ export class Hud {
   private panel!: HTMLElement;
   private card!: HTMLElement;
   private debugEl!: HTMLElement;
+  private fullBtn!: HTMLButtonElement;
   private freshArmed = false;
   private canReplay = false;
   private cardKey = "";
@@ -52,6 +54,7 @@ export class Hud {
             <p class="yard-name"></p>
             <div class="pips"></div>
             <button class="pause" type="button" aria-label="Pause">II</button>
+            <button class="full" type="button" aria-label="Full screen">Full</button>
           </div>
           <div class="stack"></div>
         </div>
@@ -87,6 +90,7 @@ export class Hud {
     this.panel = host.querySelector(".panel") as HTMLElement;
     this.card = host.querySelector(".card") as HTMLElement;
     this.debugEl = host.querySelector(".debug") as HTMLElement;
+    this.fullBtn = host.querySelector(".full") as HTMLButtonElement;
     // The goal sits just above the button. Pull it into the bottom stack.
     const bottom = host.querySelector(".bottom") as HTMLElement;
     bottom.prepend(this.goal);
@@ -104,6 +108,21 @@ export class Hud {
       event.stopPropagation();
       this.togglePause();
     });
+    this.fullBtn.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.hooks.onFullscreen();
+    });
+  }
+
+  /** A desktop without the fullscreen API hides the control. Phones are hidden in CSS. */
+  showFullscreen(available: boolean): void {
+    this.fullBtn.classList.toggle("no-api", !available);
+  }
+
+  setFullscreen(active: boolean): void {
+    this.fullBtn.textContent = active ? "Exit" : "Full";
+    this.fullBtn.setAttribute("aria-label", active ? "Exit full screen" : "Full screen");
   }
 
   flashDown(): void {

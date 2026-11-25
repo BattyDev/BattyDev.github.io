@@ -32,6 +32,15 @@ body {
   -webkit-user-select: none;
 }
 
+/* Author width would keep the yard at 480px inside the fullscreen viewport. */
+#app:fullscreen,
+#app:-webkit-full-screen {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  background: #d5e6ee;
+}
+
 @media (max-width: 520px) {
   #app { width: 100vw; }
 }
@@ -91,17 +100,34 @@ body {
 
 .pip.on { background: var(--ink); }
 
-.pause {
+.pause, .full {
   pointer-events: auto;
-  width: 44px;
   height: 44px;
-  margin-top: 28px;
   border: 0;
   border-radius: 12px;
   background: var(--cream);
   color: var(--ink);
   font-family: "Lilita One", sans-serif;
+}
+
+.pause {
+  width: 44px;
+  margin-top: 28px;
   font-size: 18px;
+}
+
+.full {
+  display: block;
+  margin-top: 8px;
+  padding: 0 12px;
+  font-size: 16px;
+}
+
+.full.no-api { display: none !important; }
+
+/* A phone already fills the glass. Fullscreen is a desktop control. */
+@media (pointer: coarse) {
+  .full { display: none !important; }
 }
 
 .stack { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }

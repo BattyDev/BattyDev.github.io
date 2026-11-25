@@ -5,7 +5,7 @@ import { getMap, hasMap, startingMap } from "./content/maps/registry";
 import type { MapDef } from "./content/types";
 import { SAVE_KEY, tuning } from "./content/tuning";
 import { AudioBus, type Cue } from "./audio/bus";
-import { worldMove } from "./input/stick";
+import { screenAxes, worldMove } from "./input/stick";
 import { campSnapshot } from "./render/camp-snapshot";
 import type { YardRenderer } from "./render/types";
 import { loadFromStorage, parkFutureSave, toBlob, writeSave } from "./save/storage";
@@ -103,7 +103,9 @@ const hud = new Hud(app, {
     hud.showBanner("", false);
     flushNow();
   },
+  onFullscreen: () => toggleFullscreen(),
 });
+hud.showFullscreen(fullscreenAvailable());
 
 app.appendChild(stickEl);
 audio.muted = state.profile.settings.muted;
@@ -146,7 +148,7 @@ function frame(now: number): void {
 requestAnimationFrame(frame);
 
 app.addEventListener("pointerdown", (event) => {
-  if ((event.target as HTMLElement).closest(".pause, .panel, .card, .banner")) return;
+  if ((event.target as HTMLElement).closest(".pause, .full, .panel, .card, .banner")) return;
   if (event.pointerType === "touch" && !event.isPrimary) return;
   audio.unlock();
   if (hud.paused() || futureHold) return;
@@ -173,14 +175,27 @@ app.addEventListener("contextmenu", (event) => event.preventDefault());
 
 window.addEventListener("keydown", (event) => {
   if (event.code.startsWith("Arrow") || event.code === "Space") event.preventDefault();
+  if (event.repeat) return;
+  const target = event.target;
+  if (target instanceof HTMLElement && target.closest("input, textarea")) return;
+  // KeyF, not F11. F11 is the browser's own fullscreen shortcut.
+  if (event.code === "KeyF" && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    toggleFullscreen();
+    return;
+  }
+  if (event.metaKey || event.ctrlKey || event.altKey) return;
   held.add(event.code);
   audio.unlock();
 });
 window.addEventListener("keyup", (event) => held.delete(event.code));
+window.addEventListener("blur", () => held.clear());
+document.addEventListener("fullscreenchange", () => hud.setFullscreen(isFullscreen()));
+document.addEventListener("webkitfullscreenchange", () => hud.setFullscreen(isFullscreen()));
 
 document.addEventListener("visibilitychange", () => {
   hidden = document.hidden;
   if (hidden) {
+    held.clear();
     flushNow();
   } else {
     last = performance.now();
@@ -192,14 +207,40 @@ window.addEventListener("pagehide", () => flushNow());
 function readMove(): { x: number; z: number } {
   const rect = app.getBoundingClientRect();
   if (stick) return worldMove(stick.x - stick.ox, stick.y - stick.oy, rect.width, rect.height);
-  let sx = 0;
-  let sy = 0;
-  if (held.has("KeyA") || held.has("ArrowLeft")) sx -= 1;
-  if (held.has("KeyD") || held.has("ArrowRight")) sx += 1;
-  if (held.has("KeyW") || held.has("ArrowUp")) sy -= 1;
-  if (held.has("KeyS") || held.has("ArrowDown")) sy += 1;
-  if (!sx && !sy) return { x: 0, z: 0 };
-  return worldMove(sx * 80, sy * 80, rect.width, rect.height);
+  const axes = screenAxes(held);
+  if (!axes) return { x: 0, z: 0 };
+  return worldMove(axes.x * 80, axes.y * 80, rect.width, rect.height);
+}
+
+type FullscreenElement = HTMLElement & { webkitRequestFullscreen?: () => void };
+type FullscreenDocument = Document & {
+  webkitFullscreenEnabled?: boolean;
+  webkitFullscreenElement?: Element | null;
+  webkitExitFullscreen?: () => void;
+};
+
+function fullscreenAvailable(): boolean {
+  const el = app as FullscreenElement;
+  const doc = document as FullscreenDocument;
+  const enabled = document.fullscreenEnabled || !!doc.webkitFullscreenEnabled;
+  return enabled && typeof (el.requestFullscreen || el.webkitRequestFullscreen) === "function";
+}
+
+function isFullscreen(): boolean {
+  const doc = document as FullscreenDocument;
+  return document.fullscreenElement === app || doc.webkitFullscreenElement === app;
+}
+
+function toggleFullscreen(): void {
+  if (!fullscreenAvailable()) return;
+  const el = app as FullscreenElement;
+  const doc = document as FullscreenDocument;
+  const done = isFullscreen()
+    ? (document.exitFullscreen?.bind(document) ?? doc.webkitExitFullscreen?.bind(document))?.()
+    : (el.requestFullscreen?.bind(el) ?? el.webkitRequestFullscreen?.bind(el))?.();
+  void Promise.resolve(done).catch(() => {
+    /* The browser refused the gesture. Leave the yard as it is. */
+  });
 }
 
 function placeStick(): void {

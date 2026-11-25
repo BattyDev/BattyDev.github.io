@@ -1,6 +1,21 @@
 import { project } from "../render/project";
 
 /**
+ * Desktop keys share the joystick's screen axes. Up on the keyboard is
+ * up the yard. WASD and the arrows are the same stick.
+ */
+export function screenAxes(held: { has(code: string): boolean }): { x: number; y: number } | null {
+  let x = 0;
+  let y = 0;
+  if (held.has("KeyA") || held.has("ArrowLeft")) x -= 1;
+  if (held.has("KeyD") || held.has("ArrowRight")) x += 1;
+  if (held.has("KeyW") || held.has("ArrowUp")) y -= 1;
+  if (held.has("KeyS") || held.has("ArrowDown")) y += 1;
+  if (!x && !y) return null;
+  return { x, y };
+}
+
+/**
  * A finger drag is a direction on the screen. Turn it into a world step
  * so "up" on the glass is up the yard, not up the world Z axis.
  */
