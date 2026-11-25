@@ -74,11 +74,13 @@ export class FlatYard implements YardRenderer {
     ctx.fillStyle = snapshot.palette.pad;
     ctx.fill();
 
-    const water = project(2.7, 0, 2.5, w, h);
-    ctx.fillStyle = snapshot.palette.water;
-    ctx.beginPath();
-    ctx.ellipse(water.x, water.y, 54, 28, -0.5, 0, Math.PI * 2);
-    ctx.fill();
+    if (snapshot.mapId !== "camp") {
+      const water = project(2.7, 0, 2.5, w, h);
+      ctx.fillStyle = snapshot.palette.water;
+      ctx.beginPath();
+      ctx.ellipse(water.x, water.y, 54, 28, -0.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     for (const tuft of snapshot.dressing) {
       if (tuft.kind === "tree") this.upright(tuft.x, tuft.z, 0.9 * tuft.scale, "#7BA04A");
@@ -127,6 +129,13 @@ export class FlatYard implements YardRenderer {
       z += snapshot.boatAway * 1.8;
     }
     const p = project(x, 0, z, this.width, this.height);
+    if (prop.kind.startsWith("mark-")) {
+      ctx.beginPath();
+      ctx.fillStyle = prop.kind === "mark-dim" ? "rgba(90, 110, 100, 0.45)" : "#E7C79A";
+      ctx.ellipse(p.x, p.y, 22, 12, 0, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
     if (prop.disc !== "off") {
       ctx.fillStyle = prop.disc === "hot" ? "#E6FF3D" : "rgba(28,25,21,0.35)";
       ctx.beginPath();
@@ -171,6 +180,9 @@ export class FlatYard implements YardRenderer {
       raw: "#E07A6A",
       bill: "#7DDE6A",
       smoke: "#F7F4EC",
+      hearth: "#D5D8DC",
+      wolf: "#7E93A8",
+      seal: "#8A97A3",
       gate: snapshot.signLit ? "#F6EFE2" : "#6E5A42",
     };
     ctx.fillStyle = colors[prop.kind] ?? "#C47A4A";
@@ -241,12 +253,17 @@ export class FlatYard implements YardRenderer {
     const ctx = this.ctx;
     ctx.fillStyle = shirt;
     ctx.fillRect(p.x - h * 0.22, p.y - h, h * 0.44, h);
-    ctx.fillStyle = "#E6C56A";
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y - h - h * 0.18);
-    ctx.lineTo(p.x + h * 0.28, p.y - h);
-    ctx.lineTo(p.x - h * 0.28, p.y - h);
-    ctx.fill();
+    if (shirt === "#F6EFE2") {
+      ctx.fillStyle = "#E6C56A";
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y - h - h * 0.18);
+      ctx.lineTo(p.x + h * 0.28, p.y - h);
+      ctx.lineTo(p.x - h * 0.28, p.y - h);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = "#F7FBFD";
+      ctx.fillRect(p.x - h * 0.2, p.y - h + 2, h * 0.4, Math.max(3, h * 0.08));
+    }
     if (scarf) {
       ctx.fillStyle = scarf;
       ctx.fillRect(p.x - h * 0.22, p.y - h + h * 0.22, h * 0.44, Math.max(3, h * 0.08));

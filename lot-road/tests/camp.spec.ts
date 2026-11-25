@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cookTime, createCamp, inWall, stationTime, tickCamp } from "../src/sim/camp";
+import { cookTime, createCamp, inWall, padAccess, stationTime, tickCamp } from "../src/sim/camp";
 
 describe("snow camp", () => {
   it("hits a bear you walk up to, then drops raw meat", () => {
@@ -63,7 +63,7 @@ describe("snow camp", () => {
     tickCamp(camp, { x: 0, z: 0 }, 40);
     tree.hitCd = 0;
     tickCamp(camp, { x: 0, z: 0 }, 40);
-    expect(camp.drops.some((drop) => drop.kind === "wood")).toBe(true);
+    expect(camp.wood).toBe(2);
 
     const rock = camp.nodes.find((node) => node.kind === "rock");
     if (!rock) throw new Error("missing rock");
@@ -94,12 +94,32 @@ describe("snow camp", () => {
   });
 
   it("keeps the hunter out of the palisade except at the gate", () => {
-    expect(inWall(2.3, 0)).toBe(true);
-    expect(inWall(0, -2.3)).toBe(false);
+    expect(inWall(4.7, 0)).toBe(true);
+    expect(inWall(0, -4.7)).toBe(false);
     const camp = createCamp();
-    camp.x = 1.9;
+    camp.x = 3.6;
     camp.z = 0;
-    for (let i = 0; i < 20; i += 1) tickCamp(camp, { x: 1, z: 0 }, 50);
-    expect(camp.x).toBeLessThan(2.16);
+    for (let i = 0; i < 40; i += 1) tickCamp(camp, { x: 1, z: 0 }, 50);
+    expect(camp.x).toBeLessThan(4.32);
+  });
+
+  it("unlocks pads one step at a time and only spends on an open pad", () => {
+    const camp = createCamp();
+    expect(padAccess(camp, "grill")).toBe("open");
+    expect(padAccess(camp, "carry")).toBe("dim");
+    expect(padAccess(camp, "hand")).toBe("hidden");
+    camp.money = 40;
+    const carry = camp.pads.find((pad) => pad.kind === "carry");
+    if (!carry) throw new Error("missing carry pad");
+    camp.x = carry.x;
+    camp.z = carry.z;
+    for (let i = 0; i < 12; i += 1) tickCamp(camp, { x: 0, z: 0 }, 50);
+    expect(carry.rank).toBe(0);
+    expect(camp.hint.includes("Carry")).toBe(false);
+    const grill = camp.pads[0];
+    grill.rank = 1;
+    expect(padAccess(camp, "carry")).toBe("open");
+    expect(padAccess(camp, "hand")).toBe("dim");
+    expect(padAccess(camp, "tool")).toBe("hidden");
   });
 });

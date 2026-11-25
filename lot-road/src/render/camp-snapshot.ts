@@ -1,6 +1,16 @@
 import { look } from "./project";
-import type { CampState } from "../sim/camp";
+import { padAccess, type CampState } from "../sim/camp";
 import type { RenderSnapshot, SnapshotProp } from "./types";
+
+const PAD_ICON: Record<string, string> = {
+  grill: "grill",
+  carry: "bag",
+  hand: "person",
+  tool: "axe",
+  station: "saw",
+  gather: "gather",
+  ridge: "gate",
+};
 
 const palette = {
   meadow: "#E4F1F6",
@@ -14,8 +24,8 @@ const palette = {
 
 /** The snow camp, drawn with the same prop list as the other yards. */
 export function campSnapshot(state: CampState, time: number, reduced: boolean): RenderSnapshot {
-  look.x = Math.max(-1.5, Math.min(1.5, state.x * 0.8));
-  look.z = Math.max(-1.5, Math.min(1.5, state.z * 0.8));
+  look.x = Math.max(-6.2, Math.min(6.2, state.x * 0.95));
+  look.z = Math.max(-6.2, Math.min(6.2, state.z * 0.95));
 
   const props: SnapshotProp[] = [];
   props.push({
@@ -29,7 +39,7 @@ export function campSnapshot(state: CampState, time: number, reduced: boolean): 
     badge: "",
     shake: false,
   });
-  props.push(deck("deck-grill", state.grillAt.x, state.grillAt.z));
+  props.push({ ...deck("deck-grill", state.grillAt.x, state.grillAt.z), kind: "hearth" });
   props.push(deck("deck-counter", state.counterAt.x, state.counterAt.z));
   props.push({
     id: "grill",
@@ -90,6 +100,10 @@ export function campSnapshot(state: CampState, time: number, reduced: boolean): 
       shake: node.hitCd > 280,
     });
   }
+  props.push(
+    { id: "wolf-scenery", kind: "wolf", x: 8.5, z: 2.8, stage: 1, disc: "off", scale: 1, badge: "", shake: false },
+    { id: "seal-scenery", kind: "seal", x: -8.3, z: -2.6, stage: 1, disc: "off", scale: 1, badge: "", shake: false },
+  );
   props.push({
     id: "counter",
     kind: "counter",
@@ -129,15 +143,17 @@ export function campSnapshot(state: CampState, time: number, reduced: boolean): 
     });
   }
   for (const pad of state.pads) {
+    const access = padAccess(state, pad.kind);
+    if (access === "hidden") continue;
     props.push({
       id: pad.id,
-      kind: "pad",
+      kind: access === "dim" ? "mark-dim" : `mark-${PAD_ICON[pad.kind] ?? "grill"}`,
       x: pad.x,
       z: pad.z,
       stage: 1,
-      disc: pad.rank >= pad.max ? "off" : state.money >= pad.price ? "hot" : "idle",
+      disc: "off",
       scale: 1,
-      badge: `${pad.rank}/${pad.max}`,
+      badge: "",
       shake: false,
     });
   }
@@ -152,8 +168,8 @@ export function campSnapshot(state: CampState, time: number, reduced: boolean): 
   if (state.serveCd > 0) customers[0].z += 0.7;
 
   const hands = [...customers];
-  if (state.worker) hands.push({ x: state.worker.x, z: state.worker.z, color: "#3D8B7A", walking: true });
-  if (state.gatherer) hands.push({ x: state.gatherer.x, z: state.gatherer.z, color: "#C47A4A", walking: true });
+  if (state.worker) hands.push({ x: state.worker.x, z: state.worker.z, color: "#4C9BE8", walking: true });
+  if (state.gatherer) hands.push({ x: state.gatherer.x, z: state.gatherer.z, color: "#4C9BE8", walking: true });
 
   const bars = state.bears
     .filter((bear) => bear.down <= 0)
@@ -188,11 +204,12 @@ export function campSnapshot(state: CampState, time: number, reduced: boolean): 
     palette,
     props,
     dressing: [
-      { kind: "tree", x: -4.2, z: 1.8, scale: 1.2 },
-      { kind: "tree", x: 4.3, z: 1.2, scale: 1.1 },
-      { kind: "tree", x: -3.6, z: -3.4, scale: 1.3 },
-      { kind: "rock", x: 3.8, z: -2.8, scale: 1 },
-      { kind: "grass", x: 4.4, z: 2.6, scale: 1 },
+      { kind: "tree", x: -8.2, z: 2.4, scale: 1.35 },
+      { kind: "tree", x: 8.4, z: 1.6, scale: 1.2 },
+      { kind: "tree", x: -6.4, z: -7.2, scale: 1.45 },
+      { kind: "tree", x: 7.2, z: -6.4, scale: 1.15 },
+      { kind: "rock", x: 8.1, z: -3.2, scale: 1.1 },
+      { kind: "rock", x: -7.6, z: 5.4, scale: 0.9 },
     ],
     hands,
     boss: { x: state.x, z: state.z, swing: state.swing / 280, facing: state.facing },
@@ -205,16 +222,12 @@ export function campSnapshot(state: CampState, time: number, reduced: boolean): 
     reduced,
     time,
     bars,
-    labels: state.pads.map((pad) => ({
-      x: pad.x,
-      z: pad.z,
-      text: `${pad.rank}/${pad.max}  ${pad.price}`,
-    })),
+    labels: [],
     carry: {
       raw: state.raw,
       cooked: state.cooked,
-      wood: state.wood,
-      ore: state.ore,
+      wood: state.wood + state.planks,
+      ore: state.ore + state.bars,
       money: state.money,
     },
     ring: true,

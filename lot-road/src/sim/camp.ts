@@ -125,16 +125,20 @@ export interface CampMove {
 
 export type CampCue = "chop" | "sell" | "load" | "build" | "hire" | "craft";
 
-const IN = 2.15;
-const OUT = 2.58;
-const WORLD = 3.65;
+/** The palisade is a ring. Twice the old radius is four times the ground. */
+const IN = 4.3;
+const OUT = 5.16;
+const WORLD = 7.3;
+const RIDGE = 8.9;
+const GATE = 0.23;
 const SPEED = 3.15;
 const HIT = 1.02;
 const PICK = 0.48;
 const NEAR = 0.72;
-const PAD = 0.56;
+const PAD = 0.62;
 const STAND = 420;
 const COOK = 3400;
+const PAD_ORDER = ["grill", "carry", "hand", "tool", "station", "gather", "ridge"] as const;
 
 export function createCamp(): CampState {
   return {
@@ -160,33 +164,33 @@ export function createCamp(): CampState {
     reach: WORLD,
     ridge: false,
     bears: [
-      bear("bear-a", 0.15, -3.15),
-      bear("bear-b", -3.05, -0.4),
-      bear("bear-c", 3.05, 0.35),
+      bear("bear-a", 0.4, -6.2),
+      bear("bear-b", -6.0, 0.5),
+      bear("bear-c", 5.9, -0.6),
     ],
     nodes: [
-      node("tree-a", -3.15, 1.7, "tree", 2),
-      node("tree-b", 2.85, 2.15, "tree", 2),
-      node("tree-c", -2.35, 2.85, "tree", 2),
-      node("rock-a", 3.2, -1.7, "rock", 3),
-      node("rock-b", -3.25, -1.35, "rock", 3),
+      node("tree-a", -5.6, 2.6, "tree", 2),
+      node("tree-b", 5.4, 3.3, "tree", 2),
+      node("tree-c", -3.4, 5.8, "tree", 2),
+      node("rock-a", 6.1, -2.4, "rock", 3),
+      node("rock-b", -6.2, -2.0, "rock", 3),
     ],
     drops: [],
     grill: { phase: "empty", left: 0, total: COOK },
     mill: { phase: "empty", left: 0, total: 4200 },
     forge: { phase: "empty", left: 0, total: 4200 },
-    grillAt: { x: -1.05, z: 0.2 },
-    millAt: { x: -1.65, z: 1.2 },
-    forgeAt: { x: 1.7, z: -1.2 },
-    counterAt: { x: 1.15, z: 0.45 },
+    grillAt: { x: -2.6, z: 0.3 },
+    millAt: { x: -2.3, z: 2.7 },
+    forgeAt: { x: 2.7, z: -2.2 },
+    counterAt: { x: 2.6, z: 0.5 },
     pads: [
-      { id: "pad-grill", x: -1.05, z: -0.85, kind: "grill", label: "Faster grill", price: 4, rank: 0, max: 5, stood: 0 },
-      { id: "pad-carry", x: 0.1, z: -1.2, kind: "carry", label: "Carry", price: 6, rank: 0, max: 5, stood: 0 },
-      { id: "pad-hand", x: 1.25, z: -0.9, kind: "hand", label: "A hand", price: 12, rank: 0, max: 1, stood: 0 },
-      { id: "pad-tool", x: -1.55, z: -1.15, kind: "tool", label: "Tool", price: 8, rank: 0, max: 3, stood: 0 },
-      { id: "pad-station", x: 0.55, z: -1.55, kind: "station", label: "Stations", price: 8, rank: 0, max: 3, stood: 0 },
-      { id: "pad-gather", x: -0.45, z: 1.45, kind: "gather", label: "Gatherer", price: 14, rank: 0, max: 1, stood: 0 },
-      { id: "pad-ridge", x: 0, z: -1.72, kind: "ridge", label: "New ground", price: 16, rank: 0, max: 1, stood: 0 },
+      { id: "pad-grill", x: -2.6, z: -1.6, kind: "grill", label: "Faster grill", price: 4, rank: 0, max: 5, stood: 0 },
+      { id: "pad-carry", x: -0.7, z: -2.2, kind: "carry", label: "Carry", price: 6, rank: 0, max: 5, stood: 0 },
+      { id: "pad-hand", x: 2.3, z: -1.7, kind: "hand", label: "A hand", price: 12, rank: 0, max: 1, stood: 0 },
+      { id: "pad-tool", x: -3.4, z: 1.3, kind: "tool", label: "Tool", price: 8, rank: 0, max: 3, stood: 0 },
+      { id: "pad-station", x: -0.5, z: 3.1, kind: "station", label: "Stations", price: 8, rank: 0, max: 3, stood: 0 },
+      { id: "pad-gather", x: 1.7, z: 2.7, kind: "gather", label: "Gatherer", price: 14, rank: 0, max: 1, stood: 0 },
+      { id: "pad-ridge", x: 0.8, z: -3.5, kind: "ridge", label: "New ground", price: 16, rank: 0, max: 1, stood: 0 },
     ],
     worker: null,
     gatherer: null,
@@ -315,14 +319,13 @@ export function campFromRaw(raw: string | null): CampState | null {
     const data = blob.camp;
     if (!data || !Array.isArray(data.bears) || typeof data.money !== "number") return null;
     const fresh = createCamp();
-    return {
+    const camp: CampState = {
       ...fresh,
       ...data,
       grillAt: fresh.grillAt,
       millAt: fresh.millAt,
       forgeAt: fresh.forgeAt,
       counterAt: fresh.counterAt,
-      nodes: data.nodes?.length ? data.nodes : fresh.nodes,
       mill: data.mill ?? fresh.mill,
       forge: data.forge ?? fresh.forge,
       gatherer: data.gatherer ?? null,
@@ -331,19 +334,41 @@ export function campFromRaw(raw: string | null): CampState | null {
       bars: data.bars ?? 0,
       toolRank: data.toolRank ?? 0,
       stationRank: data.stationRank ?? 0,
-      reach: data.reach ?? fresh.reach,
+      reach: data.ridge ? RIDGE : fresh.reach,
       pads: fresh.pads.map((pad) => {
         const saved = data.pads?.find((item) => item.id === pad.id);
         return saved ? { ...pad, rank: saved.rank, stood: 0, price: pad.price } : pad;
+      }),
+      bears: fresh.bears.map((bear) => {
+        const saved = data.bears.find((item) => item.id === bear.id);
+        return saved ? { ...bear, hp: saved.hp, max: saved.max, down: saved.down } : bear;
+      }),
+      nodes: fresh.nodes.map((node) => {
+        const saved = data.nodes?.find((item) => item.id === node.id);
+        return saved ? { ...node, hp: saved.hp, max: saved.max, down: saved.down } : node;
       }),
       grill: data.grill ?? fresh.grill,
       drops: data.drops ?? [],
       worker: data.worker ?? null,
       floaters: [],
     };
+    if (data.ridge) addRidge(camp, data);
+    return camp;
   } catch {
     return null;
   }
+}
+
+/** Grill first. Each later pad waits until the one before it has been bought once. */
+export function padAccess(state: CampState, kind: string): "open" | "dim" | "hidden" {
+  const index = PAD_ORDER.indexOf(kind as (typeof PAD_ORDER)[number]);
+  if (index < 0) return "hidden";
+  if (index === 0) return "open";
+  const prev = state.pads.find((pad) => pad.kind === PAD_ORDER[index - 1]);
+  if (prev && prev.rank >= 1) return "open";
+  if (index === 1) return "dim";
+  const earlier = state.pads.find((pad) => pad.kind === PAD_ORDER[index - 2]);
+  return earlier && earlier.rank >= 1 ? "dim" : "hidden";
 }
 
 function tickWorker(state: CampState, step: number, cues: CampCue[]): void {
@@ -401,6 +426,10 @@ function tickWorker(state: CampState, step: number, cues: CampCue[]): void {
 
 function tickPads(state: CampState, step: number, cues: CampCue[]): void {
   for (const pad of state.pads) {
+    if (padAccess(state, pad.kind) !== "open") {
+      pad.stood = 0;
+      continue;
+    }
     if (pad.rank >= pad.max) {
       pad.stood = 0;
       continue;
@@ -435,10 +464,7 @@ function tickPads(state: CampState, step: number, cues: CampCue[]): void {
       state.gatherer = { x: pad.x, z: pad.z, held: null, tx: state.millAt.x, tz: state.millAt.z };
       cues.push("hire");
     } else if (pad.kind === "ridge" && !state.ridge) {
-      state.ridge = true;
-      state.reach = 4.45;
-      state.nodes.push(node("tree-r", -3.7, -2.4, "tree", 2), node("rock-r", 3.6, 2.4, "rock", 3));
-      state.bears.push(bear("bear-d", 0.3, -4.05));
+      addRidge(state);
       cues.push("build");
     }
   }
@@ -586,7 +612,7 @@ export function inWall(x: number, z: number): boolean {
   if (r < IN || r > OUT) return false;
   const ang = Math.atan2(x, z);
   const gate = Math.abs(Math.PI - Math.abs(ang));
-  return gate > 0.46;
+  return gate > GATE;
 }
 
 function wanderOut(bear: CampBear, step: number): void {
@@ -599,7 +625,7 @@ function wanderOut(bear: CampBear, step: number): void {
   }
   let x = bear.x + (bear.vx * step) / 1000;
   let z = bear.z + (bear.vz * step) / 1000;
-  if (Math.hypot(x, z) < OUT + 0.25 || Math.hypot(x, z) > 4.5) {
+  if (Math.hypot(x, z) < OUT + 0.35 || Math.hypot(x, z) > 7.05) {
     bear.vx *= -1;
     bear.vz *= -1;
     x = bear.x;
@@ -619,7 +645,7 @@ function reviveBear(state: CampState, bear: CampBear): void {
 
 function outside(n: number): { x: number; z: number } {
   const a = Math.PI + ((n % 5) - 2) * 0.55;
-  return { x: Math.sin(a) * 3.15, z: Math.cos(a) * 3.15 };
+  return { x: Math.sin(a) * 6.35, z: Math.cos(a) * 6.35 };
 }
 
 function scatter(state: CampState, x: number, z: number, count: number, kind: CampDrop["kind"], n: number): void {
@@ -630,24 +656,27 @@ function scatter(state: CampState, x: number, z: number, count: number, kind: Ca
       id: `d${state.nextId++}`,
       kind,
       n,
-      x: clamp(x + Math.cos(a) * dist, WORLD),
-      z: clamp(z + Math.sin(a) * dist, WORLD),
+      x: clamp(x + Math.cos(a) * dist, state.reach),
+      z: clamp(z + Math.sin(a) * dist, state.reach),
     });
   }
 }
 
 function hintFor(state: CampState): string {
   let pad: CampPad | null = null;
-  let best = 1.05;
+  let best = PAD + 0.01;
   for (const item of state.pads) {
-    if (item.rank >= item.max) continue;
+    if (padAccess(state, item.kind) !== "open") continue;
     const dist = Math.hypot(item.x - state.x, item.z - state.z);
-    if (dist < best) {
+    if (dist <= PAD && dist < best) {
       pad = item;
       best = dist;
     }
   }
-  if (pad) return `${pad.label} ${pad.rank}/${pad.max} · stand · ${pad.price}`;
+  if (pad) {
+    const progress = `${pad.label} ${pad.rank}/${pad.max}`;
+    return pad.rank >= pad.max ? progress : `${progress} · ${pad.price}`;
+  }
   if (state.drops.some((drop) => drop.kind === "bill")) return "Pick up the money";
   if (state.order === "plank" && state.planks > 0) return "They want planks. Stand at the counter";
   if (state.order === "bar" && state.bars > 0) return "They want metal. Stand at the counter";
@@ -678,6 +707,24 @@ function stepToward(body: { x: number; z: number; tx: number; tz: number }, step
 function float(state: CampState, x: number, z: number, text: string, color: string): void {
   state.floaters.push({ id: state.floaterId++, x, z, text, color, age: 0 });
   if (state.floaters.length > 8) state.floaters.shift();
+}
+
+function addRidge(state: CampState, saved?: { nodes?: CampNode[]; bears?: CampBear[] }): void {
+  const tree = node("tree-r", -7.4, -4.6, "tree", 2);
+  const rock = node("rock-r", 7.2, 4.8, "rock", 3);
+  const extra = bear("bear-d", 1.4, -8.0);
+  const oldTree = saved?.nodes?.find((item) => item.id === tree.id);
+  const oldRock = saved?.nodes?.find((item) => item.id === rock.id);
+  const oldBear = saved?.bears?.find((item) => item.id === extra.id);
+  state.nodes = state.nodes.filter((item) => item.id !== tree.id && item.id !== rock.id);
+  state.bears = state.bears.filter((item) => item.id !== extra.id);
+  state.nodes.push(
+    oldTree ? { ...tree, hp: oldTree.hp, max: oldTree.max, down: oldTree.down } : tree,
+    oldRock ? { ...rock, hp: oldRock.hp, max: oldRock.max, down: oldRock.down } : rock,
+  );
+  state.bears.push(oldBear ? { ...extra, hp: oldBear.hp, max: oldBear.max, down: oldBear.down } : extra);
+  state.ridge = true;
+  state.reach = RIDGE;
 }
 
 function node(id: string, x: number, z: number, kind: CampNode["kind"], max: number): CampNode {
