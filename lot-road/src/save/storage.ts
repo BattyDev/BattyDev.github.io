@@ -1,5 +1,6 @@
 import { mapIds, getMap } from "../content/maps/registry";
 import { SAVE_BAK, SAVE_FUTURE, SAVE_KEY, tuning } from "../content/tuning";
+import type { CampState } from "../sim/camp";
 import { createGame, createRun, emptyHand, type GameState, type HandRt } from "../sim/state";
 import { slotPos } from "../sim/query";
 import { migrate } from "./migrate";
@@ -155,9 +156,11 @@ export function loadFromStorage(storage: Pick<Storage, "getItem" | "setItem" | "
   return { state: fromBlob(migrated.blob), future: false, blocked: false };
 }
 
-export function writeSave(storage: Pick<Storage, "getItem" | "setItem">, state: GameState): boolean {
+export function writeSave(storage: Pick<Storage, "getItem" | "setItem">, state: GameState, camp?: CampState): boolean {
   const previous = storage.getItem(SAVE_KEY);
-  const raw = JSON.stringify(toBlob(state));
+  const blob = toBlob(state) as ReturnType<typeof toBlob> & { camp?: CampState };
+  if (camp) blob.camp = camp;
+  const raw = JSON.stringify(blob);
   try {
     if (previous) storage.setItem(SAVE_BAK, previous);
     storage.setItem(SAVE_KEY, raw);

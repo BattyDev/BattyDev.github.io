@@ -10,12 +10,15 @@ export const VIEW = {
   far: 80,
 };
 
+/** The camera slides with the hunter. Tests leave this at the origin. */
+export const look = { x: 0, z: 0 };
+
 export function cameraEye(): [number, number, number] {
   const { yaw, pitch, dist } = VIEW;
   return [
-    dist * Math.cos(pitch) * Math.sin(yaw),
+    dist * Math.cos(pitch) * Math.sin(yaw) + look.x,
     dist * Math.sin(pitch),
-    dist * Math.cos(pitch) * Math.cos(yaw),
+    dist * Math.cos(pitch) * Math.cos(yaw) + look.z,
   ];
 }
 
@@ -38,7 +41,7 @@ function dot(a: number[], b: number[]): number {
  */
 export function project(x: number, y: number, z: number, viewW: number, viewH: number): { x: number; y: number } {
   const eye = cameraEye();
-  const target = [0, VIEW.lookY, 0];
+  const target = [look.x, VIEW.lookY, look.z];
   const zaxis = norm([eye[0] - target[0], eye[1] - target[1], eye[2] - target[2]]);
   const xaxis = norm(cross([0, 1, 0], zaxis));
   const yaxis = cross(zaxis, xaxis);

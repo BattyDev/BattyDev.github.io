@@ -1,8 +1,7 @@
 import type { MapDef } from "../content/types";
 import { hasMap } from "../content/maps/registry";
 import { tuning } from "../content/tuning";
-import { highlighted } from "../sim/actions";
-import { goalLine } from "../sim/query";
+import type { CampState } from "../sim/camp";
 import type { GameState } from "../sim/state";
 import { project } from "../render/project";
 import type { RenderSnapshot } from "../render/types";
@@ -33,6 +32,8 @@ export class Hud {
   private act!: HTMLElement;
   private hint!: HTMLElement;
   private floaters!: HTMLElement;
+  private bars!: HTMLElement;
+  private labels!: HTMLElement;
   private banner!: HTMLElement;
   private panel!: HTMLElement;
   private card!: HTMLElement;
@@ -66,6 +67,8 @@ export class Hud {
         <div class="card hidden"></div>
         <div class="debug hidden"></div>
       </div>
+      <div class="bars"></div>
+      <div class="pad-labels"></div>
       <div class="floaters"></div>
     `;
     this.root = host.querySelector(".hud") as HTMLElement;
@@ -78,6 +81,8 @@ export class Hud {
     this.act = host.querySelector(".act") as HTMLElement;
     this.hint = host.querySelector(".hint") as HTMLElement;
     this.floaters = host.querySelector(".floaters") as HTMLElement;
+    this.bars = host.querySelector(".bars") as HTMLElement;
+    this.labels = host.querySelector(".pad-labels") as HTMLElement;
     this.banner = host.querySelector(".banner") as HTMLElement;
     this.panel = host.querySelector(".panel") as HTMLElement;
     this.card = host.querySelector(".card") as HTMLElement;
@@ -127,50 +132,45 @@ export class Hud {
     });
   }
 
-  update(state: GameState, map: MapDef, snapshot: RenderSnapshot, width: number, height: number): void {
-    this.name.textContent = map.name;
-    this.canReplay = state.profile.cleared.includes(map.id);
-    const stageCount = map.stages.length;
-    this.pips.innerHTML = map.stages
-      .map((stage) => `<i class="pip${stage.id <= state.run.stage ? " on" : ""}"></i>`)
+  update(camp: CampState, snapshot: RenderSnapshot, width: number, height: number): void {
+    this.root.classList.add("roam");
+    this.name.textContent = "Snow camp";
+    this.pips.innerHTML = "";
+    this.stack.innerHTML = [
+      ["coin", camp.money],
+      ["meat", camp.raw],
+      ["cooked", camp.cooked],
+    ]
+      .map(([key, value]) => `<div class="plate">${icon(String(key))}<b>${value}</b></div>`)
       .join("");
-    if (state.run.phase !== "play") {
-      this.pips.querySelectorAll(".pip").forEach((pip) => pip.classList.add("on"));
-    }
-
-    const rows = [...map.hud].reverse().find((row) => row.stage <= state.run.stage)?.rows ?? map.hud[0].rows;
-    this.stack.innerHTML = rows
-      .map((row) => {
-        const value = row.key === "coin" ? state.profile.coins : state.run.resources[row.key] ?? 0;
-        return `<div class="plate">${icon(row.icon)}<b>${value}</b></div>`;
-      })
-      .join("");
-
-    const action = highlighted(state, map);
-    let verb = action?.verb ?? "…";
-    let sub = action?.sub ?? "";
-    if (!action && state.run.pendingSale) {
-      verb = "SELL";
-      sub = "On the water";
-    } else if (!action && state.run.launchLeft > 0) {
-      verb = "LAUNCH";
-      sub = map.away ?? "The cart is away";
-    } else if (!action && state.run.phase !== "play") {
-      verb = "DONE";
-      sub = map.name;
-    }
-    this.verb.textContent = verb;
-    this.sub.textContent = sub;
-    this.goal.textContent = state.run.phase === "play" ? goalLine(state, map) : "";
-    this.act.setAttribute("aria-label", `${verb}. ${sub}`);
-
-    const showHint =
-      state.run.phase === "play" &&
-      (state.run.hintLeft > 0 || state.run.idleMs >= tuning.hintIdleMs) &&
-      !state.run.pendingSale;
-    this.hint.classList.toggle("hidden", !showHint);
+    this.goal.textContent = camp.hint;
+    this.act.classList.add("hidden");
+    this.hint.classList.add("hidden");
 
     const reduced = document.documentElement.classList.contains("reduced");
+    this.bars.innerHTML = "";
+    for (const bar of snapshot.bars) {
+      const p = project(bar.x, 1.35, bar.z, width, height);
+      const row = document.createElement("div");
+      row.className = "bar";
+      row.style.left = `${p.x}px`;
+      row.style.top = `${p.y}px`;
+      const fill = document.createElement("i");
+      fill.style.width = `${Math.max(0, Math.min(1, bar.frac)) * 100}%`;
+      fill.style.background = bar.color;
+      row.appendChild(fill);
+      this.bars.appendChild(row);
+    }
+    this.labels.innerHTML = "";
+    for (const label of snapshot.labels) {
+      const p = project(label.x, 0.2, label.z, width, height);
+      const el = document.createElement("div");
+      el.className = "pad-label";
+      el.textContent = label.text;
+      el.style.left = `${p.x}px`;
+      el.style.top = `${p.y}px`;
+      this.labels.appendChild(el);
+    }
     this.floaters.innerHTML = "";
     for (const floater of snapshot.floaters) {
       const p = project(floater.x, 1.2, floater.z, width, height);
@@ -185,8 +185,6 @@ export class Hud {
       this.floaters.appendChild(span);
     }
 
-    this.renderCard(state, map);
-    void stageCount;
   }
 
   private renderCard(state: GameState, map: MapDef): void {

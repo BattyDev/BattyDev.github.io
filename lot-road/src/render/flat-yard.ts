@@ -94,8 +94,19 @@ export class FlatYard implements YardRenderer {
     }
     sprites.push({
       y: project(snapshot.boss.x, 0, snapshot.boss.z, w, h).y,
-      draw: () => this.person(snapshot.boss.x, snapshot.boss.z, "#F6EFE2", "#C43B3B", 1.9),
+      draw: () => {
+        if (snapshot.ring) this.ring(snapshot.boss.x, snapshot.boss.z);
+        this.person(snapshot.boss.x, snapshot.boss.z, snapshot.ring ? "#7EB6E6" : "#F6EFE2", snapshot.ring ? "#F7F4EC" : "#C43B3B", 1.9);
+        if (snapshot.ring) this.pack(snapshot.boss.x, snapshot.boss.z, snapshot.carry);
+      },
     });
+    if (snapshot.axe) {
+      const axe = snapshot.axe;
+      sprites.push({
+        y: project(axe.x, 0.7, axe.z, w, h).y,
+        draw: () => this.axe(axe.x, axe.z),
+      });
+    }
     snapshot.hands.forEach((hand) => {
       const p = project(hand.x, 0, hand.z, w, h);
       sprites.push({
@@ -122,7 +133,8 @@ export class FlatYard implements YardRenderer {
       ctx.ellipse(p.x, p.y, prop.disc === "hot" ? 28 : 20, 12, 0, 0, Math.PI * 2);
       ctx.fill();
     }
-    const worldH = prop.kind === "reed" || prop.kind === "clay" ? 0.35 + prop.scale * 0.7 : prop.kind === "boat" ? 0.45 : 1;
+    const worldH =
+      prop.kind === "grove" ? 1.15 * prop.scale : prop.kind === "beast" ? 0.55 : prop.kind === "pad" || prop.kind === "coin" ? 0.16 : prop.kind === "wood" || prop.kind === "meat" ? 0.22 : prop.kind === "pile" ? 0.4 : prop.kind === "reed" || prop.kind === "clay" ? 0.35 + prop.scale * 0.7 : prop.kind === "boat" ? 0.45 : 1;
     const height = this.worldHeight(x, z, worldH);
     const colors: Record<string, string> = {
       reed: "#7BA04A",
@@ -141,9 +153,22 @@ export class FlatYard implements YardRenderer {
       line: "#E7D3B0",
       crate: "#E6C56A",
       post: "#F2B134",
+      beast: "#F4F7F8",
       fruit: "#E07A8A",
       press: "#8C5430",
       stall: "#F2B134",
+      grove: "#7BA04A",
+      wood: "#A8653A",
+      meat: "#A33B24",
+      coin: "#E6B325",
+      pile: "#C47A4A",
+      pad: "#7ED07A",
+      grill: "#8C5430",
+      counter: "#C4A06A",
+      deck: "#A67C52",
+      raw: "#E07A6A",
+      bill: "#7DDE6A",
+      smoke: "#F7F4EC",
       gate: snapshot.signLit ? "#F6EFE2" : "#6E5A42",
     };
     ctx.fillStyle = colors[prop.kind] ?? "#C47A4A";
@@ -174,6 +199,38 @@ export class FlatYard implements YardRenderer {
     const h = this.worldHeight(x, z, world);
     this.ctx.fillStyle = color;
     this.ctx.fillRect(p.x - h * 0.28, p.y - h, h * 0.56, h);
+  }
+
+  private ring(x: number, z: number): void {
+    const p = project(x, 0, z, this.width, this.height);
+    this.ctx.strokeStyle = "#3EE0E0";
+    this.ctx.lineWidth = 3;
+    this.ctx.beginPath();
+    this.ctx.ellipse(p.x, p.y, 16, 8, 0, 0, Math.PI * 2);
+    this.ctx.stroke();
+  }
+
+  private pack(x: number, z: number, carry: RenderSnapshot["carry"]): void {
+    const p = project(x, 0.8, z, this.width, this.height);
+    const ctx = this.ctx;
+    const meat = carry.raw + carry.cooked;
+    if (meat > 0) {
+      ctx.fillStyle = "#E07A6A";
+      ctx.fillRect(p.x - 6, p.y - 8 - meat * 3, 10, 6 + meat * 3);
+    }
+    if (carry.money > 0) {
+      ctx.fillStyle = "#7DDE6A";
+      ctx.fillRect(p.x + 4, p.y - 6 - Math.min(10, carry.money) * 2, 8, 6 + Math.min(10, carry.money) * 2);
+    }
+  }
+
+  private axe(x: number, z: number): void {
+    const p = project(x, 0.7, z, this.width, this.height);
+    const ctx = this.ctx;
+    ctx.fillStyle = "#8C5A32";
+    ctx.fillRect(p.x - 3, p.y - 18, 6, 20);
+    ctx.fillStyle = "#D9D2C8";
+    ctx.fillRect(p.x - 11, p.y - 20, 22, 6);
   }
 
   private person(x: number, z: number, shirt: string, scarf: string | null, world: number): void {

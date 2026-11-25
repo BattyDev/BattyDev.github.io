@@ -8,6 +8,9 @@ function svg(body: string): string {
 
 export const icons: Record<string, string> = {
   coin: svg(`<circle cx="14" cy="14" r="10" fill="#E6B325"/><circle cx="14" cy="14" r="6" fill="none" stroke="${ink}" stroke-width="1.6"/>`),
+  wood: svg(`<rect x="4" y="12" width="20" height="6" rx="3" fill="#C47A4A" stroke="${ink}" stroke-width="1.3"/><path d="M7 12v6M12 12v6M17 12v6" stroke="#8C5430" stroke-width="1"/>`),
+  meat: svg(`<path d="M8 16c0-5 4-8 8-6 3 1 5 4 4 7-1 4-6 6-9 4-2-1-3-3-3-5z" fill="#E07A6A"/><circle cx="15" cy="14" r="1.3" fill="#F6EFE2"/>`),
+  cooked: svg(`<path d="M8 16c0-5 4-8 8-6 3 1 5 4 4 7-1 4-6 6-9 4-2-1-3-3-3-5z" fill="#C47A4A"/><path d="M10 10c2-3 6-3 8 0" fill="none" stroke="#E7EEF2" stroke-width="1.4"/>`),
   reed: svg(`<path d="M8 22c2-8 3-12 6-16" fill="none" stroke="#3E6B24" stroke-width="2.4" stroke-linecap="round"/><path d="M14 22c1-7 2-10 5-14" fill="none" stroke="#6E9440" stroke-width="2.4" stroke-linecap="round"/><path d="M11 22c0-6 1-9 2-12" fill="none" stroke="#2F5518" stroke-width="2" stroke-linecap="round"/>`),
   clay: svg(`<ellipse cx="14" cy="18" rx="9" ry="5" fill="#D08A5A"/><circle cx="11" cy="14" r="4" fill="#E0A070"/><circle cx="16" cy="13" r="3.2" fill="#C47848"/>`),
   mat: svg(`<rect x="5" y="8" width="18" height="12" rx="2" fill="#E6D2A8" stroke="#8A4E2A" stroke-width="1.6"/><path d="M5 12h18M5 16h18M11 8v12M17 8v12" stroke="#C47A4A" stroke-width="1"/>`),

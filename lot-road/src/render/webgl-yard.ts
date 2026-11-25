@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { cameraEye, VIEW } from "./project";
+import { cameraEye, look, VIEW } from "./project";
 import type { RenderSnapshot, SnapshotProp, YardRenderer } from "./types";
 
 const HOT = new THREE.Color("#E6FF3D");
@@ -248,6 +248,105 @@ function stallGeo(): THREE.BufferGeometry {
   ]);
 }
 
+function beastGeo(wounds: number): THREE.BufferGeometry {
+  const parts: Part[] = [
+    { geo: box(0.62, 0.36, 0.9), color: "#F4F7F8", y: 0.4 },
+    { geo: box(0.28, 0.24, 0.32), color: "#F7F4EC", z: 0.52, y: 0.52 },
+    { geo: sphere(0.06), color: "#1C1915", x: -0.08, z: 0.66, y: 0.58 },
+    { geo: sphere(0.06), color: "#1C1915", x: 0.08, z: 0.66, y: 0.58 },
+    { geo: cyl(0.07, 0.28, 5), color: "#E7EEF2", x: -0.18, z: 0.22, y: 0.14 },
+    { geo: cyl(0.07, 0.28, 5), color: "#E7EEF2", x: 0.18, z: 0.22, y: 0.14 },
+    { geo: cyl(0.07, 0.28, 5), color: "#E7EEF2", x: -0.18, z: -0.24, y: 0.14 },
+    { geo: cyl(0.07, 0.28, 5), color: "#E7EEF2", x: 0.18, z: -0.24, y: 0.14 },
+  ];
+  if (wounds > 0) parts.push({ geo: sphere(0.1), color: "#E07A6A", x: 0.16, y: 0.5, z: 0.1 });
+  if (wounds > 1) parts.push({ geo: sphere(0.09), color: "#C43838", x: -0.12, y: 0.48, z: -0.05 });
+  return mergeParts(parts);
+}
+
+function parkaGeo(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: cyl(0.24, 0.78, 7), color: "#7EB6E6", y: 0.62 },
+    { geo: sphere(0.2), color: "#F3D2B3", y: 1.2 },
+    { geo: sphere(0.23), color: "#7EB6E6", y: 1.34 },
+    { geo: box(0.4, 0.08, 0.18), color: "#F7F4EC", y: 1.02, z: 0.08 },
+    { geo: box(0.12, 0.46, 0.12), color: "#7EB6E6", x: -0.3, y: 0.78 },
+    { geo: box(0.12, 0.46, 0.12), color: "#7EB6E6", x: 0.3, y: 0.78 },
+    { geo: box(0.1, 0.06, 0.12), color: "#F7F4EC", x: -0.3, y: 0.58 },
+    { geo: box(0.1, 0.06, 0.12), color: "#F7F4EC", x: 0.3, y: 0.58 },
+    { geo: cyl(0.09, 0.34, 5), color: "#5C4636", x: -0.1, y: 0.18 },
+    { geo: cyl(0.09, 0.34, 5), color: "#5C4636", x: 0.1, y: 0.18 },
+    { geo: box(0.08, 0.08, 0.46), color: "#8C5A32", x: 0.34, y: 0.72, z: 0.12 },
+    { geo: box(0.22, 0.12, 0.05), color: "#D9D2C8", x: 0.34, y: 0.78, z: 0.32 },
+  ]);
+}
+
+function logGeo(): THREE.BufferGeometry {
+  return mergeParts([{ geo: cyl(0.1, 0.42, 6), color: "#C47A4A", y: 0.12, ry: Math.PI / 2 }]);
+}
+
+function meatGeo(): THREE.BufferGeometry {
+  return mergeParts([{ geo: sphere(0.14), color: "#A33B24", y: 0.14, sx: 1.3, sy: 0.7, sz: 0.9 }]);
+}
+
+function coinGeo(): THREE.BufferGeometry {
+  return mergeParts([{ geo: cyl(0.12, 0.04, 8), color: "#E6B325", y: 0.08 }]);
+}
+
+function pileGeo(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: cyl(0.46, 0.08, 8), color: "#A8653A", y: 0.06 },
+    { geo: box(0.28, 0.16, 0.2), color: "#C47A4A", y: 0.18 },
+  ]);
+}
+
+function padGeo(): THREE.BufferGeometry {
+  return mergeParts([{ geo: cyl(0.42, 0.04, 10), color: "#7ED07A", y: 0.04 }]);
+}
+
+function grillMesh(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: box(0.7, 0.28, 0.4), color: "#8C5430", y: 0.32 },
+    { geo: box(0.5, 0.06, 0.28), color: "#2A2724", y: 0.48 },
+    { geo: box(0.08, 0.2, 0.08), color: "#C4A06A", x: -0.28, y: 0.2 },
+    { geo: box(0.08, 0.2, 0.08), color: "#C4A06A", x: 0.28, y: 0.2 },
+  ]);
+}
+
+function counterMesh(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: box(0.9, 0.32, 0.42), color: "#C4A06A", y: 0.36 },
+    { geo: box(0.16, 0.1, 0.16), color: "#7DDE6A", x: 0.24, y: 0.56 },
+    { geo: cyl(0.1, 0.04, 8), color: "#F7F4EC", x: -0.2, y: 0.54 },
+  ]);
+}
+
+function deckMesh(): THREE.BufferGeometry {
+  return mergeParts([{ geo: box(1.15, 0.08, 0.85), color: "#A67C52", y: 0.04 }]);
+}
+
+function rawMesh(): THREE.BufferGeometry {
+  return mergeParts([{ geo: sphere(0.12), color: "#E07A6A", y: 0.12, sx: 1.4, sy: 0.7, sz: 0.9 }]);
+}
+
+function billMesh(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: box(0.22, 0.04, 0.12), color: "#7DDE6A", y: 0.06 },
+    { geo: box(0.2, 0.04, 0.1), color: "#3E9A62", y: 0.1 },
+  ]);
+}
+
+function smokeMesh(): THREE.BufferGeometry {
+  return mergeParts([{ geo: sphere(0.16), color: "#F7F4EC", y: 0.9, sx: 1, sy: 0.7, sz: 1 }]);
+}
+
+function axeGeo(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: box(0.08, 0.08, 0.62), color: "#8C5A32", z: 0.05 },
+    { geo: box(0.34, 0.18, 0.06), color: "#D9D2C8", z: 0.34, y: 0.04 },
+  ]);
+}
+
 function extraGeos(): Record<string, THREE.BufferGeometry> {
   return {
     scrub: scrubGeo(),
@@ -264,6 +363,21 @@ function extraGeos(): Record<string, THREE.BufferGeometry> {
     fruit: fruitTreeGeo(),
     press: pressGeo(),
     stall: stallGeo(),
+    grove: treeGeo(),
+    beast: beastGeo(0),
+    beast1: beastGeo(1),
+    beast2: beastGeo(2),
+    wood: logGeo(),
+    meat: meatGeo(),
+    coin: coinGeo(),
+    pile: pileGeo(),
+    pad: padGeo(),
+    grill: grillMesh(),
+    counter: counterMesh(),
+    deck: deckMesh(),
+    raw: rawMesh(),
+    bill: billMesh(),
+    smoke: smokeMesh(),
   };
 }
 
@@ -322,6 +436,7 @@ export class WebglYard implements YardRenderer {
   private signText = "";
   private phone = false;
   private geos: THREE.BufferGeometry[] = [];
+  private kindGeos: Record<string, THREE.BufferGeometry> = {};
 
   mount(host: HTMLElement): void {
     this.host = host;
@@ -388,7 +503,11 @@ export class WebglYard implements YardRenderer {
   }
 
   sync(snapshot: RenderSnapshot): void {
+    const eye = cameraEye();
+    this.camera.position.set(eye[0], eye[1], eye[2]);
+    this.camera.lookAt(look.x, VIEW.lookY, look.z);
     if (this.builtFor !== snapshot.mapId) this.build(snapshot);
+    this.ensureActors(snapshot);
     this.renderer.setClearColor(snapshot.palette.letter, 1);
     const pulse = snapshot.reduced ? 1 : 1 + Math.sin(snapshot.time / 160) * 0.08;
     this.discIds.forEach((id, index) => {
@@ -410,6 +529,7 @@ export class WebglYard implements YardRenderer {
 
     for (const prop of snapshot.props) this.placeProp(prop, snapshot);
     this.placePeople(snapshot);
+    this.placeAxe(snapshot);
     if (this.signText !== snapshot.sign || this.signLit !== snapshot.signLit) {
       this.signText = snapshot.sign;
       this.signLit = snapshot.signLit;
@@ -462,7 +582,7 @@ export class WebglYard implements YardRenderer {
     water.position.set(2.7, -0.02, 2.5);
     this.scene.add(ground, pad, water);
 
-    this.addFence(snapshot.palette.wood, shadow);
+    this.addFence(snapshot, shadow);
     this.addDressing(snapshot, shadow);
 
     const reed = this.track(reedGeo());
@@ -474,7 +594,16 @@ export class WebglYard implements YardRenderer {
     const barge = this.track(boatGeo(2));
     const extras = extraGeos();
     for (const geo of Object.values(extras)) this.track(geo);
-    const boss = this.track(person("#F6EFE2", "#C43B3B"));
+    this.kindGeos = {
+      reed,
+      clay,
+      weave: weave1,
+      bench,
+      boat: skiff,
+      gate: weave1,
+      ...extras,
+    };
+    const boss = this.track(snapshot.ring ? parkaGeo() : person("#F6EFE2", "#C43B3B"));
     for (const prop of snapshot.props) {
       let geo = extras[prop.kind] ?? reed;
       if (prop.kind === "reed") geo = reed;
@@ -489,14 +618,23 @@ export class WebglYard implements YardRenderer {
       const item = mesh(geo, shadow);
       item.userData.geo1 = prop.kind === "weave" ? weave1 : prop.kind === "boat" ? skiff : geo;
       item.userData.geo2 = prop.kind === "weave" ? weave2 : prop.kind === "boat" ? barge : geo;
+      if (prop.kind === "beast") {
+        item.userData.full = extras.beast;
+        item.userData.mid = extras.beast1;
+        item.userData.low = extras.beast2;
+      }
       this.scene.add(item);
       this.objects.set(prop.id, item);
     }
     const bossMesh = mesh(boss, shadow);
     this.scene.add(bossMesh);
     this.objects.set("boss", bossMesh);
-    for (let i = 0; i < 3; i += 1) {
-      const hand = mesh(this.track(person(snapshot.hands[i]?.color ?? ["#C47A4A", "#5E8C4A", "#A33B24"][i], null)), shadow);
+    if (snapshot.ring) this.addHunterGear(bossMesh, shadow);
+    const axe = mesh(this.track(axeGeo()), shadow);
+    this.scene.add(axe);
+    this.objects.set("axe", axe);
+    for (let i = 0; i < 4; i += 1) {
+      const hand = mesh(this.track(person(snapshot.hands[i]?.color ?? ["#C43838", "#C43838", "#C43838", "#3D8B7A"][i], "#F7F4EC")), shadow);
       hand.visible = false;
       this.scene.add(hand);
       this.objects.set(`hand${i}`, hand);
@@ -518,15 +656,19 @@ export class WebglYard implements YardRenderer {
     this.signText = "";
   }
 
-  private addFence(color: string, shadow: boolean): void {
-    const geo = this.track(paint(box(0.16, 0.62, 0.16), color));
+  private addFence(snapshot: RenderSnapshot, shadow: boolean): void {
+    const camp = snapshot.mapId === "camp";
+    const radius = camp ? 2.48 : 3.55;
+    const h = camp ? 0.95 : 0.62;
+    const count = camp ? 28 : 18;
+    const geo = this.track(paint(box(camp ? 0.12 : 0.16, h, 0.1), camp ? "#C4A06A" : snapshot.palette.wood));
     const posts: THREE.Vector3[] = [];
-    for (let i = 0; i < 18; i += 1) {
-      const a = (i / 18) * Math.PI * 2;
+    for (let i = 0; i < count; i += 1) {
+      const a = (i / count) * Math.PI * 2;
       let da = Math.abs(a);
       if (da > Math.PI) da = Math.PI * 2 - da;
-      if (da < 0.46) continue;
-      posts.push(new THREE.Vector3(Math.sin(a) * 3.55, 0.31, -Math.cos(a) * 3.55));
+      if (da < (camp ? 0.38 : 0.46)) continue;
+      posts.push(new THREE.Vector3(Math.sin(a) * radius, h / 2, -Math.cos(a) * radius));
     }
     const inst = new THREE.InstancedMesh(geo, LAMBERT, posts.length);
     posts.forEach((pos, index) => {
@@ -560,16 +702,17 @@ export class WebglYard implements YardRenderer {
 
   private addGate(snapshot: RenderSnapshot, shadow: boolean): void {
     const group = new THREE.Group();
-    const post = this.track(paint(box(0.16, 1.05, 0.16), snapshot.palette.wood));
+    const post = this.track(paint(box(0.16, 1.05, 0.16), snapshot.mapId === "camp" ? "#C43838" : snapshot.palette.wood));
     const left = mesh(post, shadow);
     const right = mesh(post, shadow);
     left.position.set(-0.55, 0.52, 0);
     right.position.set(0.55, 0.52, 0);
-    const beam = mesh(this.track(paint(box(1.3, 0.1, 0.1), "#A8653A")), shadow);
+    const beam = mesh(this.track(paint(box(1.3, 0.1, 0.1), snapshot.mapId === "camp" ? "#C43838" : "#A8653A")), shadow);
     beam.position.set(0, 1.02, 0);
-    this.signMat = new THREE.MeshBasicMaterial({ map: signTexture(snapshot.sign, false) });
+    this.signMat = new THREE.MeshBasicMaterial({ map: signTexture(snapshot.sign || " ", false) });
     const board = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 0.42), this.signMat);
     board.position.set(0, 0.72, 0.08);
+    board.visible = snapshot.sign.length > 0;
     group.add(left, right, beam, board);
     group.userData.left = left;
     group.userData.right = right;
@@ -600,12 +743,23 @@ export class WebglYard implements YardRenderer {
       const next = prop.stage >= 2 ? meshObj.userData.geo2 : meshObj.userData.geo1;
       if (next && meshObj.geometry !== next) meshObj.geometry = next as THREE.BufferGeometry;
     }
+    if (prop.kind === "beast" && meshObj.userData.full) {
+      const next = prop.scale > 0.67 ? meshObj.userData.full : prop.scale > 0.34 ? meshObj.userData.mid : meshObj.userData.low;
+      if (next && meshObj.geometry !== next) meshObj.geometry = next as THREE.BufferGeometry;
+    }
     let y = 0;
     let sx = 1;
     let sy = 1;
     let sz = 1;
-    if (prop.kind === "reed" || prop.kind === "clay") {
+    if (prop.kind === "smoke") y = 0.15 + Math.sin(snapshot.time / 180) * 0.12;
+    if (prop.kind === "reed" || prop.kind === "clay" || prop.kind === "grove") {
       sy = Math.max(0.2, prop.scale);
+    }
+    if (prop.kind === "pile") {
+      const bulk = 0.85 + prop.scale * 0.4;
+      sx = bulk;
+      sy = bulk;
+      sz = bulk;
     }
     if (prop.kind === "boat" || prop.kind === "cart" || prop.kind === "stall") {
       const slide = snapshot.boatAway * 2.6;
@@ -622,10 +776,21 @@ export class WebglYard implements YardRenderer {
     const boss = this.objects.get("boss");
     if (boss) {
       boss.position.set(snapshot.boss.x, 0, snapshot.boss.z);
-      boss.rotation.z = Math.sin(snapshot.boss.swing * Math.PI) * 0.35;
-      boss.rotation.y = -0.6;
+      boss.rotation.z = Math.sin(snapshot.boss.swing * Math.PI) * 0.45;
+      boss.rotation.y = snapshot.boss.facing;
+      const pack = boss.getObjectByName("pack");
+      const cash = boss.getObjectByName("cash");
+      const goods = snapshot.carry.raw + snapshot.carry.cooked;
+      if (pack) {
+        pack.visible = goods > 0;
+        pack.scale.y = 0.4 + Math.min(4, goods) * 0.35;
+      }
+      if (cash) {
+        cash.visible = snapshot.carry.money > 0;
+        cash.scale.y = 0.35 + Math.min(10, snapshot.carry.money) * 0.12;
+      }
     }
-    for (let i = 0; i < 3; i += 1) {
+    for (let i = 0; i < 4; i += 1) {
       const hand = this.objects.get(`hand${i}`);
       const data = snapshot.hands[i];
       if (!hand) continue;
@@ -640,5 +805,56 @@ export class WebglYard implements YardRenderer {
       hand.rotation.y = data.walking ? 0.4 : -0.5;
       hand.scale.setScalar(1.7 / 1.9);
     }
+  }
+
+  private addHunterGear(boss: THREE.Object3D, shadow: boolean): void {
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.34, 0.5, 24),
+      new THREE.MeshBasicMaterial({ color: 0x3ee0e0, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }),
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.05;
+    const pack = mesh(this.track(paint(box(0.22, 0.2, 0.14), "#E07A6A")), shadow);
+    pack.name = "pack";
+    pack.position.set(0, 0.78, -0.22);
+    const cash = mesh(this.track(paint(box(0.16, 0.24, 0.1), "#7DDE6A")), shadow);
+    cash.name = "cash";
+    cash.position.set(0.02, 1.05, -0.2);
+    cash.visible = false;
+    pack.visible = false;
+    boss.add(ring, pack, cash);
+  }
+
+  /** Drops appear after the yard is built, so a missing id grows a mesh here. */
+  private ensureActors(snapshot: RenderSnapshot): void {
+    const shadow = this.tier === "high";
+    const want = new Set(snapshot.props.map((prop) => prop.id));
+    for (const prop of snapshot.props) {
+      if (this.objects.has(prop.id) || prop.kind === "gate") continue;
+      const geo = this.kindGeos[prop.kind] ?? this.kindGeos.grove;
+      if (!geo) continue;
+      const item = mesh(geo, shadow);
+      this.scene.add(item);
+      this.objects.set(prop.id, item);
+    }
+    for (const [id, obj] of this.objects) {
+      if (id === "boss" || id === "axe" || id === "gate" || id.startsWith("hand")) continue;
+      if (!want.has(id)) {
+        this.scene.remove(obj);
+        this.objects.delete(id);
+      }
+    }
+  }
+
+  private placeAxe(snapshot: RenderSnapshot): void {
+    const axe = this.objects.get("axe");
+    if (!axe) return;
+    if (!snapshot.axe) {
+      axe.visible = false;
+      return;
+    }
+    axe.visible = true;
+    axe.position.set(snapshot.axe.x, 0.7, snapshot.axe.z);
+    axe.rotation.y = -snapshot.axe.angle;
   }
 }

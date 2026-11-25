@@ -3,15 +3,14 @@ import "@fontsource/nunito/latin-700.css";
 import "./ui/hud.css";
 import { getMap, hasMap, startingMap } from "./content/maps/registry";
 import type { MapDef } from "./content/types";
-import { tuning } from "./content/tuning";
+import { SAVE_KEY, tuning } from "./content/tuning";
 import { AudioBus, type Cue } from "./audio/bus";
-import { project } from "./render/project";
-import { buildSnapshot } from "./render/snapshot";
+import { worldMove } from "./input/stick";
+import { campSnapshot } from "./render/camp-snapshot";
 import type { YardRenderer } from "./render/types";
 import { loadFromStorage, parkFutureSave, toBlob, writeSave } from "./save/storage";
-import { actionForProp, flushBuffer, requestAct, requestProp, type ActResult } from "./sim/actions";
+import { campFromRaw, createCamp, tickCamp, type CampState } from "./sim/camp";
 import { createGame, createRun, type GameState } from "./sim/state";
-import { tick } from "./sim/tick";
 import { Hud } from "./ui/hud";
 
 const params = new URLSearchParams(location.search);
@@ -43,10 +42,21 @@ if (params.has("reset")) {
 
 if (reducedQuery.matches) state.profile.settings.reducedMotion = true;
 applyReduced();
-document.body.style.background = map.palette.letter;
+document.body.style.background = "#D5E6EE";
+
+let camp: CampState = createCamp();
+if (!params.has("reset")) camp = campFromRaw(localStorage.getItem(SAVE_KEY)) ?? camp;
+const stickEl = document.createElement("div");
+stickEl.className = "stick hidden";
+stickEl.innerHTML = "<i></i>";
+const knob = stickEl.querySelector("i") as HTMLElement;
+let stick: { id: number; ox: number; oy: number; x: number; y: number } | null = null;
+const held = new Set<string>();
 
 const hud = new Hud(app, {
-  onAct: () => act(),
+  onAct: () => {
+    /* Walking is the only control. */
+  },
   onMute: () => {
     state.profile.settings.muted = !state.profile.settings.muted;
     audio.muted = state.profile.settings.muted;
@@ -64,6 +74,7 @@ const hud = new Hud(app, {
     futureHold = false;
     state = createGame(startingMap());
     map = startingMap();
+    camp = createCamp();
     state.banner = "";
     hud.showBanner("", false);
     flushNow();
@@ -94,6 +105,7 @@ const hud = new Hud(app, {
   },
 });
 
+app.appendChild(stickEl);
 audio.muted = state.profile.settings.muted;
 if (futureHold) {
   hud.showBanner("This save is from a newer Lot Road. Refresh the page.", true);
@@ -109,13 +121,11 @@ function frame(now: number): void {
   const dt = Math.min(100, now - last);
   last = now;
   if (!hidden && !hud.paused() && !futureHold) {
-    tick(state, map, dt);
-    const extra = flushBuffer(state, map);
-    if (extra) react(extra);
+    const cues = tickCamp(camp, readMove(), dt);
+    for (const cue of cues) audio.play(cue as Cue);
   }
   const reduced = reducedQuery.matches || state.profile.settings.reducedMotion;
-  const signLit = state.run.phase !== "play" && !!map.nextId && hasMap(map.nextId);
-  const snapshot = buildSnapshot(state, map, now, reduced, signLit);
+  const snapshot = campSnapshot(camp, now, reduced);
   const rect = app.getBoundingClientRect();
   try {
     renderer?.resize(rect.width, rect.height);
@@ -124,7 +134,7 @@ function frame(now: number): void {
     console.error(error);
     if (rendererKind === "webgl") void mountRenderer("flat");
   }
-  hud.update(state, map, snapshot, rect.width, rect.height);
+  hud.update(camp, snapshot, rect.width, rect.height);
   watchFrame(dt);
   if (params.get("debug") === "1" && renderer) {
     const stats = renderer.stats();
@@ -136,30 +146,37 @@ function frame(now: number): void {
 requestAnimationFrame(frame);
 
 app.addEventListener("pointerdown", (event) => {
-  if ((event.target as HTMLElement).closest(".act, .pause, .panel, .card, .banner")) return;
+  if ((event.target as HTMLElement).closest(".pause, .panel, .card, .banner")) return;
   if (event.pointerType === "touch" && !event.isPrimary) return;
   audio.unlock();
   if (hud.paused() || futureHold) return;
-  const rect = app.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-  const prop = pickProp(x, y, rect.width, rect.height);
-  let result: ActResult | null = null;
-  if (prop && actionForProp(state, map, prop)) result = requestProp(state, map, prop);
-  else result = requestAct(state, map);
-  if (result) react(result);
+  stick = { id: event.pointerId, ox: event.clientX, oy: event.clientY, x: event.clientX, y: event.clientY };
+  app.setPointerCapture(event.pointerId);
+  placeStick();
 });
 
+app.addEventListener("pointermove", (event) => {
+  if (!stick || event.pointerId !== stick.id) return;
+  stick.x = event.clientX;
+  stick.y = event.clientY;
+  placeStick();
+});
+
+const endStick = (event: PointerEvent) => {
+  if (!stick || event.pointerId !== stick.id) return;
+  stick = null;
+  stickEl.classList.add("hidden");
+};
+app.addEventListener("pointerup", endStick);
+app.addEventListener("pointercancel", endStick);
 app.addEventListener("contextmenu", (event) => event.preventDefault());
 
 window.addEventListener("keydown", (event) => {
-  if (event.repeat) return;
-  if (event.code !== "Space" && event.code !== "Enter") return;
-  if ((event.target as HTMLElement).closest?.("button, input")) return;
-  event.preventDefault();
+  if (event.code.startsWith("Arrow") || event.code === "Space") event.preventDefault();
+  held.add(event.code);
   audio.unlock();
-  act();
 });
+window.addEventListener("keyup", (event) => held.delete(event.code));
 
 document.addEventListener("visibilitychange", () => {
   hidden = document.hidden;
@@ -172,43 +189,28 @@ document.addEventListener("visibilitychange", () => {
 
 window.addEventListener("pagehide", () => flushNow());
 
-function act(): void {
-  if (hud.paused() || futureHold) return;
-  audio.unlock();
-  hud.flashDown();
-  const result = requestAct(state, map);
-  if (result) react(result);
+function readMove(): { x: number; z: number } {
+  const rect = app.getBoundingClientRect();
+  if (stick) return worldMove(stick.x - stick.ox, stick.y - stick.oy, rect.width, rect.height);
+  let sx = 0;
+  let sy = 0;
+  if (held.has("KeyA") || held.has("ArrowLeft")) sx -= 1;
+  if (held.has("KeyD") || held.has("ArrowRight")) sx += 1;
+  if (held.has("KeyW") || held.has("ArrowUp")) sy -= 1;
+  if (held.has("KeyS") || held.has("ArrowDown")) sy += 1;
+  if (!sx && !sy) return { x: 0, z: 0 };
+  return worldMove(sx * 80, sy * 80, rect.width, rect.height);
 }
 
-const seen = { stage: state.run.stage, phase: state.run.phase };
-
-function react(result: ActResult): void {
-  audio.play(result.sound as Cue);
-  const reduced = reducedQuery.matches || state.profile.settings.reducedMotion;
-  if (!reduced && (result.sound === "hire" || result.sound === "build" || result.sound === "sell")) {
-    navigator.vibrate?.(12);
-  }
-  if (state.run.stage !== seen.stage || state.run.phase !== seen.phase) {
-    seen.stage = state.run.stage;
-    seen.phase = state.run.phase;
-    flushNow();
-  }
-}
-
-function pickProp(x: number, y: number, width: number, height: number): string | null {
-  const snapshot = buildSnapshot(state, map, performance.now(), false, false);
-  let best: string | null = null;
-  let bestD = 32;
-  for (const prop of snapshot.props) {
-    if (prop.stage <= 0 && prop.disc === "off") continue;
-    const p = project(prop.x, 0.4, prop.z, width, height);
-    const dist = Math.hypot(p.x - x, p.y - y);
-    if (dist < bestD) {
-      best = prop.id;
-      bestD = dist;
-    }
-  }
-  return best;
+function placeStick(): void {
+  if (!stick) return;
+  const rect = app.getBoundingClientRect();
+  stickEl.classList.remove("hidden");
+  stickEl.style.left = `${stick.ox - rect.left}px`;
+  stickEl.style.top = `${stick.oy - rect.top}px`;
+  const dx = Math.max(-48, Math.min(48, stick.x - stick.ox));
+  const dy = Math.max(-48, Math.min(48, stick.y - stick.oy));
+  knob.style.transform = `translate(${dx}px, ${dy}px)`;
 }
 
 function hasWebGL(): boolean {
@@ -289,7 +291,7 @@ function watchFrame(dt: number): void {
 
 function maybeScheduleSave(): void {
   if (futureHold) return;
-  const raw = JSON.stringify(toBlob(state));
+  const raw = JSON.stringify(toBlob(state)) + JSON.stringify(camp);
   if (raw === lastBlob) return;
   window.clearTimeout(saveTimer);
   saveTimer = window.setTimeout(() => {
@@ -302,8 +304,8 @@ function maybeScheduleSave(): void {
 function flushNow(): void {
   if (futureHold) return;
   window.clearTimeout(saveTimer);
-  const ok = writeSave(localStorage, state);
-  lastBlob = JSON.stringify(toBlob(state));
+  const ok = writeSave(localStorage, state, camp);
+  lastBlob = JSON.stringify(toBlob(state)) + JSON.stringify(camp);
   if (!ok) hud.showBanner(state.banner, false);
 }
 
