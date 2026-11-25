@@ -30,6 +30,9 @@ export function toBlob(state: GameState, now = Date.now()): SaveBlob {
         remainingMs: job.left,
         totalMs: job.total,
         recipeId: job.recipeId,
+        elapsed: job.elapsed,
+        paused: job.paused,
+        windowsHit: job.windowsHit,
       })),
       nodes: run.nodes.map((node) => ({
         id: node.id,
@@ -48,6 +51,15 @@ export function toBlob(state: GameState, now = Date.now()): SaveBlob {
       bossCd: run.bossCd,
       hintLeft: run.hintLeft,
       idleMs: run.idleMs,
+      low: { ...run.low },
+      transit: { ...run.transit },
+      clockMs: run.clockMs,
+      tides: run.tides,
+      haulLeft: run.haulLeft,
+      shakeMs: run.shakeMs,
+      shakeSpent: run.shakeSpent,
+      earlyLock: run.earlyLock,
+      pickedMs: run.pickedMs,
     },
   };
 }
@@ -74,11 +86,23 @@ export function fromBlob(blob: SaveBlob): GameState {
   run.bossCd = blob.run.bossCd ?? 0;
   run.hintLeft = blob.run.hintLeft ?? tuning.hintFreeActions;
   run.idleMs = blob.run.idleMs ?? 0;
+  run.low = { ...(blob.run.low ?? {}) };
+  run.transit = { ...(blob.run.transit ?? {}) };
+  run.clockMs = blob.run.clockMs ?? 0;
+  run.tides = blob.run.tides ?? 0;
+  run.haulLeft = blob.run.haulLeft ?? 0;
+  run.shakeMs = blob.run.shakeMs ?? 0;
+  run.shakeSpent = !!blob.run.shakeSpent;
+  run.earlyLock = blob.run.earlyLock ?? 0;
+  run.pickedMs = blob.run.pickedMs ?? 0;
   run.jobs = (blob.run.stationJobs ?? []).map((job) => ({
     stationId: job.stationId,
     recipeId: job.recipeId,
     left: job.remainingMs,
     total: job.totalMs ?? job.remainingMs,
+    elapsed: job.elapsed ?? Math.max(0, (job.totalMs ?? job.remainingMs) - job.remainingMs),
+    paused: !!job.paused,
+    windowsHit: job.windowsHit ?? 0,
   }));
   if (blob.run.nodes?.length) {
     run.nodes = blob.run.nodes.map((node) => ({

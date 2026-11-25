@@ -16,6 +16,7 @@ export interface HudHooks {
   onFresh: () => void;
   onTravel: () => void;
   onDismissFuture: () => void;
+  onReplay: () => void;
 }
 
 /**
@@ -37,6 +38,7 @@ export class Hud {
   private card!: HTMLElement;
   private debugEl!: HTMLElement;
   private freshArmed = false;
+  private canReplay = false;
   private cardKey = "";
 
   constructor(host: HTMLElement, private hooks: HudHooks) {
@@ -127,6 +129,7 @@ export class Hud {
 
   update(state: GameState, map: MapDef, snapshot: RenderSnapshot, width: number, height: number): void {
     this.name.textContent = map.name;
+    this.canReplay = state.profile.cleared.includes(map.id);
     const stageCount = map.stages.length;
     this.pips.innerHTML = map.stages
       .map((stage) => `<i class="pip${stage.id <= state.run.stage ? " on" : ""}"></i>`)
@@ -151,7 +154,7 @@ export class Hud {
       sub = "On the water";
     } else if (!action && state.run.launchLeft > 0) {
       verb = "LAUNCH";
-      sub = "The barge is away";
+      sub = map.away ?? "The cart is away";
     } else if (!action && state.run.phase !== "play") {
       verb = "DONE";
       sub = map.name;
@@ -201,12 +204,16 @@ export class Hud {
       ? `${map.nextName} is open.`
       : `${map.name} is loaded. ${map.nextName ?? "The next yard"} opens with the next update.`;
     this.card.classList.remove("hidden");
+    const heading = map.nextId ? "On the road" : "The road ends";
+    const purseNote = map.nextId
+      ? `The hands are paid. ${keep} coins stay in the purse.`
+      : "The road stops here. The purse stays as it is.";
     this.card.innerHTML = `
       <p>${map.name}</p>
-      <h2>${map.nextId ? "On the road" : "The road ends"}</h2>
+      <h2>${heading}</h2>
       <p class="purse">${state.profile.coins}</p>
-      <p>The hands are paid. ${keep} coins stay in the purse.</p>
-      <p>${nextLine}</p>
+      <p>${purseNote}</p>
+      ${map.nextId ? `<p>${nextLine}</p>` : ""}
       ${nextReady ? `<button type="button">GO</button>` : ""}
     `;
     this.card.querySelector("button")?.addEventListener("pointerdown", (event) => {
@@ -233,6 +240,7 @@ export class Hud {
       <button type="button" data-act="chunky">Chunky yard</button>
       <button type="button" data-act="flat">Flat yard</button>
       <button type="button" data-act="auto">Auto yard</button>
+      ${this.canReplay ? `<button type="button" data-act="replay">Walk this lot again</button>` : ""}
       <button type="button" data-act="fresh">Start a fresh lot</button>
       <p class="credits">Yards, icons, and sounds are original. Lilita One and Nunito are used under the SIL Open Font License 1.1.</p>
       <button type="button" data-act="close">Back to the yard</button>
@@ -250,6 +258,10 @@ export class Hud {
         if (act === "chunky") this.hooks.onRenderer("webgl");
         if (act === "flat") this.hooks.onRenderer("flat");
         if (act === "auto") this.hooks.onRenderer("auto");
+        if (act === "replay") {
+          this.hooks.onReplay();
+          this.panel.classList.add("hidden");
+        }
         if (act === "fresh") this.armFresh(button as HTMLButtonElement);
       });
     });

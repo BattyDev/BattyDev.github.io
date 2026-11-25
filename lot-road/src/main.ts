@@ -10,7 +10,7 @@ import { buildSnapshot } from "./render/snapshot";
 import type { YardRenderer } from "./render/types";
 import { loadFromStorage, parkFutureSave, toBlob, writeSave } from "./save/storage";
 import { actionForProp, flushBuffer, requestAct, requestProp, type ActResult } from "./sim/actions";
-import { createGame, type GameState } from "./sim/state";
+import { createGame, createRun, type GameState } from "./sim/state";
 import { tick } from "./sim/tick";
 import { Hud } from "./ui/hud";
 
@@ -78,6 +78,12 @@ const hud = new Hud(app, {
     document.body.style.background = map.palette.letter;
     flushNow();
     void mountRenderer(pickKind());
+  },
+  onReplay: () => {
+    // A cleared lot can be walked again. The purse and the clear bonus stay put.
+    state.run = createRun(map);
+    state.floaters = [];
+    flushNow();
   },
   onDismissFuture: () => {
     parkFutureSave(localStorage);

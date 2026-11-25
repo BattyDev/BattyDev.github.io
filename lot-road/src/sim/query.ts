@@ -14,6 +14,10 @@ export function condMet(cond: Cond | undefined, run: RunState): boolean {
       return run.hands.length >= cond.n;
     case "order":
       return (run.order[cond.good ?? ""] ?? 0) >= cond.n;
+    case "crafted":
+      return (run.crafted[cond.good ?? ""] ?? 0) >= cond.n;
+    case "tides":
+      return run.tides >= cond.n;
     default:
       return false;
   }
@@ -31,6 +35,10 @@ export function goalHave(goal: GoalDef, run: RunState): number {
       return run.hands.length;
     case "order":
       return run.order[goal.good ?? ""] ?? 0;
+    case "crafted":
+      return run.crafted[goal.good ?? ""] ?? 0;
+    case "tides":
+      return run.tides;
     case "launched":
       return run.launched ? 1 : 0;
     default:
@@ -58,6 +66,8 @@ export function activeSale(run: RunState, map: MapDef): SaleDef | null {
     if (run.stage < sale.stageMin || run.stage > sale.stageMax) continue;
     if (!condMet(sale.requires, run)) continue;
     if (sale.blockedBy && condMet(sale.blockedBy, run)) continue;
+    if (sale.whenHeld && (run.resources[sale.whenHeld.good] ?? 0) < sale.whenHeld.n) continue;
+    if (sale.limit && (run.sales[sale.id] ?? 0) >= sale.limit) continue;
     return sale;
   }
   return null;
@@ -72,6 +82,7 @@ export function orderLoadGood(run: RunState, map: MapDef): string | null {
   for (const line of map.season.lines) {
     if ((run.order[line.good] ?? 0) >= line.n) continue;
     if ((run.resources[line.good] ?? 0) > 0) return line.good;
+    if (line.also && (run.resources[line.also] ?? 0) > 0) return line.also;
   }
   return null;
 }
@@ -87,6 +98,7 @@ export function desiredOutput(state: GameState, map: MapDef): string {
   const sale = activeSale(run, map);
   if (sale) return sale.good;
   if (run.pad) return run.pad.good;
+  if (map.id !== "reed-bend") return map.season.lines[0]?.good ?? "reed";
   if (run.stage <= 1) return "reed";
   if (run.stage === 2) return "mat";
   return "crock";
@@ -105,7 +117,9 @@ export function gatherGood(state: GameState, map: MapDef): string | null {
     if (have >= threshold) continue;
     const score = have / threshold;
     const tie = best && Math.abs(score - best.score) < 0.001;
-    if (!best || score < best.score - 0.001 || (tie && good === "reed")) {
+    // Reed Bend keeps the weave fed. Later yards follow the good the sale is short of.
+    const prefer = map.id === "reed-bend" ? "reed" : scarceRaw(state, map, desiredOutput(state, map));
+    if (!best || score < best.score - 0.001 || (tie && good === prefer)) {
       best = { good, score };
     }
   }
@@ -146,7 +160,7 @@ export function goalLine(state: GameState, map: MapDef): string {
   const run = state.run;
   if (run.phase !== "play") return "";
   if (run.stage === map.season.stage && !run.launched) {
-    if (run.launchLeft > 0) return "The barge is away";
+    if (run.launchLeft > 0) return map.away ?? "The cart is away";
     if (!orderReady(run, map)) {
       return map.season.lines
         .map((line) => `${line.label} ${run.order[line.good] ?? 0}/${line.n}`)

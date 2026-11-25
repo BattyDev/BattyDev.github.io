@@ -22,7 +22,8 @@ export function harvestNode(state: GameState, map: MapDef, nodeId: string, who: 
   if (!def || !node || node.charges <= 0 || def.stage > state.run.stage) return false;
   node.charges -= 1;
   node.pending.push(def.regrowMs);
-  state.run.resources[def.good] = (state.run.resources[def.good] ?? 0) + def.yield;
+  const pile = def.low ? state.run.low : state.run.resources;
+  pile[def.good] = (pile[def.good] ?? 0) + def.yield;
   const pos = slotPos(map, def.slot);
   pushFloat(state, pos.x, pos.z, `+${def.yield}`, FLOAT_COLOR[def.good] ?? "#fff");
   if (who === "boss") state.swingMs = 320;
@@ -44,6 +45,9 @@ export function startCraft(state: GameState, map: MapDef, stationId: string): bo
     recipeId: recipe.id,
     left: recipe.ms,
     total: recipe.ms,
+    elapsed: 0,
+    paused: false,
+    windowsHit: 0,
   });
   return true;
 }
@@ -83,28 +87,44 @@ export function finishSale(state: GameState, map: MapDef): void {
   bumpPurse(state);
   state.run.sold[pending.good] = (state.run.sold[pending.good] ?? 0) + pending.count;
   state.run.sales[pending.saleId] = (state.run.sales[pending.saleId] ?? 0) + 1;
+  const sale = map.sales.find((item) => item.id === pending.saleId);
+  if (sale?.countsAs) {
+    state.run.sold[sale.countsAs.good] = (state.run.sold[sale.countsAs.good] ?? 0) + sale.countsAs.n;
+  }
   state.run.pendingSale = null;
   const pos = slotPos(map, "boat");
   pushFloat(state, pos.x, pos.z + 0.4, `+${pending.coins}`, FLOAT_COLOR.coin);
 }
 
 export function loadOrder(state: GameState, map: MapDef, good: string): boolean {
-  const line = map.season.lines.find((item) => item.good === good);
+  const line =
+    map.season.lines.find((item) => item.good === good) ??
+    map.season.lines.find((item) => item.also === good);
   if (!line) return false;
   const have = state.run.resources[good] ?? 0;
-  const room = line.n - (state.run.order[good] ?? 0);
+  const room = line.n - (state.run.order[line.good] ?? 0);
   const move = Math.min(have, room);
   if (move <= 0) return false;
   state.run.resources[good] = have - move;
-  state.run.order[good] = (state.run.order[good] ?? 0) + move;
+  state.run.order[line.good] = (state.run.order[line.good] ?? 0) + move;
   const pos = slotPos(map, "boat");
   pushFloat(state, pos.x, pos.z, `+${move}`, FLOAT_COLOR[good] ?? "#fff");
   return true;
 }
 
 export function tickJobs(state: GameState, map: MapDef, dt: number): void {
-  for (const job of state.run.jobs) job.left -= dt;
-  const done = state.run.jobs.filter((job) => job.left <= 0);
+  for (const job of state.run.jobs) {
+    const recipe = map.recipes.find((item) => item.id === job.recipeId);
+    // Windowed batches advance in tickSpecial, so a missed stoke can pause them.
+    if (recipe?.windows?.length) continue;
+    job.left -= dt;
+  }
+  const done = state.run.jobs.filter((job) => {
+    if (job.paused) return false;
+    const recipe = map.recipes.find((item) => item.id === job.recipeId);
+    if (recipe?.windows && job.windowsHit < recipe.windows.length) return false;
+    return job.left <= 0;
+  });
   if (!done.length) return;
   state.run.jobs = state.run.jobs.filter((job) => job.left > 0);
   for (const job of done) {

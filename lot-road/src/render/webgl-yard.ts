@@ -144,6 +144,129 @@ function rockGeo(): THREE.BufferGeometry {
   return mergeParts([{ geo: sphere(0.28), color: "#C0B4A4", y: 0.16, sx: 1.2, sy: 0.7, sz: 0.9 }]);
 }
 
+function scrubGeo(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: sphere(0.28), color: "#8FB456", y: 0.28 },
+    { geo: sphere(0.18), color: "#6E9440", x: 0.16, y: 0.22 },
+    { geo: cyl(0.05, 0.2, 5), color: "#8C5A32", y: 0.1 },
+  ]);
+}
+
+function stonePileGeo(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: sphere(0.22), color: "#D9D2C8", y: 0.16, sx: 1.3, sy: 0.7 },
+    { geo: sphere(0.14), color: "#C0B4A4", x: 0.18, y: 0.18 },
+  ]);
+}
+
+function pitGeo(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: cyl(0.42, 0.16, 8), color: "#2A2724", y: 0.08 },
+    { geo: cone(0.16, 0.28, 6), color: "#E6C56A", y: 0.28 },
+  ]);
+}
+
+function kilnGeo(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: box(0.7, 0.7, 0.7), color: "#A33B24", y: 0.4 },
+    { geo: box(0.28, 0.22, 0.08), color: "#2A2724", z: 0.38, y: 0.28 },
+    { geo: cyl(0.1, 0.28, 6), color: "#E7D3B0", y: 0.85 },
+  ]);
+}
+
+function cartGeo(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: box(0.9, 0.28, 0.46), color: "#C47A4A", y: 0.32 },
+    { geo: cyl(0.12, 0.08, 8), color: "#2A2724", x: -0.28, z: 0.2, y: 0.12 },
+    { geo: cyl(0.12, 0.08, 8), color: "#2A2724", x: 0.28, z: 0.2, y: 0.12 },
+  ]);
+}
+
+function brineGeo(): THREE.BufferGeometry {
+  return mergeParts([{ geo: cyl(0.26, 0.08, 8), color: "#D5E8F0", y: 0.06 }]);
+}
+
+function kelpGeo(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: cone(0.08, 0.5, 5), color: "#2E7D4F", y: 0.28, ry: 0.4 },
+    { geo: cone(0.06, 0.4, 5), color: "#3E9A62", x: 0.1, y: 0.22 },
+  ]);
+}
+
+function panGeo(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: cyl(0.36, 0.1, 8), color: "#C4A574", y: 0.2 },
+    { geo: cyl(0.28, 0.06, 8), color: "#F7F4EC", y: 0.26 },
+  ]);
+}
+
+function lineGeo(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: box(0.08, 0.7, 0.08), color: "#8C5430", x: -0.28, y: 0.4 },
+    { geo: box(0.08, 0.7, 0.08), color: "#8C5430", x: 0.28, y: 0.4 },
+    { geo: box(0.7, 0.04, 0.04), color: "#E7D3B0", y: 0.72 },
+  ]);
+}
+
+function crateStationGeo(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: box(0.7, 0.08, 0.5), color: "#C47A4A", y: 0.4 },
+    { geo: box(0.28, 0.22, 0.28), color: "#E6C56A", y: 0.55 },
+  ]);
+}
+
+function postGeo(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: box(0.1, 0.9, 0.1), color: "#8C5430", y: 0.5 },
+    { geo: sphere(0.12), color: "#F2B134", y: 1.0 },
+  ]);
+}
+
+function fruitTreeGeo(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: cyl(0.08, 0.4, 5), color: "#8C5A32", y: 0.22 },
+    { geo: sphere(0.36), color: "#6E8B4E", y: 0.7 },
+    { geo: sphere(0.08), color: "#E07A8A", x: 0.16, y: 0.78 },
+    { geo: sphere(0.07), color: "#F2B134", x: -0.12, y: 0.84 },
+  ]);
+}
+
+function pressGeo(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: box(0.5, 0.5, 0.4), color: "#8C5430", y: 0.35 },
+    { geo: cyl(0.08, 0.4, 6), color: "#E7D3B0", y: 0.7 },
+    { geo: box(0.16, 0.16, 0.16), color: "#E07A3D", x: 0.28, y: 0.3 },
+  ]);
+}
+
+function stallGeo(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: box(0.8, 0.08, 0.4), color: "#C47A4A", y: 0.45 },
+    { geo: box(0.08, 0.7, 0.08), color: "#8C5430", x: -0.32, y: 0.4 },
+    { geo: box(0.08, 0.7, 0.08), color: "#8C5430", x: 0.32, y: 0.4 },
+    { geo: box(0.7, 0.06, 0.4), color: "#F2B134", y: 0.78 },
+  ]);
+}
+
+function extraGeos(): Record<string, THREE.BufferGeometry> {
+  return {
+    scrub: scrubGeo(),
+    stone: stonePileGeo(),
+    pit: pitGeo(),
+    kiln: kilnGeo(),
+    cart: cartGeo(),
+    brine: brineGeo(),
+    kelp: kelpGeo(),
+    pan: panGeo(),
+    line: lineGeo(),
+    crate: crateStationGeo(),
+    post: postGeo(),
+    fruit: fruitTreeGeo(),
+    press: pressGeo(),
+    stall: stallGeo(),
+  };
+}
+
 function grassGeo(): THREE.BufferGeometry {
   return mergeParts([
     { geo: cone(0.08, 0.28, 4), color: "#8FB456", y: 0.14 },
@@ -349,9 +472,12 @@ export class WebglYard implements YardRenderer {
     const bench = this.track(benchGeo());
     const skiff = this.track(boatGeo(1));
     const barge = this.track(boatGeo(2));
+    const extras = extraGeos();
+    for (const geo of Object.values(extras)) this.track(geo);
     const boss = this.track(person("#F6EFE2", "#C43B3B"));
     for (const prop of snapshot.props) {
-      let geo = reed;
+      let geo = extras[prop.kind] ?? reed;
+      if (prop.kind === "reed") geo = reed;
       if (prop.kind === "clay") geo = clay;
       if (prop.kind === "weave") geo = weave1;
       if (prop.kind === "bench") geo = bench;
@@ -481,7 +607,7 @@ export class WebglYard implements YardRenderer {
     if (prop.kind === "reed" || prop.kind === "clay") {
       sy = Math.max(0.2, prop.scale);
     }
-    if (prop.kind === "boat") {
+    if (prop.kind === "boat" || prop.kind === "cart" || prop.kind === "stall") {
       const slide = snapshot.boatAway * 2.6;
       obj.position.set(prop.x + slide * 0.6, 0.02 + Math.sin(snapshot.boatAway * Math.PI) * 0.05, prop.z + slide * 0.7);
     } else {

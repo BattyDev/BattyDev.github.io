@@ -1,6 +1,7 @@
 import type { MapDef } from "../content/types";
 import { tickHands } from "./hands";
 import { ageFloaters, finishLaunch, finishSale, tickJobs, tickNodes } from "./mutate";
+import { tickSpecial } from "./special";
 import { refresh } from "./actions";
 import type { GameState } from "./state";
 
@@ -33,6 +34,7 @@ export function tick(state: GameState, map: MapDef, dt: number): void {
   }
 
   tickJobs(state, map, dt);
+  tickSpecial(state, map, dt);
   tickNodes(state, map, dt);
   tickHands(state, map, dt);
   ageFloaters(state, dt);

@@ -333,6 +333,7 @@ export const reedBend: MapDef = {
   ],
   badges: [{ fromStage: 3, station: "weave", good: "mat" }],
   boat: "boat",
+  away: "The barge is away",
   dressing: [
     { kind: "tree", x: -4.2, z: -1.4, scale: 1.05 },
     { kind: "tree", x: -3.8, z: 2.4, scale: 0.85 },

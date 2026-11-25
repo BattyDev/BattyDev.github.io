@@ -23,7 +23,15 @@ export interface SaveRun {
   stations: Record<string, number>;
   /** Count, not positions. A reload stands the Hands back on their marks. */
   hands: number;
-  stationJobs: { stationId: string; remainingMs: number; recipeId: string; totalMs?: number }[];
+  stationJobs: {
+    stationId: string;
+    remainingMs: number;
+    recipeId: string;
+    totalMs?: number;
+    elapsed?: number;
+    paused?: boolean;
+    windowsHit?: number;
+  }[];
   nodes: { id: string; charges: number; regrow: number[] }[];
   order: Record<string, number>;
   stats: { taps: number; playMs: number };
@@ -37,6 +45,15 @@ export interface SaveRun {
   bossCd?: number;
   hintLeft?: number;
   idleMs?: number;
+  low?: Record<string, number>;
+  transit?: Record<string, number>;
+  clockMs?: number;
+  tides?: number;
+  haulLeft?: number;
+  shakeMs?: number;
+  shakeSpent?: boolean;
+  earlyLock?: number;
+  pickedMs?: number;
 }
 
 export function isSaveBlob(value: unknown): value is SaveBlob {

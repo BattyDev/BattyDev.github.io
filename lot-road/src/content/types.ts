@@ -16,7 +16,7 @@ export interface Palette {
 }
 
 export interface Cond {
-  type: "sales" | "sold" | "station" | "hands" | "order";
+  type: "sales" | "sold" | "station" | "hands" | "order" | "crafted" | "tides";
   id?: string;
   good?: string;
   n: number;
@@ -36,6 +36,8 @@ export interface NodeDef {
   stage: number;
   verb: string;
   sub: string;
+  /** Harvest lands on the low terrace, where a tide can take it. */
+  low?: boolean;
 }
 
 export interface StationDef {
@@ -44,6 +46,8 @@ export interface StationDef {
   kind: string;
   /** Rank at the start of a fresh yard. 0 is unbuilt. */
   initial: number;
+  /** Starts its recipe whenever the inputs are sitting there. */
+  auto?: boolean;
 }
 
 export interface RecipeDef {
@@ -57,6 +61,8 @@ export interface RecipeDef {
   ms: number;
   verb: string;
   sub: string;
+  /** Stoke points, measured from the moment the batch starts. */
+  windows?: { at: number; ms: number }[];
 }
 
 export interface SaleDef {
@@ -71,6 +77,12 @@ export interface SaleDef {
   blockedBy?: Cond;
   loadSub: string;
   sellSub: string;
+  /** Stop offering the sale after this many loads. */
+  limit?: number;
+  /** Skip this sale until the player is holding the good. */
+  whenHeld?: { good: string; n: number };
+  /** A lantern sale also counts as juice shipped. */
+  countsAs?: { good: string; n: number };
 }
 
 export interface BuyDef {
@@ -87,7 +99,7 @@ export interface BuyDef {
 }
 
 export interface GoalDef {
-  type: "sales" | "sold" | "station" | "hands" | "order" | "launched";
+  type: "sales" | "sold" | "station" | "hands" | "order" | "launched" | "crafted" | "tides";
   id?: string;
   good?: string;
   n: number;
@@ -111,7 +123,7 @@ export interface UnlockDef {
 
 export interface SeasonDef {
   stage: number;
-  lines: { good: string; n: number; label: string }[];
+  lines: { good: string; n: number; label: string; also?: string }[];
   pay: number;
   bonus: number;
   ms: number;
@@ -128,6 +140,45 @@ export interface DressingDef {
   z: number;
   scale: number;
 }
+
+export interface StokeSpecial {
+  type: "stoke";
+  station: string;
+  /** Hire order, starting at 0. That Hand hits each window after the delay. */
+  stokerIndex: number;
+  stokerDelayMs: number;
+}
+
+export interface TideSpecial {
+  type: "tide";
+  cycleMs: number;
+  warnAtMs: number;
+  tutorialWarnAtMs: number;
+  haulMs: number;
+  lowGoods: string[];
+}
+
+export interface ShakeSpecial {
+  type: "shake";
+  fillMs: number;
+  lateMs: number;
+  perfectFruit: number;
+  perfectNectar: number;
+  earlyFruit: number;
+  pickerMs: number;
+  pickerIndex: number;
+  /** After an early tap the tree rests this long. A full ring does not. */
+  earlyLockMs?: number;
+}
+
+/** A craft the highlight takes before a plainer sale, when its inputs exist. */
+export interface PreferDef {
+  station: string;
+  inputs: { good: string; n: number }[];
+  saleId: string;
+}
+
+export type HandRole = "loop" | "crafter" | "gather" | "haul" | "stoke" | "pick";
 
 export interface MapDef {
   id: string;
@@ -158,4 +209,11 @@ export interface MapDef {
   dressing: DressingDef[];
   /** Boat station id, so sell animations know which mesh shoves off. */
   boat: string;
+  /** Purse on a fresh visit. Travel overwrites this with the 16-coin cap. */
+  startCoins?: number;
+  /** Button line while the cart is leaving. */
+  away?: string;
+  special?: StokeSpecial | TideSpecial | ShakeSpecial;
+  handRoles?: HandRole[];
+  prefer?: PreferDef;
 }

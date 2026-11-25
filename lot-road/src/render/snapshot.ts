@@ -32,7 +32,8 @@ export function buildSnapshot(state: GameState, map: MapDef, time: number, reduc
     let badge = "";
     for (const mark of map.badges) {
       if (state.run.stage >= mark.fromStage && mark.station === station.id) {
-        badge = String(state.run.resources[mark.good] ?? 0);
+        const held = (state.run.resources[mark.good] ?? 0) + (state.run.low[mark.good] ?? 0);
+        badge = String(held);
       }
     }
     const showDisc = rank > 0 || hot === station.id;

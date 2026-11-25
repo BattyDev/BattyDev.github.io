@@ -15,10 +15,11 @@ import {
   recipeFor,
   scarceRaw,
 } from "./query";
+import { applyTimed, fillingShake, timedAction } from "./special";
 import type { GameState } from "./state";
 
 export interface Action {
-  type: "harvest" | "craft" | "load" | "sell" | "buy" | "loadOrder" | "launch";
+  type: "harvest" | "craft" | "load" | "sell" | "buy" | "loadOrder" | "launch" | "stoke" | "haul" | "shake";
   nodeId?: string;
   stationId?: string;
   buyId?: string;
@@ -50,6 +51,22 @@ function craftChoices(state: GameState, map: MapDef): RecipeDef[] {
   });
 }
 
+function preferAction(state: GameState, map: MapDef): Action | null {
+  const prefer = map.prefer;
+  if (!prefer) return null;
+  const rank = state.run.stations[prefer.station] ?? 0;
+  if (rank <= 0) return null;
+  const sale = map.sales.find((item) => item.id === prefer.saleId);
+  if (sale && (state.run.resources[sale.good] ?? 0) >= sale.count && !state.run.pad && !state.run.pendingSale) {
+    return { type: "load", saleId: sale.id, verb: "LOAD", sub: sale.loadSub, propId: map.boat };
+  }
+  const ready = prefer.inputs.every((input) => (state.run.resources[input.good] ?? 0) >= input.n);
+  if (!ready || state.run.jobs.some((job) => job.stationId === prefer.station)) return null;
+  const recipe = recipeFor(map, prefer.station, rank);
+  if (!recipe || !hasInputs(state.run, recipe)) return null;
+  return { type: "craft", stationId: prefer.station, verb: recipe.verb, sub: recipe.sub, propId: prefer.station };
+}
+
 function bestCraft(state: GameState, map: MapDef, output: string): RecipeDef | null {
   const open = craftChoices(state, map);
   return (
@@ -67,6 +84,9 @@ export function highlighted(state: GameState, map: MapDef): Action | null {
   const run = state.run;
   if (run.phase !== "play" || run.pendingSale || run.launchLeft > 0) return null;
 
+  const timed = timedAction(state, map);
+  if (timed) return timed;
+
   for (const buy of map.buys) {
     if (run.stage < buy.stage) continue;
     if (buy.kind === "hand" && run.hands.length >= buy.rank) continue;
@@ -76,6 +96,9 @@ export function highlighted(state: GameState, map: MapDef): Action | null {
     const propId = buy.kind === "station" ? buy.target : "gate";
     return { type: "buy", buyId: buy.id, verb: buy.verb, sub: buy.sub, propId };
   }
+
+  const prefer = preferAction(state, map);
+  if (prefer) return prefer;
 
   if (run.stage === map.season.stage && !run.launched) {
     if (orderReady(run, map)) {
@@ -116,11 +139,14 @@ export function highlighted(state: GameState, map: MapDef): Action | null {
     };
   }
 
+  const filling = fillingShake(state, map);
+  if (filling && (output === "fruit" || output === "juice" || output === "jar")) return filling;
+
   const raw = gatherGood(state, map) ?? scarceRaw(state, map, output);
   const node = bestNode(state, map, raw);
   if (!node) return null;
   const def = map.nodes.find((item) => item.id === node.id);
-  if (!def) return null;
+  if (!def || def.kind === "fruit") return null;
   return { type: "harvest", nodeId: node.id, verb: def.verb, sub: def.sub, propId: node.id };
 }
 
@@ -201,6 +227,12 @@ export function apply(state: GameState, map: MapDef, action: Action): ActResult 
     return { sound: "launch", propId: map.boat };
   }
 
+  if (action.type === "stoke" || action.type === "haul" || action.type === "shake") {
+    if (!applyTimed(state, map, action)) return fail(action.propId);
+    refresh(state, map);
+    return { sound: action.type === "haul" ? "load" : action.type === "shake" ? "chop" : "craft", propId: action.propId };
+  }
+
   if (action.type === "buy" && action.buyId) {
     const buy = map.buys.find((item) => item.id === action.buyId);
     if (!buy || state.profile.coins < buy.cost) return fail(action.propId);
@@ -248,6 +280,8 @@ export function flushBuffer(state: GameState, map: MapDef): ActResult | null {
 
 /** Direct prop tap. Null means "not legal", and the yard tap falls through to the highlight. */
 export function actionForProp(state: GameState, map: MapDef, propId: string): Action | null {
+  const highlightedNow = highlighted(state, map);
+  if (highlightedNow && highlightedNow.propId === propId) return highlightedNow;
   const node = map.nodes.find((item) => item.id === propId);
   if (node) {
     const live = state.run.nodes.find((item) => item.id === propId);

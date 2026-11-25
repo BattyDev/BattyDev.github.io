@@ -1,7 +1,8 @@
-import type { MapDef } from "../content/types";
+import type { HandRole, MapDef } from "../content/types";
 import { tuning } from "../content/tuning";
 import { harvestNode, loadOrder, loadSale, startCraft } from "./mutate";
 import { activeSale, bestNode, gatherGood, orderLoadGood, recipeFor, hasInputs, slotPos } from "./query";
+import { handHaulOne } from "./special";
 import { emptyHand, type GameState, type HandRt } from "./state";
 
 export function addHand(state: GameState, map: MapDef): void {
@@ -34,7 +35,9 @@ export function stationCovered(state: GameState, map: MapDef, stationId: string)
   return false;
 }
 
-function roleOf(index: number, count: number): "loop" | "crafter" | "gather" | "haul" {
+function roleOf(map: MapDef, index: number, count: number): HandRole {
+  const named = map.handRoles?.[index];
+  if (named) return named;
   if (count <= 1) return "loop";
   if (index === 0) return "crafter";
   if (count >= 3 && index === count - 1) return "haul";
@@ -60,7 +63,27 @@ function send(
 
 function assign(state: GameState, map: MapDef, hand: HandRt, index: number): void {
   const run = state.run;
-  const role = roleOf(index, run.hands.length);
+  const role = roleOf(map, index, run.hands.length);
+  if (role === "stoke" || role === "pick") {
+    const stationId = role === "stoke" && map.special?.type === "stoke" ? map.special.station : "";
+    const tree = map.nodes.find((node) => node.kind === "fruit" && node.stage <= run.stage);
+    const slot = stationId
+      ? map.stations.find((station) => station.id === stationId)?.slot
+      : tree?.slot;
+    if (slot) {
+      const pos = slotPos(map, slot);
+      send(hand, pos.x, pos.z, "idle");
+    }
+    return;
+  }
+  if (role === "haul" || role === "loop" || role === "gather") {
+    const carried = handHaulOne(state, map, hand.tideMark);
+    if (carried) {
+      hand.tideMark = carried.mark;
+      hand.mode = "idle";
+      return;
+    }
+  }
   const boat = map.stations.find((station) => station.id === map.boat);
   const boatPos = slotPos(map, boat?.slot ?? "boat");
 
@@ -120,7 +143,10 @@ function assign(state: GameState, map: MapDef, hand: HandRt, index: number): voi
     return;
   }
   const def = map.nodes.find((item) => item.id === node.id);
-  if (!def) return;
+  if (!def || def.kind === "fruit") {
+    hand.mode = "idle";
+    return;
+  }
   const pos = slotPos(map, def.slot);
   hand.nodeId = node.id;
   hand.left = def.handMs;
@@ -130,7 +156,7 @@ function assign(state: GameState, map: MapDef, hand: HandRt, index: number): voi
 
 function fallbackNode(state: GameState, map: MapDef) {
   for (const def of map.nodes) {
-    if (def.stage > state.run.stage) continue;
+    if (def.stage > state.run.stage || def.kind === "fruit") continue;
     const node = bestNode(state, map, def.good);
     if (node) return node;
   }
@@ -197,9 +223,9 @@ export function tickHands(state: GameState, map: MapDef, dt: number): void {
           hand.waiting = true;
           return;
         }
-        if (hand.waiting) {
+          if (hand.waiting) {
           hand.waiting = false;
-          if (roleOf(index, run.hands.length) !== "crafter") {
+          if (roleOf(map, index, run.hands.length) !== "crafter") {
             hand.mode = "idle";
             continue;
           }
@@ -208,7 +234,7 @@ export function tickHands(state: GameState, map: MapDef, dt: number): void {
           hand.waiting = true;
           return;
         }
-        if (roleOf(index, run.hands.length) === "crafter") return;
+        if (roleOf(map, index, run.hands.length) === "crafter") return;
         hand.mode = "idle";
         continue;
       }

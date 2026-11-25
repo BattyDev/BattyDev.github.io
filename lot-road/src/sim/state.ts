@@ -14,6 +14,8 @@ export interface HandRt {
   waiting: boolean;
   haulGood: string;
   haulOrder: boolean;
+  /** Tide index this Hand already carried a pile for. */
+  tideMark: number;
 }
 
 export interface NodeRt {
@@ -28,6 +30,9 @@ export interface JobRt {
   recipeId: string;
   left: number;
   total: number;
+  elapsed: number;
+  paused: boolean;
+  windowsHit: number;
 }
 
 export interface PadRt {
@@ -77,6 +82,17 @@ export interface RunState {
   idleMs: number;
   stats: { taps: number; playMs: number };
   phase: "play" | "travel" | "end";
+  /** Goods sitting where a tide can reach them. */
+  low: Record<string, number>;
+  /** Goods on the way up the steps. */
+  transit: Record<string, number>;
+  clockMs: number;
+  tides: number;
+  haulLeft: number;
+  shakeMs: number;
+  shakeSpent: boolean;
+  earlyLock: number;
+  pickedMs: number;
 }
 
 export interface Profile {
@@ -117,6 +133,7 @@ export function emptyHand(x: number, z: number): HandRt {
     waiting: false,
     haulGood: "",
     haulOrder: false,
+    tideMark: -1,
   };
 }
 
@@ -147,13 +164,22 @@ export function createRun(map: MapDef): RunState {
     idleMs: 0,
     stats: { taps: 0, playMs: 0 },
     phase: "play",
+    low: {},
+    transit: {},
+    clockMs: 0,
+    tides: 0,
+    haulLeft: 0,
+    shakeMs: 0,
+    shakeSpent: false,
+    earlyLock: 0,
+    pickedMs: 0,
   };
 }
 
 export function createGame(map: MapDef): GameState {
   return {
     profile: {
-      coins: 0,
+      coins: map.startCoins ?? 0,
       bestPurse: 0,
       mapsUnlocked: [map.id],
       cleared: [],
@@ -191,4 +217,7 @@ export const FLOAT_COLOR: Record<string, string> = {
   nectar: "#FFE9A0",
   juice: "#FFC090",
   jar: "#FFE8C8",
+  charcoal: "#D9D2C8",
+  brine: "#D5E8F0",
+  dried: "#C8E6C0",
 };
