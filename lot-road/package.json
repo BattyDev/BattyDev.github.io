@@ -1,0 +1,26 @@
+{
+  "name": "lot-road",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "test": "vitest run",
+    "preview": "vite preview --host 127.0.0.1 --port 4173"
+  },
+  "dependencies": {
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "@fontsource/lilita-one": "^5.2.5",
+    "@fontsource/nunito": "^5.2.5",
+    "@types/three": "^0.170.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.6",
+    "vitest": "^3.2.4"
+  }
+}

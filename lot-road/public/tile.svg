@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" width="900" height="600" role="img" aria-label="An isometric meadow yard with reed, a skiff, and a big green button">
+  <rect width="900" height="600" fill="#8EA86A"/>
+  <ellipse cx="450" cy="250" rx="250" ry="130" fill="#C9D98A"/>
+  <ellipse cx="450" cy="250" rx="190" ry="96" fill="#D7E7A4"/>
+  <ellipse cx="620" cy="300" rx="70" ry="36" fill="#7EC8C3"/>
+  <g fill="#7BA04A">
+    <path d="M300 250c8-40 16-60 28-78" fill="none" stroke="#6E9440" stroke-width="8" stroke-linecap="round"/>
+    <path d="M320 255c6-36 12-52 22-70" fill="none" stroke="#8FB456" stroke-width="8" stroke-linecap="round"/>
+    <path d="M310 258c2-30 6-44 10-58" fill="none" stroke="#3E6B24" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(560 210)">
+    <rect x="0" y="18" width="90" height="16" rx="4" fill="#C47A4A"/>
+    <rect width="16" height="28" rx="2" fill="#8C5430"/>
+    <rect x="74" y="0" width="16" height="28" rx="2" fill="#8C5430"/>
+    <rect x="30" y="8" width="22" height="16" fill="#E6C56A"/>
+  </g>
+  <g transform="translate(430 200)">
+    <rect x="18" y="0" width="10" height="46" fill="#C47A4A"/>
+    <rect x="52" y="0" width="10" height="46" fill="#C47A4A"/>
+    <rect x="10" y="0" width="60" height="8" fill="#A8653A"/>
+  </g>
+  <g transform="translate(400 230)">
+    <circle cx="18" cy="8" r="10" fill="#F3D2B3"/>
+    <path d="M18 0l14 12H4z" fill="#E6C56A"/>
+    <rect x="8" y="16" width="20" height="28" rx="6" fill="#F6EFE2"/>
+    <rect x="8" y="20" width="20" height="5" fill="#C43B3B"/>
+  </g>
+  <g transform="translate(250 360)">
+    <rect width="400" height="72" rx="16" fill="#0E7C66"/>
+    <text x="200" y="48" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="32" fill="#F6EFE2">CUT</text>
+  </g>
+</svg>
