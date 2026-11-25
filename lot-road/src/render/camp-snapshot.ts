@@ -100,10 +100,6 @@ export function campSnapshot(state: CampState, time: number, reduced: boolean): 
       shake: node.hitCd > 280,
     });
   }
-  props.push(
-    { id: "wolf-scenery", kind: "wolf", x: 8.5, z: 2.8, stage: 1, disc: "off", scale: 1, badge: "", shake: false },
-    { id: "seal-scenery", kind: "seal", x: -8.3, z: -2.6, stage: 1, disc: "off", scale: 1, badge: "", shake: false },
-  );
   props.push({
     id: "counter",
     kind: "counter",
@@ -119,7 +115,7 @@ export function campSnapshot(state: CampState, time: number, reduced: boolean): 
   for (const bear of state.bears) {
     props.push({
       id: bear.id,
-      kind: "beast",
+      kind: bear.species === "wolf" ? "wolf" : bear.species === "seal" ? "seal" : "beast",
       x: bear.x,
       z: bear.z,
       stage: bear.down > 0 ? 0 : 1,

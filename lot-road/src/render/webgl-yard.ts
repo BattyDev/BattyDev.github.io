@@ -361,8 +361,12 @@ function extraGeos(): Record<string, THREE.BufferGeometry> {
     raw: rawMesh(),
     bill: billMesh(),
     smoke: smokeMesh(),
-    wolf: wolfGeo(),
-    seal: sealGeo(),
+    wolf: wolfGeo(0),
+    wolf1: wolfGeo(1),
+    wolf2: wolfGeo(2),
+    seal: sealGeo(0),
+    seal1: sealGeo(1),
+    seal2: sealGeo(2),
     hearth: hearthGeo(),
   };
 }
@@ -392,7 +396,7 @@ function signTexture(text: string, lit: boolean): THREE.CanvasTexture {
   return tex;
 }
 
-const LAMBERT = new THREE.MeshLambertMaterial({ vertexColors: true });
+const LAMBERT = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
 
 function mesh(geo: THREE.BufferGeometry, shadow: boolean): THREE.Mesh {
   const item = new THREE.Mesh(geo, LAMBERT);
@@ -414,6 +418,7 @@ export class WebglYard implements YardRenderer {
   private tier: "high" | "low" = "low";
   private hemi!: THREE.HemisphereLight;
   private sun!: THREE.DirectionalLight;
+  private fill!: THREE.DirectionalLight;
   private objects = new Map<string, THREE.Object3D>();
   private discMesh!: THREE.InstancedMesh;
   private discIds: string[] = [];
@@ -439,10 +444,12 @@ export class WebglYard implements YardRenderer {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.domElement.className = "yard";
     host.prepend(this.renderer.domElement);
-    this.hemi = new THREE.HemisphereLight("#FFF6E4", "#8AA05A", 0.95);
-    this.sun = new THREE.DirectionalLight("#FFF8EC", 1.2);
-    this.sun.position.set(10, 16, 8);
-    this.scene.add(this.hemi, this.sun);
+    this.hemi = new THREE.HemisphereLight("#F7FBFF", "#D5E4EE", 1.45);
+    this.sun = new THREE.DirectionalLight("#FFF4E4", 0.48);
+    this.sun.position.set(8, 14, 6);
+    this.fill = new THREE.DirectionalLight("#E7F3FB", 0.42);
+    this.fill.position.set(-10, 8, -6);
+    this.scene.add(this.hemi, this.sun, this.fill);
     const eye = cameraEye();
     this.camera.position.set(eye[0], eye[1], eye[2]);
     this.camera.lookAt(0, VIEW.lookY, 0);
@@ -557,7 +564,7 @@ export class WebglYard implements YardRenderer {
 
   private build(snapshot: RenderSnapshot): void {
     for (const child of [...this.scene.children]) {
-      if (child !== this.hemi && child !== this.sun) this.scene.remove(child);
+      if (child !== this.hemi && child !== this.sun && child !== this.fill) this.scene.remove(child);
     }
     this.objects.clear();
     const shadow = this.tier === "high";
@@ -620,10 +627,11 @@ export class WebglYard implements YardRenderer {
       const item = prop.kind.startsWith("mark-") ? this.padMark(prop.kind, shadow) : mesh(geo, shadow);
       item.userData.geo1 = prop.kind === "weave" ? weave1 : prop.kind === "boat" ? skiff : geo;
       item.userData.geo2 = prop.kind === "weave" ? weave2 : prop.kind === "boat" ? barge : geo;
-      if (prop.kind === "beast") {
-        item.userData.full = extras.beast;
-        item.userData.mid = extras.beast1;
-        item.userData.low = extras.beast2;
+      if (prop.kind === "beast" || prop.kind === "wolf" || prop.kind === "seal") {
+        const key = prop.kind === "beast" ? "beast" : prop.kind;
+        item.userData.full = extras[key];
+        item.userData.mid = extras[`${key}1`];
+        item.userData.low = extras[`${key}2`];
       }
       this.scene.add(item);
       this.objects.set(prop.id, item);
@@ -767,7 +775,7 @@ export class WebglYard implements YardRenderer {
     if (prop.kind.startsWith("mark-") && meshObj.material !== this.padMaterial(prop.kind)) {
       meshObj.material = this.padMaterial(prop.kind);
     }
-    if (prop.kind === "beast" && meshObj.userData.full) {
+    if ((prop.kind === "beast" || prop.kind === "wolf" || prop.kind === "seal") && meshObj.userData.full) {
       const next = prop.scale > 0.67 ? meshObj.userData.full : prop.scale > 0.34 ? meshObj.userData.mid : meshObj.userData.low;
       if (next && meshObj.geometry !== next) meshObj.geometry = next as THREE.BufferGeometry;
     }
@@ -823,7 +831,8 @@ export class WebglYard implements YardRenderer {
       }
       if (cash) {
         cash.visible = snapshot.carry.money > 0;
-        cash.scale.y = 0.45 + Math.min(12, snapshot.carry.money) * 0.08;
+        const pile = 1 + Math.min(10, snapshot.carry.money) * 0.045;
+        cash.scale.set(pile, pile, pile);
       }
     }
     for (let i = 0; i < 5; i += 1) {
@@ -864,7 +873,7 @@ export class WebglYard implements YardRenderer {
     rocks.position.set(0, 0.85, -0.38);
     const cash = mesh(this.track(billStackGeo()), shadow);
     cash.name = "cash";
-    cash.position.set(0.02, 0.95, -0.22);
+    cash.position.set(0.34, 0.95, -0.18);
     cash.visible = false;
     pack.visible = false;
     logs.visible = false;

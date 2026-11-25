@@ -103,6 +103,19 @@ describe("snow camp", () => {
     expect(camp.x).toBeLessThan(4.32);
   });
 
+  it("hunts a wolf and a seal with the axe", () => {
+    const camp = createCamp();
+    for (const species of ["wolf", "seal"] as const) {
+      const animal = camp.bears.find((bear) => bear.species === species);
+      if (!animal) throw new Error(`missing ${species}`);
+      camp.x = animal.x;
+      camp.z = animal.z;
+      tickCamp(camp, { x: 0, z: 0 }, 40);
+      expect(animal.hp).toBe(2);
+      animal.hitCd = 0;
+    }
+  });
+
   it("unlocks pads one step at a time and only spends on an open pad", () => {
     const camp = createCamp();
     expect(padAccess(camp, "grill")).toBe("open");

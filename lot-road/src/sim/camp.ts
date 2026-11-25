@@ -25,6 +25,7 @@ export interface CampBear {
   vx: number;
   vz: number;
   turn: number;
+  species: "bear" | "wolf" | "seal";
 }
 
 export interface CampGrill {
@@ -164,9 +165,11 @@ export function createCamp(): CampState {
     reach: WORLD,
     ridge: false,
     bears: [
-      bear("bear-a", 0.4, -6.2),
-      bear("bear-b", -6.0, 0.5),
-      bear("bear-c", 5.9, -0.6),
+      bear("bear-a", 0.4, -6.2, "bear"),
+      bear("bear-b", -6.0, 0.5, "bear"),
+      bear("bear-c", 5.9, -0.6, "bear"),
+      bear("wolf-a", 6.4, 2.4, "wolf"),
+      bear("seal-a", -6.2, -2.6, "seal"),
     ],
     nodes: [
       node("tree-a", -5.6, 2.6, "tree", 2),
@@ -731,8 +734,8 @@ function node(id: string, x: number, z: number, kind: CampNode["kind"], max: num
   return { id, kind, x, z, hp: max, max, hitCd: 0, down: 0 };
 }
 
-function bear(id: string, x: number, z: number): CampBear {
-  return { id, x, z, hp: 3, max: 3, hitCd: 0, down: 0, vx: 0.3, vz: 0.15, turn: 1200 };
+function bear(id: string, x: number, z: number, species: CampBear["species"] = "bear"): CampBear {
+  return { id, x, z, hp: 3, max: 3, hitCd: 0, down: 0, vx: 0.3, vz: 0.15, turn: 1200, species };
 }
 
 function clamp(n: number, limit: number): number {
