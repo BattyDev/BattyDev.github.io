@@ -7,7 +7,7 @@
 
 export interface CampDrop {
   id: string;
-  kind: "raw" | "bill";
+  kind: "raw" | "wood" | "ore" | "bill";
   x: number;
   z: number;
   /** Bills can be worth more than one. Raw is always one. */
@@ -37,7 +37,7 @@ export interface CampPad {
   id: string;
   x: number;
   z: number;
-  kind: "grill" | "carry" | "hand";
+  kind: "grill" | "carry" | "hand" | "tool" | "station" | "gather" | "ridge";
   label: string;
   price: number;
   rank: number;
@@ -48,7 +48,7 @@ export interface CampPad {
 export interface CampWorker {
   x: number;
   z: number;
-  held: "raw" | "cooked" | null;
+  held: "raw" | "cooked" | "wood" | "ore" | null;
   tx: number;
   tz: number;
 }
@@ -62,6 +62,19 @@ export interface CampFloater {
   age: number;
 }
 
+export type CampOrder = "cooked" | "plank" | "bar";
+
+export interface CampNode {
+  id: string;
+  kind: "tree" | "rock";
+  x: number;
+  z: number;
+  hp: number;
+  max: number;
+  hitCd: number;
+  down: number;
+}
+
 export interface CampState {
   x: number;
   z: number;
@@ -71,16 +84,32 @@ export interface CampState {
   cooked: number;
   wood: number;
   ore: number;
+  planks: number;
+  bars: number;
   money: number;
   carryMax: number;
   grillRank: number;
+  toolRank: number;
+  stationRank: number;
+  madePlanks: number;
+  madeBars: number;
+  sales: number;
+  order: CampOrder;
+  reach: number;
+  ridge: boolean;
   bears: CampBear[];
+  nodes: CampNode[];
   drops: CampDrop[];
   grill: CampGrill;
+  mill: CampGrill;
+  forge: CampGrill;
   grillAt: { x: number; z: number };
+  millAt: { x: number; z: number };
+  forgeAt: { x: number; z: number };
   counterAt: { x: number; z: number };
   pads: CampPad[];
   worker: CampWorker | null;
+  gatherer: CampWorker | null;
   serveCd: number;
   floaters: CampFloater[];
   hint: string;
@@ -117,24 +146,50 @@ export function createCamp(): CampState {
     cooked: 0,
     wood: 0,
     ore: 0,
+    planks: 0,
+    bars: 0,
     money: 0,
     carryMax: 4,
     grillRank: 0,
+    toolRank: 0,
+    stationRank: 0,
+    madePlanks: 0,
+    madeBars: 0,
+    sales: 0,
+    order: "cooked",
+    reach: WORLD,
+    ridge: false,
     bears: [
       bear("bear-a", 0.15, -3.15),
       bear("bear-b", -3.05, -0.4),
       bear("bear-c", 3.05, 0.35),
     ],
+    nodes: [
+      node("tree-a", -3.15, 1.7, "tree", 2),
+      node("tree-b", 2.85, 2.15, "tree", 2),
+      node("tree-c", -2.35, 2.85, "tree", 2),
+      node("rock-a", 3.2, -1.7, "rock", 3),
+      node("rock-b", -3.25, -1.35, "rock", 3),
+    ],
     drops: [],
     grill: { phase: "empty", left: 0, total: COOK },
+    mill: { phase: "empty", left: 0, total: 4200 },
+    forge: { phase: "empty", left: 0, total: 4200 },
     grillAt: { x: -1.05, z: 0.2 },
+    millAt: { x: -1.65, z: 1.2 },
+    forgeAt: { x: 1.7, z: -1.2 },
     counterAt: { x: 1.15, z: 0.45 },
     pads: [
       { id: "pad-grill", x: -1.05, z: -0.85, kind: "grill", label: "Faster grill", price: 4, rank: 0, max: 5, stood: 0 },
       { id: "pad-carry", x: 0.1, z: -1.2, kind: "carry", label: "Carry", price: 6, rank: 0, max: 5, stood: 0 },
       { id: "pad-hand", x: 1.25, z: -0.9, kind: "hand", label: "A hand", price: 12, rank: 0, max: 1, stood: 0 },
+      { id: "pad-tool", x: -1.55, z: -1.15, kind: "tool", label: "Tool", price: 8, rank: 0, max: 3, stood: 0 },
+      { id: "pad-station", x: 0.55, z: -1.55, kind: "station", label: "Stations", price: 8, rank: 0, max: 3, stood: 0 },
+      { id: "pad-gather", x: -0.45, z: 1.45, kind: "gather", label: "Gatherer", price: 14, rank: 0, max: 1, stood: 0 },
+      { id: "pad-ridge", x: 0, z: -1.72, kind: "ridge", label: "New ground", price: 16, rank: 0, max: 1, stood: 0 },
     ],
     worker: null,
+    gatherer: null,
     serveCd: 0,
     floaters: [],
     hint: "Drag to walk out to the bears",
@@ -148,8 +203,12 @@ export function cookTime(state: CampState): number {
   return Math.round(COOK * Math.pow(0.82, state.grillRank));
 }
 
+export function stationTime(state: CampState): number {
+  return Math.round(4200 * Math.pow(0.82, state.stationRank));
+}
+
 export function carriedGoods(state: CampState): number {
-  return state.raw + state.cooked + state.wood + state.ore;
+  return state.raw + state.cooked + state.wood + state.ore + state.planks + state.bars;
 }
 
 export function tickCamp(state: CampState, move: CampMove, dt: number): CampCue[] {
@@ -175,7 +234,7 @@ export function tickCamp(state: CampState, move: CampMove, dt: number): CampCue[
     if (bear.hitCd > 0) continue;
     if (Math.hypot(bear.x - state.x, bear.z - state.z) > HIT) continue;
     bear.hitCd = 420;
-    bear.hp -= 1;
+    bear.hp -= 1 + state.toolRank;
     state.swing = 280;
     state.facing = Math.atan2(bear.x - state.x, bear.z - state.z);
     cues.push("chop");
@@ -186,13 +245,21 @@ export function tickCamp(state: CampState, move: CampMove, dt: number): CampCue[
     }
   }
 
+  for (const node of state.nodes) tickNode(state, node, step, cues);
+
   for (const drop of [...state.drops]) {
     if (Math.hypot(drop.x - state.x, drop.z - state.z) > PICK) continue;
-    if (drop.kind === "raw" && carriedGoods(state) >= state.carryMax) continue;
+    if (drop.kind !== "bill" && carriedGoods(state) >= state.carryMax) continue;
     state.drops = state.drops.filter((item) => item.id !== drop.id);
     if (drop.kind === "raw") {
       state.raw += 1;
       float(state, drop.x, drop.z, "+meat", "#E07A6A");
+    } else if (drop.kind === "wood") {
+      state.wood += 1;
+      float(state, drop.x, drop.z, "+wood", "#C4A06A");
+    } else if (drop.kind === "ore") {
+      state.ore += 1;
+      float(state, drop.x, drop.z, "+ore", "#9AA7B2");
     } else {
       state.money += drop.n;
       float(state, drop.x, drop.z, `+${drop.n}`, "#7DDE6A");
@@ -220,13 +287,19 @@ export function tickCamp(state: CampState, move: CampMove, dt: number): CampCue[
     state.grill = { phase: "cook", left: total, total };
   }
 
+  boil(state.mill, step, cues);
+  boil(state.forge, step, cues);
+  feedStation(state, state.millAt, state.mill, "wood", "planks");
+  feedStation(state, state.forgeAt, state.forge, "ore", "bars");
+
   state.serveCd = Math.max(0, state.serveCd - step);
-  if (near(state, state.counterAt) && state.cooked > 0 && state.serveCd === 0) {
-    state.cooked -= 1;
+  if (near(state, state.counterAt) && state.serveCd === 0 && holding(state, state.order) > 0) {
+    take(state, state.order);
     pay(state, cues);
   }
 
   tickWorker(state, step, cues);
+  tickGatherer(state, step);
   tickPads(state, step, cues);
 
   for (const floater of state.floaters) floater.age += step;
@@ -246,7 +319,19 @@ export function campFromRaw(raw: string | null): CampState | null {
       ...fresh,
       ...data,
       grillAt: fresh.grillAt,
+      millAt: fresh.millAt,
+      forgeAt: fresh.forgeAt,
       counterAt: fresh.counterAt,
+      nodes: data.nodes?.length ? data.nodes : fresh.nodes,
+      mill: data.mill ?? fresh.mill,
+      forge: data.forge ?? fresh.forge,
+      gatherer: data.gatherer ?? null,
+      order: data.order ?? "cooked",
+      planks: data.planks ?? 0,
+      bars: data.bars ?? 0,
+      toolRank: data.toolRank ?? 0,
+      stationRank: data.stationRank ?? 0,
+      reach: data.reach ?? fresh.reach,
       pads: fresh.pads.map((pad) => {
         const saved = data.pads?.find((item) => item.id === pad.id);
         return saved ? { ...pad, rank: saved.rank, stood: 0, price: pad.price } : pad;
@@ -264,11 +349,11 @@ export function campFromRaw(raw: string | null): CampState | null {
 function tickWorker(state: CampState, step: number, cues: CampCue[]): void {
   const hand = state.worker;
   if (!hand) return;
-  if (hand.held === "cooked") {
+    if (hand.held === "cooked") {
     hand.tx = state.counterAt.x;
     hand.tz = state.counterAt.z - 0.35;
     stepToward(hand, step, 2.2);
-    if (Math.hypot(hand.x - state.counterAt.x, hand.z - state.counterAt.z) < 0.85 && state.serveCd === 0) {
+    if (state.order === "cooked" && Math.hypot(hand.x - state.counterAt.x, hand.z - state.counterAt.z) < 0.85 && state.serveCd === 0) {
       hand.held = null;
       pay(state, cues);
     }
@@ -337,22 +422,156 @@ function tickPads(state: CampState, step: number, cues: CampCue[]): void {
     } else if (pad.kind === "carry") {
       state.carryMax = 4 + pad.rank;
       cues.push("build");
-    } else if (!state.worker) {
+    } else if (pad.kind === "tool") {
+      state.toolRank = pad.rank;
+      cues.push("build");
+    } else if (pad.kind === "station") {
+      state.stationRank = pad.rank;
+      cues.push("build");
+    } else if (pad.kind === "hand" && !state.worker) {
       state.worker = { x: pad.x, z: pad.z, held: null, tx: state.grillAt.x, tz: state.grillAt.z };
       cues.push("hire");
+    } else if (pad.kind === "gather" && !state.gatherer) {
+      state.gatherer = { x: pad.x, z: pad.z, held: null, tx: state.millAt.x, tz: state.millAt.z };
+      cues.push("hire");
+    } else if (pad.kind === "ridge" && !state.ridge) {
+      state.ridge = true;
+      state.reach = 4.45;
+      state.nodes.push(node("tree-r", -3.7, -2.4, "tree", 2), node("rock-r", 3.6, 2.4, "rock", 3));
+      state.bears.push(bear("bear-d", 0.3, -4.05));
+      cues.push("build");
     }
   }
 }
 
 function pay(state: CampState, cues: CampCue[]): void {
+  const bills = state.order === "bar" ? 8 : state.order === "plank" ? 6 : 4;
   state.serveCd = 700;
-  scatter(state, state.counterAt.x, state.counterAt.z + 0.15, 4, "bill", 1);
+  state.sales += 1;
+  scatter(state, state.counterAt.x, state.counterAt.z + 0.15, bills, "bill", 1);
+  state.order = nextOrder(state);
   cues.push("sell");
 }
 
+function nextOrder(state: CampState): CampOrder {
+  if (state.madeBars > 0 && state.sales % 3 === 0) return "bar";
+  if (state.madePlanks > 0 && state.sales % 2 === 0) return "plank";
+  return "cooked";
+}
+
+function holding(state: CampState, order: CampOrder): number {
+  if (order === "plank") return state.planks;
+  if (order === "bar") return state.bars;
+  return state.cooked;
+}
+
+function take(state: CampState, order: CampOrder): void {
+  if (order === "plank") state.planks -= 1;
+  else if (order === "bar") state.bars -= 1;
+  else state.cooked -= 1;
+}
+
+function boil(station: CampGrill, step: number, cues: CampCue[]): void {
+  if (station.phase !== "cook") return;
+  station.left -= step;
+  if (station.left <= 0) {
+    station.phase = "done";
+    station.left = 0;
+    cues.push("craft");
+  }
+}
+
+function feedStation(
+  state: CampState,
+  at: { x: number; z: number },
+  station: CampGrill,
+  input: "wood" | "ore",
+  output: "planks" | "bars",
+): void {
+  if (!near(state, at)) return;
+  if (station.phase === "done" && carriedGoods(state) < state.carryMax) {
+    station.phase = "empty";
+    state[output] += 1;
+    if (output === "planks") state.madePlanks += 1;
+    else state.madeBars += 1;
+    float(state, at.x, at.z, output === "planks" ? "planks" : "bars", "#E6C56A");
+    return;
+  }
+  if (station.phase === "empty" && state[input] > 0) {
+    state[input] -= 1;
+    const total = stationTime(state);
+    station.phase = "cook";
+    station.left = total;
+    station.total = total;
+  }
+}
+
+function tickNode(state: CampState, node: CampNode, step: number, cues: CampCue[]): void {
+  node.hitCd = Math.max(0, node.hitCd - step);
+  if (node.down > 0) {
+    node.down -= step;
+    if (node.down <= 0) {
+      node.down = 0;
+      node.hp = node.max;
+    }
+    return;
+  }
+  if (node.kind === "rock" && state.toolRank < 1) return;
+  if (node.hitCd > 0) return;
+  if (Math.hypot(node.x - state.x, node.z - state.z) > HIT) return;
+  node.hitCd = 420;
+  node.hp -= 1 + state.toolRank;
+  state.swing = 280;
+  state.facing = Math.atan2(node.x - state.x, node.z - state.z);
+  cues.push("chop");
+  if (node.hp > 0) return;
+  node.down = 8000;
+  if (node.kind === "tree") {
+    scatter(state, node.x, node.z, 2, "wood", 1);
+    float(state, node.x, node.z, "wood", "#C4A06A");
+  } else {
+    scatter(state, node.x, node.z, 1, "ore", 1);
+    float(state, node.x, node.z, "ore", "#9AA7B2");
+  }
+}
+
+function tickGatherer(state: CampState, step: number): void {
+  const hand = state.gatherer;
+  if (!hand) return;
+  if (hand.held === "wood" || hand.held === "ore") {
+    const at = hand.held === "wood" ? state.millAt : state.forgeAt;
+    const station = hand.held === "wood" ? state.mill : state.forge;
+    hand.tx = at.x;
+    hand.tz = at.z;
+    stepToward(hand, step, 2.1);
+    if (station.phase === "empty" && Math.hypot(hand.x - at.x, hand.z - at.z) < 0.7) {
+      const total = stationTime(state);
+      station.phase = "cook";
+      station.left = total;
+      station.total = total;
+      hand.held = null;
+    }
+    return;
+  }
+  const drop = state.drops.find((item) => item.kind === "wood" || (item.kind === "ore" && state.toolRank > 0));
+  if (!drop) {
+    hand.tx = state.millAt.x + 0.4;
+    hand.tz = state.millAt.z;
+    stepToward(hand, step, 1.5);
+    return;
+  }
+  hand.tx = drop.x;
+  hand.tz = drop.z;
+  stepToward(hand, step, 2.1);
+  if (Math.hypot(hand.x - drop.x, hand.z - drop.z) < 0.45) {
+    state.drops = state.drops.filter((item) => item.id !== drop.id);
+    hand.held = drop.kind === "ore" ? "ore" : "wood";
+  }
+}
+
 function slide(state: CampState, dx: number, dz: number): void {
-  const nx = clamp(state.x + dx, WORLD);
-  const nz = clamp(state.z + dz, WORLD);
+  const nx = clamp(state.x + dx, state.reach);
+  const nz = clamp(state.z + dz, state.reach);
   if (!inWall(nx, nz)) {
     state.x = nx;
     state.z = nz;
@@ -380,7 +599,7 @@ function wanderOut(bear: CampBear, step: number): void {
   }
   let x = bear.x + (bear.vx * step) / 1000;
   let z = bear.z + (bear.vz * step) / 1000;
-  if (Math.hypot(x, z) < OUT + 0.25 || Math.hypot(x, z) > WORLD) {
+  if (Math.hypot(x, z) < OUT + 0.25 || Math.hypot(x, z) > 4.5) {
     bear.vx *= -1;
     bear.vz *= -1;
     x = bear.x;
@@ -430,7 +649,12 @@ function hintFor(state: CampState): string {
   }
   if (pad) return `${pad.label} ${pad.rank}/${pad.max} · stand · ${pad.price}`;
   if (state.drops.some((drop) => drop.kind === "bill")) return "Pick up the money";
-  if (state.cooked > 0) return "Stand at the counter";
+  if (state.order === "plank" && state.planks > 0) return "They want planks. Stand at the counter";
+  if (state.order === "bar" && state.bars > 0) return "They want metal. Stand at the counter";
+  if (state.order !== "cooked" && holding(state, state.order) === 0 && state.cooked > 0) {
+    return state.order === "plank" ? "This buyer wants planks" : "This buyer wants metal";
+  }
+  if (state.cooked > 0 && state.order === "cooked") return "Stand at the counter";
   if (state.grill.phase === "done") return "Pick up the cooked meat";
   if (state.grill.phase === "cook") return "The meat is cooking";
   if (state.raw > 0) return "Stand at the grill";
@@ -454,6 +678,10 @@ function stepToward(body: { x: number; z: number; tx: number; tz: number }, step
 function float(state: CampState, x: number, z: number, text: string, color: string): void {
   state.floaters.push({ id: state.floaterId++, x, z, text, color, age: 0 });
   if (state.floaters.length > 8) state.floaters.shift();
+}
+
+function node(id: string, x: number, z: number, kind: CampNode["kind"], max: number): CampNode {
+  return { id, kind, x, z, hp: max, max, hitCd: 0, down: 0 };
 }
 
 function bear(id: string, x: number, z: number): CampBear {

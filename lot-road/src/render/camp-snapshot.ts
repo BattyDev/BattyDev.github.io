@@ -56,6 +56,41 @@ export function campSnapshot(state: CampState, time: number, reduced: boolean): 
     });
   }
   props.push({
+    id: "mill",
+    kind: "mill",
+    x: state.millAt.x,
+    z: state.millAt.z,
+    stage: 1,
+    disc: state.mill.phase === "empty" ? "idle" : "hot",
+    scale: 1,
+    badge: state.mill.phase === "done" ? "OK" : "",
+    shake: false,
+  });
+  props.push({
+    id: "forge",
+    kind: "forge",
+    x: state.forgeAt.x,
+    z: state.forgeAt.z,
+    stage: 1,
+    disc: state.forge.phase === "empty" ? "idle" : "hot",
+    scale: 1,
+    badge: state.forge.phase === "done" ? "OK" : "",
+    shake: false,
+  });
+  for (const node of state.nodes) {
+    props.push({
+      id: node.id,
+      kind: node.kind === "tree" ? "grove" : "stone",
+      x: node.x,
+      z: node.z,
+      stage: node.down > 0 ? 0 : 1,
+      disc: "off",
+      scale: node.kind === "tree" && node.down <= 0 ? 1 : node.hp / node.max,
+      badge: "",
+      shake: node.hitCd > 280,
+    });
+  }
+  props.push({
     id: "counter",
     kind: "counter",
     x: state.counterAt.x,
@@ -107,20 +142,18 @@ export function campSnapshot(state: CampState, time: number, reduced: boolean): 
     });
   }
 
+  const front = state.order === "plank" ? "#3D6EA5" : state.order === "bar" ? "#E6C56A" : "#C43838";
   const customers = [0, 1, 2].map((i) => ({
     x: state.counterAt.x + (i - 1) * 0.38,
     z: state.counterAt.z + 0.85 + i * 0.08,
-    color: "#C43838",
+    color: i === 0 ? front : "#C43838",
     walking: i === 0 && state.serveCd > 0,
   }));
   if (state.serveCd > 0) customers[0].z += 0.7;
 
-  const hands = state.worker
-    ? [
-        ...customers,
-        { x: state.worker.x, z: state.worker.z, color: "#3D8B7A", walking: true },
-      ]
-    : customers;
+  const hands = [...customers];
+  if (state.worker) hands.push({ x: state.worker.x, z: state.worker.z, color: "#3D8B7A", walking: true });
+  if (state.gatherer) hands.push({ x: state.gatherer.x, z: state.gatherer.z, color: "#C47A4A", walking: true });
 
   const bars = state.bears
     .filter((bear) => bear.down <= 0)
@@ -131,6 +164,22 @@ export function campSnapshot(state: CampState, time: number, reduced: boolean): 
       z: state.grillAt.z,
       frac: 1 - state.grill.left / Math.max(1, state.grill.total),
       color: "#F2B134",
+    });
+  }
+  if (state.mill.phase === "cook") {
+    bars.push({
+      x: state.millAt.x,
+      z: state.millAt.z,
+      frac: 1 - state.mill.left / Math.max(1, state.mill.total),
+      color: "#C4A06A",
+    });
+  }
+  if (state.forge.phase === "cook") {
+    bars.push({
+      x: state.forgeAt.x,
+      z: state.forgeAt.z,
+      frac: 1 - state.forge.left / Math.max(1, state.forge.total),
+      color: "#E6C56A",
     });
   }
 

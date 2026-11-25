@@ -304,6 +304,22 @@ function padGeo(): THREE.BufferGeometry {
   return mergeParts([{ geo: cyl(0.42, 0.04, 10), color: "#7ED07A", y: 0.04 }]);
 }
 
+function millMesh(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: box(0.7, 0.36, 0.45), color: "#A67C52", y: 0.32 },
+    { geo: cyl(0.16, 0.08, 8), color: "#D9D2C8", y: 0.54 },
+    { geo: box(0.34, 0.06, 0.16), color: "#E6C56A", x: 0.28, y: 0.4 },
+  ]);
+}
+
+function forgeMesh(): THREE.BufferGeometry {
+  return mergeParts([
+    { geo: box(0.55, 0.5, 0.5), color: "#5C4636", y: 0.32 },
+    { geo: box(0.22, 0.16, 0.08), color: "#E07A3D", z: 0.26, y: 0.28 },
+    { geo: cyl(0.08, 0.22, 6), color: "#C4A06A", y: 0.66 },
+  ]);
+}
+
 function grillMesh(): THREE.BufferGeometry {
   return mergeParts([
     { geo: box(0.7, 0.28, 0.4), color: "#8C5430", y: 0.32 },
@@ -373,6 +389,8 @@ function extraGeos(): Record<string, THREE.BufferGeometry> {
     pile: pileGeo(),
     pad: padGeo(),
     grill: grillMesh(),
+    mill: millMesh(),
+    forge: forgeMesh(),
     counter: counterMesh(),
     deck: deckMesh(),
     raw: rawMesh(),
@@ -633,8 +651,8 @@ export class WebglYard implements YardRenderer {
     const axe = mesh(this.track(axeGeo()), shadow);
     this.scene.add(axe);
     this.objects.set("axe", axe);
-    for (let i = 0; i < 4; i += 1) {
-      const hand = mesh(this.track(person(snapshot.hands[i]?.color ?? ["#C43838", "#C43838", "#C43838", "#3D8B7A"][i], "#F7F4EC")), shadow);
+    for (let i = 0; i < 5; i += 1) {
+      const hand = mesh(this.track(person(snapshot.hands[i]?.color ?? "#C43838", "#F7F4EC")), shadow);
       hand.visible = false;
       this.scene.add(hand);
       this.objects.set(`hand${i}`, hand);
@@ -790,7 +808,7 @@ export class WebglYard implements YardRenderer {
         cash.scale.y = 0.35 + Math.min(10, snapshot.carry.money) * 0.12;
       }
     }
-    for (let i = 0; i < 4; i += 1) {
+    for (let i = 0; i < 5; i += 1) {
       const hand = this.objects.get(`hand${i}`);
       const data = snapshot.hands[i];
       if (!hand) continue;

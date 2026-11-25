@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cookTime, createCamp, inWall, tickCamp } from "../src/sim/camp";
+import { cookTime, createCamp, inWall, stationTime, tickCamp } from "../src/sim/camp";
 
 describe("snow camp", () => {
   it("hits a bear you walk up to, then drops raw meat", () => {
@@ -52,6 +52,45 @@ describe("snow camp", () => {
     expect(pad.rank).toBe(1);
     expect(camp.money).toBe(0);
     expect(camp.grillRank).toBe(1);
+  });
+
+  it("chops trees for wood, and rocks only after the tool pad", () => {
+    const camp = createCamp();
+    const tree = camp.nodes.find((node) => node.kind === "tree");
+    if (!tree) throw new Error("missing tree");
+    camp.x = tree.x;
+    camp.z = tree.z;
+    tickCamp(camp, { x: 0, z: 0 }, 40);
+    tree.hitCd = 0;
+    tickCamp(camp, { x: 0, z: 0 }, 40);
+    expect(camp.drops.some((drop) => drop.kind === "wood")).toBe(true);
+
+    const rock = camp.nodes.find((node) => node.kind === "rock");
+    if (!rock) throw new Error("missing rock");
+    camp.x = rock.x;
+    camp.z = rock.z;
+    tickCamp(camp, { x: 0, z: 0 }, 40);
+    expect(rock.hp).toBe(rock.max);
+    camp.toolRank = 1;
+    tickCamp(camp, { x: 0, z: 0 }, 40);
+    expect(rock.hp).toBeLessThan(rock.max);
+  });
+
+  it("saws wood into planks and sells those to a plank buyer", () => {
+    const camp = createCamp();
+    camp.wood = 1;
+    camp.x = camp.millAt.x;
+    camp.z = camp.millAt.z;
+    tickCamp(camp, { x: 0, z: 0 }, 40);
+    expect(camp.mill.phase).toBe("cook");
+    for (let t = 0; t < stationTime(camp) + 150; t += 100) tickCamp(camp, { x: 0, z: 0 }, 100);
+    expect(camp.planks).toBe(1);
+    camp.order = "plank";
+    camp.x = camp.counterAt.x;
+    camp.z = camp.counterAt.z;
+    tickCamp(camp, { x: 0, z: 0 }, 40);
+    expect(camp.planks).toBe(0);
+    expect(camp.drops.filter((drop) => drop.kind === "bill")).toHaveLength(6);
   });
 
   it("keeps the hunter out of the palisade except at the gate", () => {

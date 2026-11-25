@@ -136,11 +136,14 @@ export class Hud {
     this.root.classList.add("roam");
     this.name.textContent = "Snow camp";
     this.pips.innerHTML = "";
-    this.stack.innerHTML = [
+    const plates: [string, number][] = [
       ["coin", camp.money],
       ["meat", camp.raw],
       ["cooked", camp.cooked],
-    ]
+    ];
+    if (camp.wood > 0 || camp.planks > 0) plates.push(["wood", camp.wood]);
+    if (camp.ore > 0 || camp.bars > 0) plates.push(["stone", camp.ore]);
+    this.stack.innerHTML = plates
       .map(([key, value]) => `<div class="plate">${icon(String(key))}<b>${value}</b></div>`)
       .join("");
     this.goal.textContent = camp.hint;

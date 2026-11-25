@@ -164,6 +164,8 @@ export class FlatYard implements YardRenderer {
       pile: "#C47A4A",
       pad: "#7ED07A",
       grill: "#8C5430",
+      mill: "#A67C52",
+      forge: "#5C4636",
       counter: "#C4A06A",
       deck: "#A67C52",
       raw: "#E07A6A",
