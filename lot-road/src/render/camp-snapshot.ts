@@ -154,11 +154,13 @@ export function campSnapshot(state: CampState, time: number, reduced: boolean): 
     });
   }
 
+  const coats = ["#C43838", "#3D6EA5", "#E6C56A"];
   const front = state.order === "plank" ? "#3D6EA5" : state.order === "bar" ? "#E6C56A" : "#C43838";
+  const line = [front, ...coats.filter((color) => color !== front)];
   const customers = [0, 1, 2].map((i) => ({
-    x: state.counterAt.x + (i - 1) * 0.38,
-    z: state.counterAt.z + 0.85 + i * 0.08,
-    color: i === 0 ? front : "#C43838",
+    x: state.counterAt.x + (i - 1) * 0.62,
+    z: state.counterAt.z + 1.05 + i * 0.05,
+    color: line[i] ?? front,
     walking: i === 0 && state.serveCd > 0,
   }));
   if (state.serveCd > 0) customers[0].z += 0.7;

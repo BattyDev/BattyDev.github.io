@@ -98,13 +98,13 @@ export function parka(coat = COAT, held: "axe" | "log" | "meat" | "plank" | "bar
     parts.push({ geo: cyl(0.1, 0.72, 6), color: WOOD, y: 1.08, rz: Math.PI / 2 });
   } else if (held === "meat") {
     parts.push(
-      { geo: ball(0.1), color: "#E15B55", y: 0.5, z: 0.28, sx: 1.3, sy: 0.55, sz: 0.9 },
-      { geo: box(0.04, 0.08, 0.12), color: "#F7F4EC", y: 0.52, z: 0.3 },
+      { geo: ball(0.16, 8, 6), color: "#C43838", y: 0.64, z: 0.42, sx: 1.35, sy: 0.55, sz: 0.95 },
+      { geo: box(0.06, 0.1, 0.18), color: "#F7F4EC", y: 0.68, z: 0.44 },
     );
   } else if (held === "plank") {
-    parts.push({ geo: box(0.36, 0.08, 0.12), color: WOOD, y: 0.52, z: 0.24 });
+    parts.push({ geo: box(0.72, 0.12, 0.18), color: "#E6C9A0", x: 0.12, y: 0.7, z: 0.36, rz: 0.2 });
   } else if (held === "bar") {
-    parts.push({ geo: box(0.34, 0.08, 0.1), color: "#8A939C", y: 0.52, z: 0.24 });
+    parts.push({ geo: box(0.7, 0.12, 0.14), color: "#5E666E", x: 0.12, y: 0.7, z: 0.36, rz: -0.15 });
   }
   return mergeParts(parts);
 }
@@ -139,35 +139,52 @@ export function beastGeo(wounds: number): THREE.BufferGeometry {
 }
 
 export function wolfGeo(wounds = 0): THREE.BufferGeometry {
+  const mane: Part[] = [
+    [-0.14, 0.66, 0.22],
+    [0.14, 0.66, 0.22],
+    [-0.16, 0.52, 0.12],
+    [0.16, 0.52, 0.12],
+    [0, 0.74, 0.16],
+  ].map(([x, y, z]) => ({ geo: ico(0.08), color: "#4A5C6E", x, y, z, sx: 0.75, sy: 1.15, sz: 0.7 }));
   return mergeParts([
-    { geo: ico(0.28, 1), color: "#7E93A8", y: 0.46, sx: 0.7, sy: 0.75, sz: 1.45 },
-    { geo: ico(0.14, 1), color: "#5E7388", z: 0.48, y: 0.58 },
-    { geo: cone(0.05, 0.16, 4), color: "#4E6274", x: -0.07, y: 0.78, z: 0.46 },
-    { geo: cone(0.05, 0.16, 4), color: "#4E6274", x: 0.07, y: 0.78, z: 0.46 },
-    { geo: ico(0.06), color: "#3E4E60", z: 0.64, y: 0.52, sx: 0.7, sy: 0.6, sz: 1.3 },
-    { geo: ico(0.025), color: "#F2E6A8", x: -0.04, z: 0.58, y: 0.62 },
-    { geo: ico(0.025), color: "#F2E6A8", x: 0.04, z: 0.58, y: 0.62 },
-    { geo: cyl(0.04, 0.28, 5), color: "#6E8498", x: -0.1, z: 0.18, y: 0.14 },
-    { geo: cyl(0.04, 0.28, 5), color: "#6E8498", x: 0.1, z: 0.18, y: 0.14 },
-    { geo: cyl(0.04, 0.28, 5), color: "#6E8498", x: -0.1, z: -0.22, y: 0.14 },
-    { geo: cyl(0.04, 0.28, 5), color: "#6E8498", x: 0.1, z: -0.22, y: 0.14 },
-    { geo: ico(0.08), color: "#4E6274", z: -0.52, y: 0.42, sx: 0.45, sy: 0.45, sz: 1.4 },
-    ...meatBits(wounds, 0.55, 0.05),
+    { geo: ico(0.28, 1), color: "#7E93A8", y: 0.48, sx: 0.72, sy: 0.78, sz: 1.3 },
+    { geo: ico(0.15, 1), color: "#6E8498", z: 0.4, y: 0.64 },
+    { geo: ico(0.09), color: "#D5DDE3", z: 0.6, y: 0.54, sx: 0.65, sy: 0.5, sz: 1.7 },
+    { geo: ico(0.035), color: "#1C1915", z: 0.76, y: 0.54 },
+    { geo: cone(0.06, 0.22, 4), color: "#3E4E60", x: -0.08, y: 0.9, z: 0.36 },
+    { geo: cone(0.06, 0.22, 4), color: "#3E4E60", x: 0.08, y: 0.9, z: 0.36 },
+    { geo: ico(0.028), color: "#F2E6A8", x: -0.05, z: 0.52, y: 0.7 },
+    { geo: ico(0.028), color: "#F2E6A8", x: 0.05, z: 0.52, y: 0.7 },
+    { geo: cyl(0.04, 0.3, 5), color: "#6E8498", x: -0.12, z: 0.16, y: 0.15 },
+    { geo: cyl(0.04, 0.3, 5), color: "#6E8498", x: 0.12, z: 0.16, y: 0.15 },
+    { geo: cyl(0.04, 0.3, 5), color: "#6E8498", x: -0.12, z: -0.22, y: 0.15 },
+    { geo: cyl(0.04, 0.3, 5), color: "#6E8498", x: 0.12, z: -0.22, y: 0.15 },
+    { geo: ico(0.08), color: "#5E7388", z: -0.5, y: 0.58, sx: 0.4, sy: 0.4, sz: 1.5 },
+    ...mane,
+    ...meatBits(wounds, 0.58, 0.02),
   ]);
 }
 
 export function sealGeo(wounds = 0): THREE.BufferGeometry {
+  const whiskers: Part[] = [];
+  for (const side of [-1, 1]) {
+    whiskers.push(
+      { geo: box(0.2, 0.015, 0.015), color: "#F7FBFD", x: side * 0.18, y: 0.4, z: 0.52, rz: side * 0.35 },
+      { geo: box(0.16, 0.015, 0.015), color: "#F7FBFD", x: side * 0.16, y: 0.36, z: 0.52, rz: side * 0.05 },
+    );
+  }
   return mergeParts([
-    { geo: ico(0.32, 1), color: "#8A97A3", y: 0.24, sx: 1.15, sy: 0.55, sz: 1.45 },
-    { geo: ico(0.22, 0), color: "#D5DDE3", y: 0.3, z: 0.05, sx: 0.85, sy: 0.4, sz: 0.9 },
-    { geo: ico(0.14, 1), color: "#9AA6B0", z: 0.42, y: 0.36 },
-    { geo: ico(0.035), color: "#1C1915", x: -0.05, z: 0.54, y: 0.4 },
-    { geo: ico(0.035), color: "#1C1915", x: 0.05, z: 0.54, y: 0.4 },
-    { geo: ico(0.03), color: "#1C1915", z: 0.56, y: 0.32 },
-    { geo: ico(0.08), color: "#6E7C88", x: -0.32, y: 0.12, sx: 1.4, sy: 0.35, sz: 0.8 },
-    { geo: ico(0.08), color: "#6E7C88", x: 0.32, y: 0.12, sx: 1.4, sy: 0.35, sz: 0.8 },
-    { geo: ico(0.07), color: "#6E7C88", z: -0.42, y: 0.14, sx: 0.5, sy: 0.35, sz: 1.1 },
-    ...meatBits(wounds, 0.36, 0.05),
+    { geo: ball(0.34, 8, 6), color: "#8A97A3", y: 0.3, sx: 1.05, sy: 0.7, sz: 1.3 },
+    { geo: ball(0.24, 8, 6), color: "#E4EAF0", y: 0.28, z: 0.06, sx: 0.82, sy: 0.5, sz: 1.05 },
+    { geo: ball(0.16, 8, 6), color: "#9AA6B0", z: 0.4, y: 0.42 },
+    { geo: ball(0.035, 5, 4), color: "#1C1915", x: -0.06, z: 0.52, y: 0.46 },
+    { geo: ball(0.035, 5, 4), color: "#1C1915", x: 0.06, z: 0.52, y: 0.46 },
+    { geo: ball(0.03, 5, 4), color: "#1C1915", z: 0.55, y: 0.38 },
+    { geo: ball(0.1, 6, 4), color: "#6E7C88", x: -0.32, y: 0.14, sx: 1.5, sy: 0.28, sz: 0.7 },
+    { geo: ball(0.1, 6, 4), color: "#6E7C88", x: 0.32, y: 0.14, sx: 1.5, sy: 0.28, sz: 0.7 },
+    { geo: ball(0.08, 6, 4), color: "#6E7C88", z: -0.42, y: 0.16, sx: 0.45, sy: 0.3, sz: 1.2 },
+    ...whiskers,
+    ...meatBits(wounds, 0.4, 0.02),
   ]);
 }
 
@@ -185,10 +202,13 @@ export function snowTreeGeo(): THREE.BufferGeometry {
 
 export function oreGeo(): THREE.BufferGeometry {
   return mergeParts([
-    { geo: box(0.42, 0.28, 0.36), color: "#5E666E", y: 0.16 },
-    { geo: box(0.24, 0.2, 0.22), color: "#4A5158", x: 0.16, y: 0.22, z: 0.06 },
-    { geo: box(0.06, 0.22, 0.06), color: "#E07A3D", y: 0.2, rz: 0.4 },
-    { geo: box(0.05, 0.16, 0.05), color: "#F2B134", x: 0.1, y: 0.18, rz: -0.5 },
+    { geo: ico(0.24), color: "#5E666E", y: 0.22, sx: 1.15, sy: 0.9, sz: 1 },
+    { geo: ico(0.16), color: "#4A5158", x: 0.18, y: 0.2, z: 0.06 },
+    { geo: ico(0.14), color: "#6E767E", x: -0.16, y: 0.16, z: -0.04 },
+    { geo: ico(0.11), color: "#3E444A", x: 0.02, y: 0.34, z: -0.08 },
+    { geo: box(0.07, 0.28, 0.06), color: "#E07A3D", y: 0.24, rz: 0.55 },
+    { geo: box(0.06, 0.2, 0.05), color: "#F2B134", x: 0.1, y: 0.22, rz: -0.7 },
+    { geo: box(0.05, 0.18, 0.05), color: "#E07A3D", x: -0.08, y: 0.18, z: 0.08, rz: 0.25 },
   ]);
 }
 
@@ -252,23 +272,31 @@ export function grillGeo(): THREE.BufferGeometry {
 
 export function millGeo(): THREE.BufferGeometry {
   return mergeParts([
-    { geo: box(0.9, 0.08, 0.7), color: WOOD, y: 0.06 },
-    { geo: box(0.1, 0.55, 0.1), color: WOOD_DARK, x: -0.28, y: 0.36 },
-    { geo: box(0.1, 0.55, 0.1), color: WOOD_DARK, x: 0.28, y: 0.36 },
-    { geo: cyl(0.12, 0.55, 6), color: "#D7B07A", y: 0.32, rz: Math.PI / 2 },
-    { geo: cyl(0.22, 0.06, 8), color: "#C5CCD1", x: 0.22, y: 0.4, rz: Math.PI / 2 },
+    { geo: box(1.1, 0.08, 0.9), color: WOOD, y: 0.05 },
+    { geo: box(0.08, 0.72, 0.08), color: WOOD_DARK, x: -0.32, y: 0.42, rz: 0.28 },
+    { geo: box(0.08, 0.72, 0.08), color: WOOD_DARK, x: -0.02, y: 0.42, rz: -0.28 },
+    { geo: box(0.08, 0.5, 0.08), color: WOOD, x: 0.34, y: 0.32 },
+    { geo: box(0.08, 0.5, 0.08), color: WOOD, x: 0.52, y: 0.32 },
+    { geo: cyl(0.14, 0.72, 8), color: "#C4A06A", y: 0.4, rz: Math.PI / 2 },
+    { geo: cyl(0.14, 0.05, 8), color: "#E6D2A8", x: -0.34, y: 0.4, rz: Math.PI / 2 },
+    { geo: cyl(0.3, 0.045, 12), color: "#D5D8DC", x: 0.24, y: 0.5, rz: Math.PI / 2 },
+    { geo: cyl(0.08, 0.06, 8), color: "#8A939C", x: 0.24, y: 0.5, rz: Math.PI / 2 },
+    { geo: box(0.16, 0.12, 0.14), color: WOOD_DARK, x: -0.16, y: 0.74 },
   ]);
 }
 
 export function forgeGeo(): THREE.BufferGeometry {
   return mergeParts([
-    { geo: box(0.7, 0.1, 0.6), color: "#C5CCD1", y: 0.06 },
-    { geo: box(0.5, 0.28, 0.46), color: "#6E767E", y: 0.24 },
-    { geo: box(0.36, 0.28, 0.34), color: "#5C656E", y: 0.5 },
-    { geo: box(0.24, 0.28, 0.24), color: "#4E565E", y: 0.76 },
-    { geo: box(0.18, 0.14, 0.08), color: "#E07A3D", z: 0.22, y: 0.32 },
-    { geo: box(0.22, 0.12, 0.16), color: "#3A3E44", z: 0.36, y: 0.16 },
-    { geo: box(0.1, 0.1, 0.16), color: "#2A2724", z: 0.46, y: 0.2 },
+    { geo: box(0.9, 0.08, 0.78), color: "#C5CCD1", y: 0.04 },
+    { geo: box(0.64, 0.3, 0.56), color: "#6E767E", y: 0.22 },
+    { geo: box(0.46, 0.26, 0.42), color: "#5C656E", y: 0.48 },
+    { geo: box(0.32, 0.3, 0.3), color: "#4E565E", y: 0.74 },
+    { geo: box(0.16, 0.08, 0.14), color: "#2A2724", y: 0.92 },
+    { geo: box(0.24, 0.18, 0.06), color: "#F2B134", z: 0.3, y: 0.28 },
+    { geo: box(0.12, 0.1, 0.04), color: "#E07A3D", z: 0.33, y: 0.26 },
+    { geo: box(0.42, 0.1, 0.16), color: "#3A3E44", z: 0.62, y: 0.2 },
+    { geo: box(0.14, 0.16, 0.12), color: "#2A2724", z: 0.58, y: 0.08 },
+    { geo: box(0.18, 0.08, 0.1), color: "#4A5158", z: 0.78, y: 0.22 },
   ]);
 }
 

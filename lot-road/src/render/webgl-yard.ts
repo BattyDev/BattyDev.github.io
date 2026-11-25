@@ -850,8 +850,8 @@ export class WebglYard implements YardRenderer {
       hand.position.set(data.x, 0, data.z);
       const bob = data.walking && !snapshot.reduced ? Math.sin(snapshot.time / 90 + i) * 0.06 : 0;
       hand.position.y = bob;
-      hand.rotation.y = data.walking ? 0.4 : -0.5;
-      hand.scale.setScalar(1.7 / 1.9);
+      hand.rotation.y = data.walking ? 0.4 : 0.85;
+      hand.scale.setScalar(1);
     }
   }
 
