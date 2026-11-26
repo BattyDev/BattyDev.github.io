@@ -57,3 +57,14 @@
 .note-list li p { margin-top: .3rem; }
 .free-text { white-space: pre-wrap; }
 .individual-votes li { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: .25rem .8rem; }
+.availability-calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .25rem; margin-top: .8rem; }
+.availability-calendar > .weekday { text-align: center; font-size: .74rem; }
+.calendar-day { min-height: 3.3rem; padding: .3rem .08rem; display: grid; align-content: center; gap: .15rem; text-align: center; }
+.calendar-day > span { font-size: .68rem; white-space: nowrap; }
+.calendar-day > strong { font-size: 1.12rem; line-height: 1; }
+.calendar-day[aria-pressed=true] { background: var(--pine); border-color: var(--pine); color: #fff; }
+.calendar-details h4 { margin: .75rem 0 .25rem; }
+.calendar-favorites { padding-left: 1.25rem; margin: 0 0 .6rem; }
+.calendar-favorites li { margin-block: .18rem; overflow-wrap: anywhere; }
+.calendar-people { border-top: 1px solid var(--line); }
+.calendar-people li { padding-block: .65rem; }

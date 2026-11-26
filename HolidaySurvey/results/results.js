@@ -10,7 +10,7 @@ const summary = document.querySelector('#summary');
 const message = document.querySelector('#message');
 const view = document.querySelector('#view');
 const refresh = document.querySelector('#refresh');
-const settings = { view: 'overlap', duration: 120, activity: '', individual: 0 };
+const settings = { view: 'calendar', calendarDate: '', duration: 120, activity: '', individual: 0 };
 const dateFormat = new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/Denver' });
 const updatedFormat = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Denver' });
 const escape = (text) => String(text).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
@@ -90,6 +90,68 @@ const option = (value, label, current) => '<option value="' + escape(value) + '"
 const badge = (label, state) => '<span class="badge day-' + state + '">' + label + '</span>';
 const empty = (text) => '<p class="help empty">' + text + '</p>';
 
+const groupSize = ({ name }) => name.split(/\s+\+\s+/).length;
+const headcount = (group) => group.reduce((total, person) => total + groupSize(person), 0);
+
+function calendarView() {
+  const days = dates.map((date) => {
+    const definite = responses.filter((person) => person.days?.[date]?.status === 2);
+    const possible = responses.filter((person) => person.days?.[date]?.status === 1);
+    const total = headcount(definite) + headcount(possible);
+    return { date, definite, possible, total };
+  });
+  if (!settings.calendarDate) {
+    const best = days.reduce((a, b) => b.total > a.total ||
+      (b.total === a.total && headcount(b.definite) > headcount(a.definite)) ? b : a);
+    settings.calendarDate = best.date;
+  }
+  const selected = days.find(({ date }) => date === settings.calendarDate);
+  const offset = new Date(dates[0] + 'T12:00:00Z').getUTCDay();
+  const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const month = new Intl.DateTimeFormat('en-US', { month: 'short', timeZone: 'UTC' });
+  const cells = days.map(({ date, total, definite, possible }) => {
+    const stamp = new Date(date + 'T12:00:00Z');
+    const label = dateLabel(date) + ', ' + headcount(definite) + ' definite, ' + headcount(possible) + ' could make it';
+    return '<button type="button" class="calendar-day quiet" data-calendar-date="' + date +
+      '" aria-label="' + escape(label) + '" aria-pressed="' + (date === selected.date) +
+      '" aria-controls="calendar-details"><span>' + month.format(stamp) + ' ' + stamp.getUTCDate() +
+      '</span><strong>' + total + '</strong></button>';
+  }).join('');
+
+  return '<h2>Availability calendar</h2><p class="help">Numbers show how many people are free for part of each day, including tentative answers. Tap a date for names and activities.</p>' +
+    '<div class="availability-calendar" aria-label="December 19, 2026 through January 1, 2027">' +
+    weekdayLabels.map((label) => '<span class="weekday">' + label + '</span>').join('') +
+    '<span aria-hidden="true"></span>'.repeat(offset) + cells + '</div>' + calendarDetails(selected);
+}
+
+function calendarDetails({ date, definite, possible, total }) {
+  const group = [...definite, ...possible];
+  const top = activityTotals(group, catalog).filter(({ play }) => play > 0).slice(0, 3);
+  const favorites = top.map(({ title, play }) => '<li>' + escape(title) + ' <span class="help">· ' +
+    play + (play === 1 ? ' participation vote' : ' participation votes') + '</span></li>').join('');
+  const list = group.map((person) => {
+    const day = person.days[date];
+    const interests = (vote) => nameList(catalog.filter(([id]) => person.activities?.[id] === vote).map(([, title]) => title));
+    const play = interests('play');
+    const hang = interests('hang');
+    const name = person.name === 'OG' ? 'Jeff' : person.name;
+    return '<li><div class="result-title"><strong>' + escape(name) + '</strong>' +
+      badge(statuses[day.status], day.status) + '</div>' +
+      '<p>' + day.windows.map(([start, end]) => rangeLabel(start, end)).join(', ') + '</p>' +
+      (day.note ? '<p class="help free-text">' + escape(day.note) + '</p>' : '') +
+      (play ? '<p class="help"><b>Would participate</b> ' + play + '</p>' : '') +
+      (hang ? '<p class="help"><b>Would come along</b> ' + hang + '</p>' : '') +
+      (!play && !hang ? '<p class="help">No activities selected to join.</p>' : '') + '</li>';
+  }).join('');
+
+  return '<section class="result-section calendar-details" id="calendar-details">' +
+    '<h3>' + dateLabel(date) + '</h3>' +
+    (total ? '<p class="help">' + headcount(definite) + ' definite · ' + headcount(possible) + ' could make it · Mountain Time</p>' +
+      (favorites ? '<h4>Top activities for this group</h4><ul class="calendar-favorites">' + favorites + '</ul>' : '') +
+      '<ul class="note-list calendar-people">' + list + '</ul>' : empty('Nobody marked this date as available.')) +
+    '</section>';
+}
+
 function overlapView() {
   const included = settings.activity ?
     responses.filter(({ activities: votes }) => ['play', 'hang'].includes(votes?.[settings.activity])) : responses;
@@ -163,7 +225,7 @@ function individualView() {
 
 function render() {
   dashboard.querySelectorAll('[data-view]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.view === settings.view)));
-  view.innerHTML = ({ overlap: overlapView, interests: interestsView, individuals: individualView })[settings.view]();
+  view.innerHTML = ({ calendar: calendarView, overlap: overlapView, interests: interestsView, individuals: individualView })[settings.view]();
 }
 
 dashboard.addEventListener('click', (event) => {
@@ -179,6 +241,14 @@ view.addEventListener('change', ({ target }) => {
   settings[setting] = setting === 'activity' ? target.value : Number(target.value);
   render();
   view.querySelector('[data-setting="' + setting + '"]').focus();
+});
+
+view.addEventListener('click', ({ target }) => {
+  const button = target.closest('button[data-calendar-date]');
+  if (!button) return;
+  settings.calendarDate = button.dataset.calendarDate;
+  render();
+  view.querySelector('[aria-pressed="true"][data-calendar-date]').focus({ preventScroll: true });
 });
 
 refresh.addEventListener('click', () => void load(linkKey));
